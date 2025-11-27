@@ -40,5 +40,13 @@
 		"vite": "^7.2.2",
 		"vitest": "^4.0.10",
 		"vitest-browser-svelte": "^2.0.1"
+	},
+	"dependencies": {
+		"@kubernetes/client-node": "^1.4.0",
+		"ajv": "^8.17.1",
+		"ajv-formats": "^3.0.1",
+		"fast-json-patch": "^3.1.1",
+		"json-logic-js": "^2.0.5",
+		"lucide-svelte": "^0.555.0"
 	}
 }

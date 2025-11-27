@@ -1,0 +1,238 @@
+import * as k8s from '@kubernetes/client-node';
+import type { K8sResource, K8sListResponse, ResourceFilter } from '$lib/types/k8s';
+
+// Create a simple wrapper that avoids the complex factory pattern
+export class K8sApiServiceSimple {
+	private kc: k8s.KubeConfig;
+
+	constructor() {
+		this.kc = new k8s.KubeConfig();
+		this.kc.loadFromDefault();
+	}
+
+	async listResources(resourceType: string, filter: ResourceFilter = {}): Promise<K8sListResponse> {
+		// Force namespace to be a string
+		const namespace = String(filter.namespace || 'default');
+		
+		// Ensure we have a valid namespace
+		if (!namespace || typeof namespace !== 'string') {
+			throw new Error(`Invalid namespace: ${namespace} (type: ${typeof namespace})`);
+		}
+		
+		const k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
+		const appsApi = this.kc.makeApiClient(k8s.AppsV1Api);
+		const batchApi = this.kc.makeApiClient(k8s.BatchV1Api);
+		const networkingApi = this.kc.makeApiClient(k8s.NetworkingV1Api);
+		const rbacApi = this.kc.makeApiClient(k8s.RbacAuthorizationV1Api);
+		const autoscalingApi = this.kc.makeApiClient(k8s.AutoscalingV1Api);
+		const storageApi = this.kc.makeApiClient(k8s.StorageV1Api);
+
+		try {
+			let result: any;
+			
+			switch (resourceType) {
+				case 'pods':
+					result = await k8sApi.listNamespacedPod({ namespace });
+					break;
+					
+				case 'deployments':
+					result = await appsApi.listNamespacedDeployment({ namespace });
+					break;
+					
+				case 'services':
+					result = await k8sApi.listNamespacedService({ namespace });
+					break;
+					
+				case 'configmaps':
+					result = await k8sApi.listNamespacedConfigMap({ namespace });
+					break;
+					
+				case 'secrets':
+					result = await k8sApi.listNamespacedSecret({ namespace });
+					break;
+					
+				case 'ingresses':
+					result = await networkingApi.listNamespacedIngress({ namespace });
+					break;
+					
+				case 'statefulsets':
+					// Try with explicit parameters
+					result = await appsApi.listNamespacedStatefulSet({ namespace });
+					break;
+					
+				case 'daemonsets':
+					// Try with explicit parameters
+					result = await appsApi.listNamespacedDaemonSet({ namespace });
+					break;
+					
+				case 'replicasets':
+					result = await appsApi.listNamespacedReplicaSet({ namespace });
+					break;
+					
+				case 'jobs':
+					result = await batchApi.listNamespacedJob({ namespace });
+					break;
+					
+				case 'cronjobs':
+					result = await batchApi.listNamespacedCronJob({ namespace });
+					break;
+					
+				case 'networkpolicies':
+					result = await networkingApi.listNamespacedNetworkPolicy({ namespace });
+					break;
+					
+				case 'pvc':
+				case 'persistentvolumeclaims':
+					result = await k8sApi.listNamespacedPersistentVolumeClaim({ namespace });
+					break;
+					
+				case 'endpoints':
+					result = await k8sApi.listNamespacedEndpoints({ namespace });
+					break;
+					
+				case 'serviceaccounts':
+					result = await k8sApi.listNamespacedServiceAccount({ namespace });
+					break;
+					
+				case 'resourcequotas':
+					result = await k8sApi.listNamespacedResourceQuota({ namespace });
+					break;
+					
+				case 'hpa':
+				case 'horizontalpodautoscalers':
+					result = await autoscalingApi.listNamespacedHorizontalPodAutoscaler({ namespace });
+					break;
+					
+				case 'limitranges':
+					result = await k8sApi.listNamespacedLimitRange({ namespace });
+					break;
+					
+				case 'roles':
+					result = await rbacApi.listNamespacedRole({ namespace });
+					break;
+					
+				case 'rolebindings':
+					result = await rbacApi.listNamespacedRoleBinding({ namespace });
+					break;
+					
+				// Cluster-scoped resources (no namespace)
+				case 'namespaces':
+					result = await k8sApi.listNamespace({});
+					break;
+					
+				case 'nodes':
+					result = await k8sApi.listNode({});
+					break;
+					
+				case 'pv':
+				case 'persistentvolumes':
+					result = await k8sApi.listPersistentVolume({});
+					break;
+					
+				case 'storageclasses':
+					result = await storageApi.listStorageClass({});
+					break;
+					
+				case 'clusterroles':
+					result = await rbacApi.listClusterRole({});
+					break;
+					
+				case 'clusterrolebindings':
+					result = await rbacApi.listClusterRoleBinding({});
+					break;
+
+				case 'pdb':
+				case 'poddisruptionbudgets':
+					// Note: PodDisruptionBudgets require PolicyV1Api
+					try {
+						const policyApi = this.kc.makeApiClient(k8s.PolicyV1Api);
+						result = await policyApi.listNamespacedPodDisruptionBudget({ namespace });
+					} catch (error) {
+						console.warn('PodDisruptionBudgets not supported or not available');
+						result = { body: { items: [], apiVersion: 'policy/v1', kind: 'PodDisruptionBudgetList' } };
+					}
+					break;
+
+				// These are often custom resources, return empty for now
+				case 'volumesnapshots':
+				case 'volumesnapshotclasses':
+				case 'endpointslices':
+					console.warn(`Resource type ${resourceType} not yet implemented`);
+					result = { body: { items: [], apiVersion: 'v1', kind: 'List' } };
+					break;
+					
+				default:
+					console.warn(`Unsupported resource type: ${resourceType}`);
+					result = { body: { items: [], apiVersion: 'v1', kind: 'List' } };
+					break;
+			}
+			
+			// Debug logging (remove in production)
+			// console.log(`API Response for ${resourceType}:`, result);
+			
+			// Handle different response structures
+			if (result.body) {
+				return result.body as K8sListResponse;
+			} else if (result.items) {
+				return result as K8sListResponse;
+			} else {
+				console.error('Unexpected response structure:', result);
+				return { items: [], apiVersion: '', kind: '' } as K8sListResponse;
+			}
+		} catch (error) {
+			console.error('Error listing resources:', error);
+			throw error;
+		}
+	}
+
+	async deleteResource(resourceType: string, name: string, namespace: string = 'default'): Promise<void> {
+		const k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
+		const appsApi = this.kc.makeApiClient(k8s.AppsV1Api);
+		const batchApi = this.kc.makeApiClient(k8s.BatchV1Api);
+
+		try {
+			switch (resourceType) {
+				case 'pods':
+					await k8sApi.deleteNamespacedPod({ name, namespace });
+					break;
+					
+				case 'deployments':
+					await appsApi.deleteNamespacedDeployment({ name, namespace });
+					break;
+					
+				case 'services':
+					await k8sApi.deleteNamespacedService({ name, namespace });
+					break;
+					
+				case 'configmaps':
+					await k8sApi.deleteNamespacedConfigMap({ name, namespace });
+					break;
+					
+				case 'secrets':
+					await k8sApi.deleteNamespacedSecret({ name, namespace });
+					break;
+					
+				case 'jobs':
+					await batchApi.deleteNamespacedJob({ name, namespace });
+					break;
+					
+				default:
+					throw new Error(`Delete not implemented for resource type: ${resourceType}`);
+			}
+		} catch (error) {
+			console.error('Error deleting resource:', error);
+			throw error;
+		}
+	}
+
+	async listNamespaces(): Promise<string[]> {
+		try {
+			const k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
+			const namespaces = await k8sApi.listNamespace({});
+			return namespaces.body.items.map(ns => ns.metadata?.name || '').filter(name => name);
+		} catch (error) {
+			console.error('Error listing namespaces:', error);
+			return ['default'];
+		}
+	}
+}
