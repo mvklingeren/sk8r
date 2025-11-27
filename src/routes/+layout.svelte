@@ -2,8 +2,31 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import Sidebar from '$lib/components/Sidebar.svelte';
+	import GlobalSearch from '$lib/components/GlobalSearch.svelte';
+	import { onMount } from 'svelte';
 	
 	let { children } = $props();
+	let searchOpen = $state(false);
+
+	onMount(() => {
+		function handleKeydown(event: KeyboardEvent) {
+			// Ctrl+K or Cmd+K to open search
+			if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+				event.preventDefault();
+				searchOpen = true;
+			}
+		}
+
+		document.addEventListener('keydown', handleKeydown);
+		
+		return () => {
+			document.removeEventListener('keydown', handleKeydown);
+		};
+	});
+
+	function closeSearch() {
+		searchOpen = false;
+	}
 </script>
 
 <svelte:head>
@@ -17,4 +40,7 @@
 			{@render children()}
 		</div>
 	</main>
+	
+	<!-- Global Search -->
+	<GlobalSearch isOpen={searchOpen} onClose={closeSearch} />
 </div>

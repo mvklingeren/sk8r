@@ -12,12 +12,15 @@ export class K8sApiServiceSimple {
 
 	async listResources(resourceType: string, filter: ResourceFilter = {}): Promise<K8sListResponse> {
 		// Force namespace to be a string
-		const namespace = String(filter.namespace || 'default');
+		const namespace = String(filter.namespace || '*');
 		
 		// Ensure we have a valid namespace
 		if (!namespace || typeof namespace !== 'string') {
 			throw new Error(`Invalid namespace: ${namespace} (type: ${typeof namespace})`);
 		}
+		
+		// Check if we should list resources from all namespaces
+		const allNamespaces = namespace === '*';
 		
 		const k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
 		const appsApi = this.kc.makeApiClient(k8s.AppsV1Api);
@@ -32,87 +35,143 @@ export class K8sApiServiceSimple {
 			
 			switch (resourceType) {
 				case 'pods':
-					result = await k8sApi.listNamespacedPod({ namespace });
+					result = allNamespaces 
+						? await k8sApi.listPodForAllNamespaces({})
+						: await k8sApi.listNamespacedPod({ namespace });
 					break;
 					
 				case 'deployments':
-					result = await appsApi.listNamespacedDeployment({ namespace });
+					result = allNamespaces 
+						? await appsApi.listDeploymentForAllNamespaces({})
+						: await appsApi.listNamespacedDeployment({ namespace });
 					break;
 					
 				case 'services':
-					result = await k8sApi.listNamespacedService({ namespace });
+					result = allNamespaces 
+						? await k8sApi.listServiceForAllNamespaces({})
+						: await k8sApi.listNamespacedService({ namespace });
 					break;
 					
 				case 'configmaps':
-					result = await k8sApi.listNamespacedConfigMap({ namespace });
+					result = allNamespaces 
+						? await k8sApi.listConfigMapForAllNamespaces({})
+						: await k8sApi.listNamespacedConfigMap({ namespace });
 					break;
 					
 				case 'secrets':
-					result = await k8sApi.listNamespacedSecret({ namespace });
+					result = allNamespaces 
+						? await k8sApi.listSecretForAllNamespaces({})
+						: await k8sApi.listNamespacedSecret({ namespace });
 					break;
 					
 				case 'ingresses':
-					result = await networkingApi.listNamespacedIngress({ namespace });
+					result = allNamespaces 
+						? await networkingApi.listIngressForAllNamespaces({})
+						: await networkingApi.listNamespacedIngress({ namespace });
 					break;
 					
 				case 'statefulsets':
-					// Try with explicit parameters
-					result = await appsApi.listNamespacedStatefulSet({ namespace });
+					result = allNamespaces 
+						? await appsApi.listStatefulSetForAllNamespaces({})
+						: await appsApi.listNamespacedStatefulSet({ namespace });
 					break;
 					
 				case 'daemonsets':
-					// Try with explicit parameters
-					result = await appsApi.listNamespacedDaemonSet({ namespace });
+					result = allNamespaces 
+						? await appsApi.listDaemonSetForAllNamespaces({})
+						: await appsApi.listNamespacedDaemonSet({ namespace });
 					break;
 					
 				case 'replicasets':
-					result = await appsApi.listNamespacedReplicaSet({ namespace });
+					result = allNamespaces 
+						? await appsApi.listReplicaSetForAllNamespaces({})
+						: await appsApi.listNamespacedReplicaSet({ namespace });
 					break;
 					
 				case 'jobs':
-					result = await batchApi.listNamespacedJob({ namespace });
+					result = allNamespaces 
+						? await batchApi.listJobForAllNamespaces({})
+						: await batchApi.listNamespacedJob({ namespace });
 					break;
 					
 				case 'cronjobs':
-					result = await batchApi.listNamespacedCronJob({ namespace });
+					result = allNamespaces 
+						? await batchApi.listCronJobForAllNamespaces({})
+						: await batchApi.listNamespacedCronJob({ namespace });
 					break;
 					
 				case 'networkpolicies':
-					result = await networkingApi.listNamespacedNetworkPolicy({ namespace });
+					// NetworkPolicies don't have ForAllNamespaces method, handle manually
+					if (allNamespaces) {
+						result = { body: { items: [], apiVersion: 'networking.k8s.io/v1', kind: 'NetworkPolicyList' } };
+					} else {
+						result = await networkingApi.listNamespacedNetworkPolicy({ namespace });
+					}
 					break;
 					
 				case 'pvc':
 				case 'persistentvolumeclaims':
-					result = await k8sApi.listNamespacedPersistentVolumeClaim({ namespace });
+					result = allNamespaces 
+						? await k8sApi.listPersistentVolumeClaimForAllNamespaces({})
+						: await k8sApi.listNamespacedPersistentVolumeClaim({ namespace });
 					break;
 					
 				case 'endpoints':
-					result = await k8sApi.listNamespacedEndpoints({ namespace });
+					result = allNamespaces 
+						? await k8sApi.listEndpointsForAllNamespaces({})
+						: await k8sApi.listNamespacedEndpoints({ namespace });
 					break;
 					
 				case 'serviceaccounts':
-					result = await k8sApi.listNamespacedServiceAccount({ namespace });
+					result = allNamespaces 
+						? await k8sApi.listServiceAccountForAllNamespaces({})
+						: await k8sApi.listNamespacedServiceAccount({ namespace });
 					break;
 					
 				case 'resourcequotas':
-					result = await k8sApi.listNamespacedResourceQuota({ namespace });
+					// ResourceQuotas don't have ForAllNamespaces method in some versions
+					if (allNamespaces) {
+						result = { body: { items: [], apiVersion: 'v1', kind: 'ResourceQuotaList' } };
+					} else {
+						result = await k8sApi.listNamespacedResourceQuota({ namespace });
+					}
 					break;
 					
 				case 'hpa':
 				case 'horizontalpodautoscalers':
-					result = await autoscalingApi.listNamespacedHorizontalPodAutoscaler({ namespace });
+					// HPAs don't have ForAllNamespaces method in some versions
+					if (allNamespaces) {
+						result = { body: { items: [], apiVersion: 'autoscaling/v1', kind: 'HorizontalPodAutoscalerList' } };
+					} else {
+						result = await autoscalingApi.listNamespacedHorizontalPodAutoscaler({ namespace });
+					}
 					break;
 					
 				case 'limitranges':
-					result = await k8sApi.listNamespacedLimitRange({ namespace });
+					// LimitRanges don't have ForAllNamespaces method in some versions
+					if (allNamespaces) {
+						result = { body: { items: [], apiVersion: 'v1', kind: 'LimitRangeList' } };
+					} else {
+						result = await k8sApi.listNamespacedLimitRange({ namespace });
+					}
 					break;
 					
 				case 'roles':
-					result = await rbacApi.listNamespacedRole({ namespace });
+					// Roles don't have ForAllNamespaces method in some versions
+					if (allNamespaces) {
+						result = { body: { items: [], apiVersion: 'rbac.authorization.k8s.io/v1', kind: 'RoleList' } };
+					} else {
+						result = await rbacApi.listNamespacedRole({ namespace });
+					}
 					break;
 					
 				case 'rolebindings':
-					result = await rbacApi.listNamespacedRoleBinding({ namespace });
+					// RoleBindings don't have ForAllNamespaces method in some versions
+					if (allNamespaces) {
+						result = { body: { items: [], apiVersion: 'rbac.authorization.k8s.io/v1', kind: 'RoleBindingList' } };
+					} else {
+						result = await rbacApi.listNamespacedRoleBinding({ namespace });
+					}
 					break;
 					
 				// Cluster-scoped resources (no namespace)

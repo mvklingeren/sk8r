@@ -104,6 +104,7 @@
 		<ResourceList
 			resourceType={data.resourceType}
 			resources={data.resources}
+			namespace={data.namespace}
 			onEdit={handleEdit}
 			onDelete={handleDelete}
 			onRefresh={handleRefresh}

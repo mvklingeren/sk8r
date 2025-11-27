@@ -129,6 +129,13 @@
 			SK8TES
 		</h1>
 		<p class="text-sm text-gray-400 mt-1">Kubernetes Management</p>
+		
+		<!-- Search hint -->
+		<div class="mt-3 text-xs text-gray-500 flex items-center gap-2">
+			<kbd class="px-2 py-1 bg-gray-800 border border-gray-600 rounded text-gray-400">Ctrl</kbd>
+			<kbd class="px-2 py-1 bg-gray-800 border border-gray-600 rounded text-gray-400">K</kbd>
+			<span>to search</span>
+		</div>
 	</div>
 
 	<nav class="flex-1 overflow-y-auto p-2">
@@ -186,6 +193,7 @@
 				onchange={(e) => navigation.setNamespace(e.target.value)}
 				class="w-full text-xs bg-gray-800 text-gray-300 border border-gray-600 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
 			>
+				<option value="*">* All Namespaces</option>
 				<option value="default">default</option>
 				<option value="kube-system">kube-system</option>
 				<option value="cert-manager">cert-manager</option>

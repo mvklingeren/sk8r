@@ -6,12 +6,13 @@
 	interface Props {
 		resourceType: string;
 		resources: K8sResource[];
+		namespace?: string;
 		onEdit?: (resource: K8sResource) => void;
 		onDelete?: (resource: K8sResource) => void;
 		onRefresh?: () => void;
 	}
 
-	let { resourceType, resources = [], onEdit, onDelete, onRefresh }: Props = $props();
+	let { resourceType, resources = [], namespace = 'default', onEdit, onDelete, onRefresh }: Props = $props();
 	let searchQuery = $state('');
 	
 	let filteredResources = $derived.by(() => {
@@ -86,9 +87,11 @@
 					<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 						Name
 					</th>
-					<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-						Namespace
-					</th>
+					{#if namespace === '*'}
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+							Namespace
+						</th>
+					{/if}
 					<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 						Status
 					</th>
@@ -106,9 +109,13 @@
 						<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
 							{resource.metadata.name}
 						</td>
-						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-							{resource.metadata.namespace || 'N/A'}
-						</td>
+						{#if namespace === '*'}
+							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+								<span class="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+									{resource.metadata.namespace || 'N/A'}
+								</span>
+							</td>
+						{/if}
 						<td class="px-6 py-4 whitespace-nowrap">
 							<span
 								class="inline-flex px-2 py-1 text-xs font-medium rounded-full"

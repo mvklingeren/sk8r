@@ -9,7 +9,7 @@ export interface NavigationState {
 function createNavigationStore() {
 	const { subscribe, set, update } = writable<NavigationState>({
 		selectedResource: 'overview',
-		namespace: 'default',
+		namespace: '*',
 		cluster: 'default'
 	});
 
@@ -20,7 +20,7 @@ function createNavigationStore() {
 		setCluster: (cluster: string) => update(state => ({ ...state, cluster })),
 		reset: () => set({
 			selectedResource: 'overview',
-			namespace: 'default',
+			namespace: '*',
 			cluster: 'default'
 		})
 	};

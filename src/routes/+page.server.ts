@@ -4,7 +4,7 @@ import type { K8sResource } from '$lib/types/k8s';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const resourceType = url.searchParams.get('resource') || '';
-	const namespace = url.searchParams.get('namespace') || 'default';
+	const namespace = url.searchParams.get('namespace') || '*';
 	
 	// Debug logging
 	// console.log('PageServerLoad - resourceType:', resourceType, 'namespace:', namespace, 'type:', typeof namespace);
