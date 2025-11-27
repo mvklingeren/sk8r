@@ -44,12 +44,121 @@
 	}
 
 	function getStatus(resource: K8sResource): string {
-		if (resource.status?.phase) return resource.status.phase;
-		if (resource.status?.conditions?.length > 0) {
-			const ready = resource.status.conditions.find((c: any) => c.type === 'Ready');
-			return ready?.status === 'True' ? 'Ready' : 'Not Ready';
+		const kind = resource.kind;
+		const status = resource.status;
+
+		if (!status) return 'Unknown';
+
+		switch (kind) {
+			case 'Pod':
+				return status.phase || 'Unknown';
+
+			case 'Deployment':
+				if (status.readyReplicas === status.replicas && status.replicas > 0) {
+					return 'Ready';
+				}
+				if (status.replicas === 0) {
+					return 'Scaled Down';
+				}
+				if ((status.readyReplicas || 0) < (status.replicas || 0)) {
+					return `${status.readyReplicas || 0}/${status.replicas || 0} Ready`;
+				}
+				return 'Progressing';
+
+			case 'StatefulSet':
+				if (status.readyReplicas === status.replicas && status.replicas > 0) {
+					return 'Ready';
+				}
+				if ((status.readyReplicas || 0) < (status.replicas || 0)) {
+					return `${status.readyReplicas || 0}/${status.replicas || 0} Ready`;
+				}
+				return 'Progressing';
+
+			case 'DaemonSet':
+				if (status.numberReady === status.desiredNumberScheduled) {
+					return 'Ready';
+				}
+				return `${status.numberReady || 0}/${status.desiredNumberScheduled || 0} Ready`;
+
+			case 'ReplicaSet':
+				if (status.readyReplicas === status.replicas && status.replicas > 0) {
+					return 'Ready';
+				}
+				if ((status.readyReplicas || 0) < (status.replicas || 0)) {
+					return `${status.readyReplicas || 0}/${status.replicas || 0} Ready`;
+				}
+				return 'Available';
+
+			case 'Service':
+				// Services don't have a traditional "status"
+				return 'Active';
+
+			case 'Job':
+				if (status.succeeded > 0) {
+					return 'Complete';
+				}
+				if (status.failed > 0) {
+					return 'Failed';
+				}
+				if (status.active > 0) {
+					return 'Running';
+				}
+				return 'Pending';
+
+			case 'CronJob':
+				if (status.active?.length > 0) {
+					return 'Active';
+				}
+				return 'Scheduled';
+
+			case 'ConfigMap':
+			case 'Secret':
+			case 'PersistentVolumeClaim':
+			case 'ServiceAccount':
+				// These resources don't have meaningful status, they're just "Available"
+				return 'Available';
+
+			case 'Ingress':
+				if (status.loadBalancer?.ingress?.length > 0) {
+					return 'Ready';
+				}
+				return 'Pending';
+
+			case 'IngressRoute':
+				// Traefik IngressRoutes are usually active if they exist
+				return 'Active';
+
+			case 'Middleware':
+			case 'TLSOption':
+				// Traefik middleware and TLS options are configuration resources
+				return 'Configured';
+
+			case 'Certificate':
+				if (status?.conditions) {
+					const ready = status.conditions.find((c: any) => c.type === 'Ready');
+					if (ready?.status === 'True') {
+						return 'Ready';
+					}
+					const issuing = status.conditions.find((c: any) => c.type === 'Issuing');
+					if (issuing?.status === 'True') {
+						return 'Issuing';
+					}
+				}
+				return 'Unknown';
+
+			default:
+				// Fallback to generic condition checking
+				if (status.phase) {
+					return status.phase;
+				}
+				if (status.conditions?.length > 0) {
+					const ready = status.conditions.find((c: any) => c.type === 'Ready' || c.type === 'Available');
+					if (ready) {
+						return ready.status === 'True' ? 'Ready' : 'Not Ready';
+					}
+				}
+				return 'Unknown';
 		}
-		return 'Unknown';
 	}
 </script>
 
@@ -119,14 +228,16 @@
 						<td class="px-6 py-4 whitespace-nowrap">
 							<span
 								class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
-								class:bg-green-100={getStatus(resource) === 'Running' || getStatus(resource) === 'Ready'}
-								class:text-green-800={getStatus(resource) === 'Running' || getStatus(resource) === 'Ready'}
-								class:bg-yellow-100={getStatus(resource) === 'Pending'}
-								class:text-yellow-800={getStatus(resource) === 'Pending'}
-								class:bg-red-100={getStatus(resource) === 'Failed' || getStatus(resource) === 'Not Ready'}
-								class:text-red-800={getStatus(resource) === 'Failed' || getStatus(resource) === 'Not Ready'}
-								class:bg-gray-100={!['Running', 'Ready', 'Pending', 'Failed', 'Not Ready'].includes(getStatus(resource))}
-								class:text-gray-800={!['Running', 'Ready', 'Pending', 'Failed', 'Not Ready'].includes(getStatus(resource))}
+								class:bg-green-100={['Running', 'Ready', 'Active', 'Available', 'Complete', 'Configured'].includes(getStatus(resource)) || getStatus(resource).includes('Ready')}
+								class:text-green-800={['Running', 'Ready', 'Active', 'Available', 'Complete', 'Configured'].includes(getStatus(resource)) || getStatus(resource).includes('Ready')}
+								class:bg-yellow-100={['Pending', 'Progressing', 'Scheduled', 'Issuing'].includes(getStatus(resource))}
+								class:text-yellow-800={['Pending', 'Progressing', 'Scheduled', 'Issuing'].includes(getStatus(resource))}
+								class:bg-red-100={['Failed', 'Not Ready', 'Error'].includes(getStatus(resource))}
+								class:text-red-800={['Failed', 'Not Ready', 'Error'].includes(getStatus(resource))}
+								class:bg-blue-100={getStatus(resource) === 'Scaled Down'}
+								class:text-blue-800={getStatus(resource) === 'Scaled Down'}
+								class:bg-gray-100={['Unknown'].includes(getStatus(resource))}
+								class:text-gray-800={['Unknown'].includes(getStatus(resource))}
 							>
 								{getStatus(resource)}
 							</span>

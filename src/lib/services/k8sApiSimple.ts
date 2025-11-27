@@ -1,13 +1,16 @@
 import * as k8s from '@kubernetes/client-node';
 import type { K8sResource, K8sListResponse, ResourceFilter } from '$lib/types/k8s';
+import { CustomResourceService } from './customResourceService';
 
 // Create a simple wrapper that avoids the complex factory pattern
 export class K8sApiServiceSimple {
 	private kc: k8s.KubeConfig;
+	private customResourceService: CustomResourceService;
 
 	constructor() {
 		this.kc = new k8s.KubeConfig();
 		this.kc.loadFromDefault();
+		this.customResourceService = new CustomResourceService();
 	}
 
 	async listResources(resourceType: string, filter: ResourceFilter = {}): Promise<K8sListResponse> {
@@ -212,6 +215,17 @@ export class K8sApiServiceSimple {
 					}
 					break;
 
+				// Custom Resources (using kubectl)
+				case 'ingressroutes':
+				case 'middlewares':
+				case 'tlsoptions':
+				case 'certificates':
+				case 'certificaterequests':
+				case 'issuers':
+				case 'clusterissuers':
+					result = await this.customResourceService.listCustomResources(resourceType, { namespace });
+					return result; // Return directly since CustomResourceService already returns the right format
+					
 				// These are often custom resources, return empty for now
 				case 'volumesnapshots':
 				case 'volumesnapshotclasses':
@@ -273,6 +287,14 @@ export class K8sApiServiceSimple {
 					
 				case 'jobs':
 					await batchApi.deleteNamespacedJob({ name, namespace });
+					break;
+					
+				// Custom Resources
+				case 'ingressroutes':
+				case 'middlewares':
+				case 'tlsoptions':
+				case 'certificates':
+					await this.customResourceService.deleteCustomResource(resourceType, name, namespace);
 					break;
 					
 				default:

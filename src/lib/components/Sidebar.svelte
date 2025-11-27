@@ -107,7 +107,14 @@
 			label: 'Custom Resources',
 			icon: Puzzle,
 			expanded: false,
-			children: []
+			children: [
+				{ label: 'IngressRoutes', resource: 'ingressroutes', icon: Globe },
+				{ label: 'Middlewares', resource: 'middlewares', icon: Network },
+				{ label: 'TLSOptions', resource: 'tlsoptions', icon: Lock },
+				{ label: 'Certificates', resource: 'certificates', icon: Lock },
+				{ label: 'Issuers', resource: 'issuers', icon: Key },
+				{ label: 'ClusterIssuers', resource: 'clusterissuers', icon: Key }
+			]
 		}
 	]);
 
