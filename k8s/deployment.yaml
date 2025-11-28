@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sk8tes-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sk8tes-app
+  template:
+    metadata:
+      labels:
+        app: sk8tes-app
+    spec:
+      containers:
+      - name: sk8tes-app
+        image: <your-registry>/sk8tes-app:latest
+        ports:
+        - containerPort: 3000
