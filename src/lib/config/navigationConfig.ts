@@ -15,26 +15,26 @@ export const navigationConfig: NavigationConfig = {
 					color: 'blue',
 					description: 'Kubernetes worker and master nodes'
 				},
-			{
-				key: 'namespaces',
-				label: 'Namespaces',
-				resourceType: 'namespaces',
-				icon: 'folder',
-				color: 'purple',
-				description: 'Virtual clusters for resource isolation'
-			},
-			{
-				key: 'events',
-				label: 'Events',
-				resourceType: 'events',
-				icon: 'activity',
-				color: 'yellow',
-				description: 'Cluster events and activity logs'
-			}
-		]
-	},
-	{
-		key: 'workloads',
+				{
+					key: 'namespaces',
+					label: 'Namespaces',
+					resourceType: 'namespaces',
+					icon: 'folder',
+					color: 'purple',
+					description: 'Virtual clusters for resource isolation'
+				},
+				{
+					key: 'events',
+					label: 'Events',
+					resourceType: 'events',
+					icon: 'activity',
+					color: 'yellow',
+					description: 'Cluster events and activity logs'
+				}
+			]
+		},
+		{
+			key: 'workloads',
 			label: 'Workloads',
 			icon: 'cpu',
 			items: [
@@ -137,7 +137,7 @@ export const navigationConfig: NavigationConfig = {
 		},
 		{
 			key: 'configuration',
-			label: 'Configuration & Storage',
+			label: 'Configuration',
 			icon: 'settings',
 			items: [
 				{
@@ -155,7 +155,14 @@ export const navigationConfig: NavigationConfig = {
 					icon: 'key',
 					color: 'red',
 					description: 'Stores sensitive data securely'
-				},
+				}
+			]
+		},
+		{
+			key: 'storage',
+			label: 'Storage',
+			icon: 'hard-drive',
+			items: [
 				{
 					key: 'persistentvolumes',
 					label: 'Persistent Volumes',
