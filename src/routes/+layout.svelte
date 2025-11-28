@@ -4,7 +4,10 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import GlobalSearch from '$lib/components/GlobalSearch.svelte';
 	import { onMount } from 'svelte';
-	
+	import { authToken } from '$lib/stores/auth';
+	import { get } from 'svelte/store';
+	import { browser } from '$app/environment';
+
 	let { children } = $props();
 	let searchOpen = $state(false);
 
@@ -18,6 +21,17 @@
 		}
 
 		document.addEventListener('keydown', handleKeydown);
+
+		// Prompt for token if not set, once on mount
+		if (browser) {
+			const tokenValue = get(authToken);
+			if (!tokenValue) {
+				const userToken = prompt('Please enter your Kubernetes bearer token:');
+				if (userToken) {
+					authToken.setToken(userToken);
+				}
+			}
+		}
 		
 		return () => {
 			document.removeEventListener('keydown', handleKeydown);

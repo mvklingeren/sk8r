@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { navigation } from '$lib/stores/navigation';
 	import ResourceList from '$lib/components/ResourceList.svelte';
+	import MetricsPanel from '$lib/components/MetricsPanel.svelte';
 	import type { K8sResource } from '$lib/types/k8s';
+	import type { MetricChartConfig, MetricSeries } from '$lib/types/metricsTypes';
 	import { goto } from '$app/navigation';
+	import { apiClient } from '$lib/utils/apiClient';
 	
 	interface Props {
 		data: {
@@ -10,6 +13,8 @@
 			resources: K8sResource[];
 			namespace: string;
 			error?: string;
+			metricsEnabled: boolean;
+			metricsCharts: MetricChartConfig[];
 		};
 	}
 
@@ -37,7 +42,7 @@
 	async function handleDelete(resource: K8sResource) {
 		if (confirm(`Are you sure you want to delete ${resource.metadata.name}?`)) {
 			try {
-				const response = await fetch(`/api/resources/${data.resourceType}/${resource.metadata.name}`, {
+				const response = await apiClient(`/api/resources/${data.resourceType}/${resource.metadata.name}`, {
 					method: 'DELETE',
 					headers: {
 						'Content-Type': 'application/json',
@@ -56,6 +61,54 @@
 
 	function handleRefresh() {
 		goto(window.location.href);
+	}
+
+	async function fetchNodeMetrics(): Promise<Map<string, MetricSeries[]>> {
+		console.log('Fetching node metrics...');
+		const metricsMap = new Map<string, MetricSeries[]>();
+
+		try {
+			for (const chart of data.metricsCharts) {
+				if (!chart.query) continue;
+
+				console.log(`Executing query for chart '${chart.title}':`, chart.query);
+				const response = await apiClient(`/api/prometheus/query?q=${encodeURIComponent(chart.query)}`);
+				
+				if (!response.ok) {
+					const errorText = await response.text();
+					console.error(`Query for '${chart.title}' failed:`, errorText);
+					throw new Error(`Query for '${chart.title}' failed: ${errorText}`);
+				}
+
+				const result = await response.json();
+				console.log(`Raw response for '${chart.title}':`, JSON.stringify(result, null, 2));
+
+				const seriesData: MetricSeries[] = [];
+
+				if (result.status === 'success' && result.data.result.length > 0) {
+					// Assuming instant vector result
+					const value = parseFloat(result.data.result[0].value[1]);
+					const timestamp = new Date(result.data.result[0].value[0] * 1000);
+
+					const dataPoint = { timestamp, value };
+					console.log(`Processed data point for '${chart.title}':`, dataPoint);
+
+					seriesData.push({
+						label: chart.title,
+						data: [dataPoint]
+					});
+				} else {
+					console.warn(`No data returned from Prometheus for query:`, chart.query);
+				}
+				
+				metricsMap.set(chart.id, seriesData);
+			}
+		} catch (error) {
+			console.error('Error fetching or processing Prometheus metrics:', error);
+		}
+
+		console.log('Final metrics map:', metricsMap);
+		return metricsMap;
 	}
 </script>
 
@@ -101,6 +154,14 @@
 			<p class="text-red-800">Error: {data.error}</p>
 		</div>
 	{:else}
+		{#if data.metricsEnabled && data.metricsCharts.length > 0}
+			<MetricsPanel
+				charts={data.metricsCharts}
+				resourceType={data.resourceType}
+				fetchMetrics={fetchNodeMetrics}
+			/>
+		{/if}
+		
 		<ResourceList
 			resourceType={data.resourceType}
 			resources={data.resources}

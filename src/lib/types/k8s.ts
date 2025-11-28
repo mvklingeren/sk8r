@@ -1,3 +1,5 @@
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
 export interface K8sResource {
 	apiVersion: string;
 	kind: string;

@@ -6,10 +6,31 @@ import { CustomResourceService } from './customResourceService';
 export class K8sApiServiceSimple {
 	private kc: k8s.KubeConfig;
 	private customResourceService: CustomResourceService;
+	
+	get kubeConfig(): k8s.KubeConfig {
+		return this.kc;
+	}
 
-	constructor() {
+	constructor(token?: string) {
 		this.kc = new k8s.KubeConfig();
 		this.kc.loadFromDefault();
+
+		if (token) {
+			const user = this.kc.getCurrentUser();
+			if (user) {
+				// Clear existing authentication fields
+				delete user.authProvider;
+				delete user.exec;
+				delete user.clientCertificate;
+				delete user.clientKey;
+				delete user.password;
+				delete user.username;
+				
+				// Set the token for authentication
+				user.token = token;
+			}
+		}
+
 		this.customResourceService = new CustomResourceService();
 	}
 
@@ -239,9 +260,6 @@ export class K8sApiServiceSimple {
 					result = { body: { items: [], apiVersion: 'v1', kind: 'List' } };
 					break;
 			}
-			
-			// Debug logging (remove in production)
-			// console.log(`API Response for ${resourceType}:`, result);
 			
 			// Handle different response structures
 			if (result.body) {

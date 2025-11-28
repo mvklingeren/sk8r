@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { K8sApiServiceSimple } from '$lib/services/k8sApiSimple';
 import type { K8sResource } from '$lib/types/k8s';
+import { resourceMetricsConfig } from '$lib/config/metricsConfig';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const resourceType = url.searchParams.get('resource') || '';
@@ -31,10 +32,15 @@ export const load: PageServerLoad = async ({ url }) => {
 			JSON.parse(JSON.stringify(item))
 		);
 		
+		// Check if metrics are enabled for this resource type
+		const metricsConfig = resourceMetricsConfig[resourceType];
+		
 		return {
 			resourceType,
 			resources: serializedResources,
-			namespace: namespaceStr
+			namespace: namespaceStr,
+			metricsEnabled: metricsConfig?.enabled || false,
+			metricsCharts: metricsConfig?.charts || []
 		};
 	} catch (error) {
 		console.error('Failed to load resources:', error);
@@ -42,7 +48,9 @@ export const load: PageServerLoad = async ({ url }) => {
 			resourceType,
 			resources: [],
 			namespace,
-			error: error instanceof Error ? error.message : 'Failed to load resources'
+			error: error instanceof Error ? error.message : 'Failed to load resources',
+			metricsEnabled: false,
+			metricsCharts: []
 		};
 	}
 };
