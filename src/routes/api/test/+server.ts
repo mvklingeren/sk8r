@@ -1,42 +1,57 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { KubeConfig, CoreV1Api } from '@kubernetes/client-node';
+import { env } from '$env/dynamic/private';
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ url }) => {
 	try {
-		const kc = new KubeConfig();
-		kc.loadFromDefault();
+		const prometheusUrl = env.PROMETHEUS_URL;
+		if (!prometheusUrl) {
+			return json({ error: 'PROMETHEUS_URL not configured' }, { status: 500 });
+		}
+
+		const query = url.searchParams.get('q') || 
+			'sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) / sum(machine_cpu_cores)';
+
+		// Test 1: Instant query (single point)
+		const instantUrl = new URL('/api/v1/query', prometheusUrl);
+		instantUrl.searchParams.append('query', query);
 		
-		const k8sApi = kc.makeApiClient(CoreV1Api);
+		const instantResponse = await fetch(instantUrl.toString());
+		const instantData = await instantResponse.json();
+
+		// Test 2: Range query (multiple points over time)
+		const rangeUrl = new URL('/api/v1/query_range', prometheusUrl);
+		rangeUrl.searchParams.append('query', query);
 		
-		// Try to list namespaces first (no namespace parameter needed)
-		const namespaces = await k8sApi.listNamespace();
+		// Get data for the last 5 minutes with 15-second step
+		const end = Math.floor(Date.now() / 1000);
+		const start = end - (5 * 60); // 5 minutes ago
+		rangeUrl.searchParams.append('start', start.toString());
+		rangeUrl.searchParams.append('end', end.toString());
+		rangeUrl.searchParams.append('step', '15'); // 15 second intervals
 		
-		// Then try to list pods in default namespace
-		const namespace = 'default';
-		console.log('Testing listNamespacedPod with namespace:', namespace, 'type:', typeof namespace);
-		
-		// Try with all parameters explicitly
-		const pods = await k8sApi.listNamespacedPod(
-			'default',  // namespace
-			undefined,  // pretty
-			undefined,  // allowWatchBookmarks
-			undefined,  // _continue
-			undefined,  // fieldSelector
-			undefined,  // labelSelector
-			undefined,  // limit
-			undefined,  // resourceVersion
-			undefined,  // resourceVersionMatch
-			undefined,  // timeoutSeconds
-			undefined   // watch
-		);
-		
+		const rangeResponse = await fetch(rangeUrl.toString());
+		const rangeData = await rangeResponse.json();
+
 		return json({
-			success: true,
-			namespaces: namespaces.body.items.map(ns => ns.metadata?.name),
-			pods: pods.body.items.map(pod => pod.metadata?.name),
-			namespace: namespace,
-			namespaceType: typeof namespace
+			query,
+			instant: {
+				endpoint: '/api/v1/query',
+				description: 'Returns a SINGLE data point (current value)',
+				resultType: instantData.data?.resultType,
+				resultCount: instantData.data?.result?.length,
+				data: instantData
+			},
+			range: {
+				endpoint: '/api/v1/query_range',
+				description: 'Returns MULTIPLE data points over time (for charts)',
+				timeRange: '5 minutes',
+				step: '15 seconds',
+				resultType: rangeData.data?.resultType,
+				resultCount: rangeData.data?.result?.length,
+				pointsPerSeries: rangeData.data?.result?.[0]?.values?.length,
+				data: rangeData
+			}
 		});
 	} catch (error) {
 		console.error('Test API error:', error);

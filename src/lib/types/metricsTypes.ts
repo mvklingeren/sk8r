@@ -13,7 +13,12 @@ export interface MetricChartConfig {
 	type: 'line' | 'area' | 'bar';
 	title: string;
 	height?: number; // pixels, defaults to 300
-	metrics: {
+	// Option 1: Use a PromQL query directly
+	query?: string; // PromQL query string
+	unit?: string; // e.g., 'cores', '%', 'bytes'
+	color?: string; // Chart color
+	// Option 2: Use metrics array for non-Prometheus sources
+	metrics?: {
 		label: string;
 		metricPath: string; // e.g., "usage.cpu", "usage.memory"
 		color: string;

@@ -6,7 +6,8 @@
 	import type { MetricChartConfig, MetricSeries } from '$lib/types/metricsTypes';
 	import { goto } from '$app/navigation';
 	import { apiClient } from '$lib/utils/apiClient';
-	
+	import { browser } from '$app/environment';
+
 	interface Props {
 		data: {
 			resourceType: string;
@@ -19,8 +20,26 @@
 	}
 
 	let { data }: Props = $props();
+	let initialized = $state(false);
 
+	// On initial load, sync the store FROM the server data (URL params)
 	$effect(() => {
+		if (browser && !initialized) {
+			// Initialize store from server data (which comes from URL params)
+			if (data.resourceType && data.resourceType !== $navigation.selectedResource) {
+				navigation.selectResource(data.resourceType);
+			}
+			if (data.namespace && data.namespace !== $navigation.namespace) {
+				navigation.setNamespace(data.namespace);
+			}
+			initialized = true;
+		}
+	});
+
+	// After initialization, sync URL FROM store changes (user interactions)
+	$effect(() => {
+		if (!initialized) return;
+		
 		if ($navigation.selectedResource !== data.resourceType || $navigation.namespace !== data.namespace) {
 			const params = new URLSearchParams();
 			if ($navigation.selectedResource && $navigation.selectedResource !== 'overview') {
@@ -71,8 +90,12 @@
 			for (const chart of data.metricsCharts) {
 				if (!chart.query) continue;
 
-				console.log(`Executing query for chart '${chart.title}':`, chart.query);
-				const response = await apiClient(`/api/prometheus/query?q=${encodeURIComponent(chart.query)}`);
+				// Use range query for line charts to get multiple data points
+				const timeRange = chart.timeRange || 5; // default 5 minutes
+				const queryUrl = `/api/prometheus/query?q=${encodeURIComponent(chart.query)}&type=range&range=${timeRange}&step=15`;
+				
+				console.log(`Executing range query for chart '${chart.title}':`, chart.query);
+				const response = await apiClient(queryUrl);
 				
 				if (!response.ok) {
 					const errorText = await response.text();
@@ -86,17 +109,31 @@
 				const seriesData: MetricSeries[] = [];
 
 				if (result.status === 'success' && result.data.result.length > 0) {
-					// Assuming instant vector result
-					const value = parseFloat(result.data.result[0].value[1]);
-					const timestamp = new Date(result.data.result[0].value[0] * 1000);
-
-					const dataPoint = { timestamp, value };
-					console.log(`Processed data point for '${chart.title}':`, dataPoint);
-
-					seriesData.push({
-						label: chart.title,
-						data: [dataPoint]
-					});
+					// Handle range query result (matrix with multiple values)
+					const matrixResult = result.data.result[0];
+					
+					if (matrixResult.values && matrixResult.values.length > 0) {
+						// Range query returns array of [timestamp, value] pairs
+						const dataPoints = matrixResult.values.map((v: [number, string]) => ({
+							timestamp: new Date(v[0] * 1000),
+							value: parseFloat(v[1])
+						}));
+						
+						console.log(`Processed ${dataPoints.length} data points for '${chart.title}'`);
+						
+						seriesData.push({
+							label: chart.title,
+							data: dataPoints
+						});
+					} else if (matrixResult.value) {
+						// Fallback for instant query result
+						const value = parseFloat(matrixResult.value[1]);
+						const timestamp = new Date(matrixResult.value[0] * 1000);
+						seriesData.push({
+							label: chart.title,
+							data: [{ timestamp, value }]
+						});
+					}
 				} else {
 					console.warn(`No data returned from Prometheus for query:`, chart.query);
 				}
