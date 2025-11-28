@@ -193,6 +193,15 @@ export const columnFormatters = {
 		return active.length.toString();
 	},
 
+	// Event specific formatters
+	eventObject(resource: K8sResource): string {
+		const involvedObject = resource.involvedObject;
+		if (!involvedObject) return '';
+		const kind = involvedObject.kind || '';
+		const name = involvedObject.name || '';
+		return kind && name ? `${kind}/${name}` : name || kind;
+	},
+
 	// Generic utility formatters
 	arrayLength(resource: K8sResource, path: string): string {
 		const value = getNestedValue(resource, path);

@@ -140,11 +140,17 @@ export class K8sApiServiceSimple {
 						: await k8sApi.listNamespacedPersistentVolumeClaim({ namespace });
 					break;
 					
-				case 'endpoints':
-					result = allNamespaces 
-						? await k8sApi.listEndpointsForAllNamespaces({})
-						: await k8sApi.listNamespacedEndpoints({ namespace });
-					break;
+			case 'endpoints':
+				result = allNamespaces 
+					? await k8sApi.listEndpointsForAllNamespaces({})
+					: await k8sApi.listNamespacedEndpoints({ namespace });
+				break;
+				
+			case 'events':
+				result = allNamespaces 
+					? await k8sApi.listEventForAllNamespaces({})
+					: await k8sApi.listNamespacedEvent({ namespace });
+				break;
 					
 				case 'serviceaccounts':
 					result = allNamespaces 
@@ -319,11 +325,14 @@ export class K8sApiServiceSimple {
 				case 'jobs':
 					result = await batchApi.readNamespacedJob({ name, namespace });
 					break;
-				case 'cronjobs':
-					result = await batchApi.readNamespacedCronJob({ name, namespace });
-					break;
-				// Cluster-scoped resources
-				case 'nodes':
+			case 'cronjobs':
+				result = await batchApi.readNamespacedCronJob({ name, namespace });
+				break;
+			case 'events':
+				result = await k8sApi.readNamespacedEvent({ name, namespace });
+				break;
+			// Cluster-scoped resources
+			case 'nodes':
 					result = await k8sApi.readNode({ name });
 					break;
 				case 'persistentvolumes':

@@ -607,6 +607,53 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 		]
 	},
 
+	events: {
+		columns: [
+			{
+				key: 'type',
+				label: 'Type',
+				path: 'type',
+				type: 'badge',
+				colorMap: {
+					'Normal': 'green',
+					'Warning': 'yellow'
+				}
+			},
+			{
+				key: 'reason',
+				label: 'Reason',
+				path: 'reason',
+				type: 'text'
+			},
+			{
+				key: 'object',
+				label: 'Object',
+				path: 'involvedObject',
+				type: 'text',
+				formatter: 'eventObject'
+			},
+			{
+				key: 'message',
+				label: 'Message',
+				path: 'message',
+				type: 'text',
+				flex: 3
+			},
+			{
+				key: 'count',
+				label: 'Count',
+				path: 'count',
+				type: 'text'
+			},
+			{
+				key: 'age',
+				label: 'Last Seen',
+				path: 'lastTimestamp',
+				type: 'age'
+			}
+		]
+	},
+
 	serviceaccounts: {
 		columns: [
 			{

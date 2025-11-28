@@ -47,9 +47,39 @@
 			chart.destroy();
 		}
 
+		// Helper to convert color to rgba with opacity
+		function colorToRgba(color: string, opacity: number): string {
+			// Handle rgb() format - extract values and rebuild as rgba
+			const rgbMatch = color.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+			if (rgbMatch) {
+				return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${opacity})`;
+			}
+			// Handle rgba() format - replace existing opacity
+			const rgbaMatch = color.match(/^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*[\d.]+\s*\)$/);
+			if (rgbaMatch) {
+				return `rgba(${rgbaMatch[1]}, ${rgbaMatch[2]}, ${rgbaMatch[3]}, ${opacity})`;
+			}
+			// Handle hex format
+			if (color.startsWith('#')) {
+				const hex = color.slice(1);
+				const r = parseInt(hex.slice(0, 2), 16);
+				const g = parseInt(hex.slice(2, 4), 16);
+				const b = parseInt(hex.slice(4, 6), 16);
+				return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+			}
+			// Handle hsl format
+			const hslMatch = color.match(/^hsl\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?\s*\)$/);
+			if (hslMatch) {
+				return `hsla(${hslMatch[1]}, ${hslMatch[2]}%, ${hslMatch[3]}%, ${opacity})`;
+			}
+			// Fallback - return original color (Chart.js might handle it)
+			return color;
+		}
+
 		// Prepare datasets
 		const datasets = data.map((series, index) => {
 			const seriesColor = config.color || `hsl(${index * 60}, 70%, 50%)`;
+			const shouldFill = config.fill === true || config.type === 'area';
 			return {
 				label: series.label,
 				data: series.data.map(point => ({
@@ -57,11 +87,11 @@
 					y: point.value
 				})),
 				borderColor: seriesColor,
-				backgroundColor: config.type === 'area' 
-					? `${seriesColor}33`
+				backgroundColor: shouldFill 
+					? colorToRgba(seriesColor, 0.15) // 15% opacity for a subtle fill
 					: seriesColor,
 				borderWidth: 2,
-				fill: config.type === 'area',
+				fill: shouldFill ? 'origin' : false, // Fill to the x-axis (origin)
 				tension: 0.4,
 				pointRadius: 0,
 				pointHoverRadius: 4

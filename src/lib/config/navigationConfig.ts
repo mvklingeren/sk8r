@@ -15,18 +15,26 @@ export const navigationConfig: NavigationConfig = {
 					color: 'blue',
 					description: 'Kubernetes worker and master nodes'
 				},
-				{
-					key: 'namespaces',
-					label: 'Namespaces',
-					resourceType: 'namespaces',
-					icon: 'folder',
-					color: 'purple',
-					description: 'Virtual clusters for resource isolation'
-				}
-			]
-		},
-		{
-			key: 'workloads',
+			{
+				key: 'namespaces',
+				label: 'Namespaces',
+				resourceType: 'namespaces',
+				icon: 'folder',
+				color: 'purple',
+				description: 'Virtual clusters for resource isolation'
+			},
+			{
+				key: 'events',
+				label: 'Events',
+				resourceType: 'events',
+				icon: 'activity',
+				color: 'yellow',
+				description: 'Cluster events and activity logs'
+			}
+		]
+	},
+	{
+		key: 'workloads',
 			label: 'Workloads',
 			icon: 'cpu',
 			items: [

@@ -17,6 +17,7 @@ export interface MetricChartConfig {
 	query?: string; // PromQL query string
 	unit?: string; // e.g., 'cores', '%', 'bytes'
 	color?: string; // Chart color
+	fill?: boolean; // Fill area under the line (for line charts)
 	// Option 2: Use metrics array for non-Prometheus sources
 	metrics?: {
 		label: string;
