@@ -258,6 +258,98 @@ export class K8sApiServiceSimple {
 		}
 	}
 
+	async getResource(
+		resourceType: string,
+		name: string,
+		namespace = 'default'
+	): Promise<K8sResource> {
+		const k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
+		const appsApi = this.kc.makeApiClient(k8s.AppsV1Api);
+		const batchApi = this.kc.makeApiClient(k8s.BatchV1Api);
+		const networkingApi = this.kc.makeApiClient(k8s.NetworkingV1Api);
+		const rbacApi = this.kc.makeApiClient(k8s.RbacAuthorizationV1Api);
+		const storageApi = this.kc.makeApiClient(k8s.StorageV1Api);
+
+		try {
+			let result: any;
+
+			switch (resourceType) {
+				case 'pods':
+					result = await k8sApi.readNamespacedPod({ name, namespace });
+					break;
+				case 'deployments':
+					result = await appsApi.readNamespacedDeployment({ name, namespace });
+					break;
+				case 'services':
+					result = await k8sApi.readNamespacedService({ name, namespace });
+					break;
+				case 'configmaps':
+					result = await k8sApi.readNamespacedConfigMap({ name, namespace });
+					break;
+				case 'secrets':
+					result = await k8sApi.readNamespacedSecret({ name, namespace });
+					break;
+				case 'ingresses':
+					result = await networkingApi.readNamespacedIngress({ name, namespace });
+					break;
+				case 'statefulsets':
+					result = await appsApi.readNamespacedStatefulSet({ name, namespace });
+					break;
+				case 'daemonsets':
+					result = await appsApi.readNamespacedDaemonSet({ name, namespace });
+					break;
+				case 'jobs':
+					result = await batchApi.readNamespacedJob({ name, namespace });
+					break;
+				case 'cronjobs':
+					result = await batchApi.readNamespacedCronJob({ name, namespace });
+					break;
+				// Cluster-scoped resources
+				case 'nodes':
+					result = await k8sApi.readNode({ name });
+					break;
+				case 'persistentvolumes':
+					result = await k8sApi.readPersistentVolume({ name });
+					break;
+				case 'storageclasses':
+					result = await storageApi.readStorageClass({ name });
+					break;
+				case 'clusterroles':
+					result = await rbacApi.readClusterRole({ name });
+					break;
+				case 'clusterrolebindings':
+					result = await rbacApi.readClusterRoleBinding({ name });
+					break;
+				// Custom Resources
+				case 'ingressroutes':
+				case 'middlewares':
+				case 'certificates':
+					result = await this.customResourceService.getCustomResource(resourceType, name, namespace);
+					return result; // Return directly
+				default:
+					// Fallback for other custom resources or unhandled types
+					try {
+						const customResource = await this.customResourceService.getCustomResource(
+							resourceType,
+							name,
+							namespace
+						);
+						return customResource;
+					} catch (e) {
+						throw new Error(`Get not implemented for resource type: ${resourceType}`);
+					}
+			}
+
+			if (result.body) {
+				return result.body as K8sResource;
+			}
+			return result as K8sResource;
+		} catch (error) {
+			console.error(`Error getting resource ${name} of type ${resourceType}:`, error);
+			throw error;
+		}
+	}
+
 	async deleteResource(resourceType: string, name: string, namespace: string = 'default'): Promise<void> {
 		const k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
 		const appsApi = this.kc.makeApiClient(k8s.AppsV1Api);

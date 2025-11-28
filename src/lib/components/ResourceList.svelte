@@ -2,6 +2,9 @@
 	import { onMount } from 'svelte';
 	import { Trash2, Edit, RefreshCw, Search } from 'lucide-svelte';
 	import type { K8sResource } from '$lib/types/k8s';
+	import type { ColumnConfig } from '$lib/types/columnConfig';
+	import { resourceColumnConfigs, defaultColumnConfig } from '$lib/config/resourceColumns';
+	import { extractColumnValue, getAge } from '$lib/utils/columnFormatters';
 
 	interface Props {
 		resourceType: string;
@@ -15,6 +18,12 @@
 	let { resourceType, resources = [], namespace = 'default', onEdit, onDelete, onRefresh }: Props = $props();
 	let searchQuery = $state('');
 	
+	// Get column configuration for this resource type
+	let columns = $derived.by(() => {
+		const config = resourceColumnConfigs[resourceType] || defaultColumnConfig;
+		return config.columns;
+	});
+	
 	let filteredResources = $derived.by(() => {
 		if (!searchQuery) return resources;
 		
@@ -27,137 +36,34 @@
 		});
 	});
 
-	function getAge(timestamp: string | undefined): string {
-		if (!timestamp) return 'Unknown';
+	// Function to get the display value for a column
+	function getColumnValue(resource: K8sResource, column: ColumnConfig): string {
+		if (column.type === 'age') {
+			const timestamp = extractColumnValue(resource, column.path, column.formatter);
+			return getAge(timestamp);
+		}
 		
-		const created = new Date(timestamp);
-		const now = new Date();
-		const diff = now.getTime() - created.getTime();
+		const value = extractColumnValue(resource, column.path, column.formatter);
 		
-		const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-		const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-		const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+		if (value === null || value === undefined) {
+			return '';
+		}
 		
-		if (days > 0) return `${days}d${hours > 0 ? ` ${hours}h` : ''}`;
-		if (hours > 0) return `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
-		return `${minutes}m`;
+		return String(value);
 	}
 
-	function getStatus(resource: K8sResource): string {
-		const kind = resource.kind;
-		const status = resource.status;
-
-		if (!status) return 'Unknown';
-
-		switch (kind) {
-			case 'Pod':
-				return status.phase || 'Unknown';
-
-			case 'Deployment':
-				if (status.readyReplicas === status.replicas && status.replicas > 0) {
-					return 'Ready';
-				}
-				if (status.replicas === 0) {
-					return 'Scaled Down';
-				}
-				if ((status.readyReplicas || 0) < (status.replicas || 0)) {
-					return `${status.readyReplicas || 0}/${status.replicas || 0} Ready`;
-				}
-				return 'Progressing';
-
-			case 'StatefulSet':
-				if (status.readyReplicas === status.replicas && status.replicas > 0) {
-					return 'Ready';
-				}
-				if ((status.readyReplicas || 0) < (status.replicas || 0)) {
-					return `${status.readyReplicas || 0}/${status.replicas || 0} Ready`;
-				}
-				return 'Progressing';
-
-			case 'DaemonSet':
-				if (status.numberReady === status.desiredNumberScheduled) {
-					return 'Ready';
-				}
-				return `${status.numberReady || 0}/${status.desiredNumberScheduled || 0} Ready`;
-
-			case 'ReplicaSet':
-				if (status.readyReplicas === status.replicas && status.replicas > 0) {
-					return 'Ready';
-				}
-				if ((status.readyReplicas || 0) < (status.replicas || 0)) {
-					return `${status.readyReplicas || 0}/${status.replicas || 0} Ready`;
-				}
-				return 'Available';
-
-			case 'Service':
-				// Services don't have a traditional "status"
-				return 'Active';
-
-			case 'Job':
-				if (status.succeeded > 0) {
-					return 'Complete';
-				}
-				if (status.failed > 0) {
-					return 'Failed';
-				}
-				if (status.active > 0) {
-					return 'Running';
-				}
-				return 'Pending';
-
-			case 'CronJob':
-				if (status.active?.length > 0) {
-					return 'Active';
-				}
-				return 'Scheduled';
-
-			case 'ConfigMap':
-			case 'Secret':
-			case 'PersistentVolumeClaim':
-			case 'ServiceAccount':
-				// These resources don't have meaningful status, they're just "Available"
-				return 'Available';
-
-			case 'Ingress':
-				if (status.loadBalancer?.ingress?.length > 0) {
-					return 'Ready';
-				}
-				return 'Pending';
-
-			case 'IngressRoute':
-				// Traefik IngressRoutes are usually active if they exist
-				return 'Active';
-
-			case 'Middleware':
-			case 'TLSOption':
-				// Traefik middleware and TLS options are configuration resources
-				return 'Configured';
-
-			case 'Certificate':
-				if (status?.conditions) {
-					const ready = status.conditions.find((c: any) => c.type === 'Ready');
-					if (ready?.status === 'True') {
-						return 'Ready';
-					}
-					const issuing = status.conditions.find((c: any) => c.type === 'Issuing');
-					if (issuing?.status === 'True') {
-						return 'Issuing';
-					}
-				}
-				return 'Unknown';
-
-			default:
-				// Fallback to generic condition checking
-				if (status.phase) {
-					return status.phase;
-				}
-				if (status.conditions?.length > 0) {
-					const ready = status.conditions.find((c: any) => c.type === 'Ready' || c.type === 'Available');
-					if (ready) {
-						return ready.status === 'True' ? 'Ready' : 'Not Ready';
-					}
-				}
-				return 'Unknown';
+	// Function to get CSS classes for badge types
+	function getBadgeClass(value: string, colorMap?: Record<string, string>): string {
+		if (!colorMap) return 'bg-gray-100 text-gray-800';
+		
+		const color = colorMap[value];
+		switch (color) {
+			case 'green': return 'bg-green-100 text-green-800';
+			case 'yellow': return 'bg-yellow-100 text-yellow-800';
+			case 'red': return 'bg-red-100 text-red-800';
+			case 'blue': return 'bg-blue-100 text-blue-800';
+			case 'gray': return 'bg-gray-100 text-gray-800';
+			default: return 'bg-gray-100 text-gray-800';
 		}
 	}
 </script>
@@ -193,20 +99,19 @@
 		<table class="w-full">
 			<thead class="bg-gray-50">
 				<tr>
-					<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-						Name
-					</th>
+					{#each columns as column}
+						<th 
+							class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+							style={column.flex ? `flex-grow: ${column.flex}` : ''}
+						>
+							{column.label}
+						</th>
+					{/each}
 					{#if namespace === '*'}
 						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 							Namespace
 						</th>
 					{/if}
-					<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-						Status
-					</th>
-					<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-						Age
-					</th>
 					<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
 						Actions
 					</th>
@@ -215,9 +120,30 @@
 			<tbody class="bg-white divide-y divide-gray-200">
 				{#each filteredResources as resource}
 					<tr class="hover:bg-gray-50 transition-colors">
-						<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-							{resource.metadata.name}
-						</td>
+						{#each columns as column}
+							<td class="px-6 py-4 whitespace-nowrap text-sm">
+								{#if column.type === 'link'}
+									<a
+										href="/{resourceType}/{resource.metadata.name}?namespace={resource.metadata.namespace || 'default'}"
+										class="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+									>
+										{getColumnValue(resource, column)}
+									</a>
+								{:else if column.type === 'badge'}
+									<span class="inline-flex px-2 py-1 text-xs font-medium rounded-full {getBadgeClass(getColumnValue(resource, column), column.colorMap)}">
+										{getColumnValue(resource, column)}
+									</span>
+								{:else if column.type === 'list'}
+									<span class="text-gray-900">
+										{getColumnValue(resource, column)}
+									</span>
+								{:else}
+									<span class="text-gray-900">
+										{getColumnValue(resource, column)}
+									</span>
+								{/if}
+							</td>
+						{/each}
 						{#if namespace === '*'}
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
 								<span class="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
@@ -225,26 +151,6 @@
 								</span>
 							</td>
 						{/if}
-						<td class="px-6 py-4 whitespace-nowrap">
-							<span
-								class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
-								class:bg-green-100={['Running', 'Ready', 'Active', 'Available', 'Complete', 'Configured'].includes(getStatus(resource)) || getStatus(resource).includes('Ready')}
-								class:text-green-800={['Running', 'Ready', 'Active', 'Available', 'Complete', 'Configured'].includes(getStatus(resource)) || getStatus(resource).includes('Ready')}
-								class:bg-yellow-100={['Pending', 'Progressing', 'Scheduled', 'Issuing'].includes(getStatus(resource))}
-								class:text-yellow-800={['Pending', 'Progressing', 'Scheduled', 'Issuing'].includes(getStatus(resource))}
-								class:bg-red-100={['Failed', 'Not Ready', 'Error'].includes(getStatus(resource))}
-								class:text-red-800={['Failed', 'Not Ready', 'Error'].includes(getStatus(resource))}
-								class:bg-blue-100={getStatus(resource) === 'Scaled Down'}
-								class:text-blue-800={getStatus(resource) === 'Scaled Down'}
-								class:bg-gray-100={['Unknown'].includes(getStatus(resource))}
-								class:text-gray-800={['Unknown'].includes(getStatus(resource))}
-							>
-								{getStatus(resource)}
-							</span>
-						</td>
-						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-							{getAge(resource.metadata.creationTimestamp)}
-						</td>
 						<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
 							<div class="flex items-center justify-end gap-2">
 								{#if onEdit}

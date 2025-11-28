@@ -1,127 +1,29 @@
 <script lang="ts">
-	import { ChevronRight, ChevronDown } from 'lucide-svelte';
-	import type { ComponentType } from 'svelte';
-	import {
-		Package,
-		Layers,
-		Network,
-		HardDrive,
-		Shield,
-		Puzzle,
-		Home,
-		Box,
-		Calendar,
-		Clock,
-		Server,
-		FileText,
-		Lock,
-		Share2,
-		Globe,
-		Database,
-		Key,
-		Users,
-		UserCheck
-	} from 'lucide-svelte';
-
-	interface NavItem {
-		label: string;
-		icon: ComponentType;
-		expanded?: boolean;
-		children?: {
-			label: string;
-			resource: string;
-			icon?: ComponentType;
-		}[];
-	}
-
-	let navItems: NavItem[] = $state([
-		{
-			label: 'Overview',
-			icon: Home,
-			children: []
-		},
-		{
-			label: 'Workloads',
-			icon: Package,
-			expanded: false,
-			children: [
-				{ label: 'Pods', resource: 'pods', icon: Box },
-				{ label: 'Deployments', resource: 'deployments', icon: Layers },
-				{ label: 'StatefulSets', resource: 'statefulsets', icon: Server },
-				{ label: 'DaemonSets', resource: 'daemonsets', icon: Server },
-				{ label: 'ReplicaSets', resource: 'replicasets', icon: Layers },
-				{ label: 'Jobs', resource: 'jobs', icon: Calendar },
-				{ label: 'CronJobs', resource: 'cronjobs', icon: Clock }
-			]
-		},
-		{
-			label: 'Configuration',
-			icon: FileText,
-			expanded: false,
-			children: [
-				{ label: 'ConfigMaps', resource: 'configmaps', icon: FileText },
-				{ label: 'Secrets', resource: 'secrets', icon: Lock },
-				{ label: 'ResourceQuotas', resource: 'resourcequotas', icon: Database },
-				{ label: 'HorizontalPodAutoscalers', resource: 'hpa', icon: Layers },
-				{ label: 'PodDisruptionBudgets', resource: 'pdb', icon: Shield },
-				{ label: 'LimitRanges', resource: 'limitranges', icon: Database }
-			]
-		},
-		{
-			label: 'Network',
-			icon: Network,
-			expanded: false,
-			children: [
-				{ label: 'Services', resource: 'services', icon: Share2 },
-				{ label: 'Ingresses', resource: 'ingresses', icon: Globe },
-				{ label: 'NetworkPolicies', resource: 'networkpolicies', icon: Shield },
-				{ label: 'Endpoints', resource: 'endpoints', icon: Network },
-				{ label: 'EndpointSlices', resource: 'endpointslices', icon: Network }
-			]
-		},
-		{
-			label: 'Storage',
-			icon: HardDrive,
-			expanded: false,
-			children: [
-				{ label: 'PersistentVolumeClaims', resource: 'pvc', icon: HardDrive },
-				{ label: 'PersistentVolumes', resource: 'pv', icon: Database },
-				{ label: 'StorageClasses', resource: 'storageclasses', icon: Layers },
-				{ label: 'VolumeSnapshots', resource: 'volumesnapshots', icon: HardDrive },
-				{ label: 'VolumeSnapshotClasses', resource: 'volumesnapshotclasses', icon: Layers }
-			]
-		},
-		{
-			label: 'Access Control',
-			icon: Shield,
-			expanded: false,
-			children: [
-				{ label: 'ServiceAccounts', resource: 'serviceaccounts', icon: Key },
-				{ label: 'ClusterRoles', resource: 'clusterroles', icon: Shield },
-				{ label: 'ClusterRoleBindings', resource: 'clusterrolebindings', icon: UserCheck },
-				{ label: 'Roles', resource: 'roles', icon: Users },
-				{ label: 'RoleBindings', resource: 'rolebindings', icon: UserCheck }
-			]
-		},
-		{
-			label: 'Custom Resources',
-			icon: Puzzle,
-			expanded: false,
-			children: [
-				{ label: 'IngressRoutes', resource: 'ingressroutes', icon: Globe },
-				{ label: 'Middlewares', resource: 'middlewares', icon: Network },
-				{ label: 'TLSOptions', resource: 'tlsoptions', icon: Lock },
-				{ label: 'Certificates', resource: 'certificates', icon: Lock },
-				{ label: 'Issuers', resource: 'issuers', icon: Key },
-				{ label: 'ClusterIssuers', resource: 'clusterissuers', icon: Key }
-			]
-		}
-	]);
-
+	import { ChevronRight, ChevronDown, Box } from 'lucide-svelte';
+	import { navigationConfig } from '$lib/config/navigationConfig';
+	import type { NavigationSection } from '$lib/types/navigationConfig';
+	import { getIcon } from '$lib/utils/iconMapping';
 	import { navigation } from '$lib/stores/navigation';
 
-	function toggleSection(index: number) {
-		navItems[index].expanded = !navItems[index].expanded;
+	// Create reactive state for expanded sections - properly initialize each section
+	let sectionStates = $state(
+		navigationConfig.sections.map(section => ({
+			key: section.key,
+			expanded: section.collapsed === undefined ? false : !section.collapsed
+		}))
+	);
+
+	function toggleSection(sectionKey: string) {
+		const sectionIndex = sectionStates.findIndex((s) => s.key === sectionKey);
+		if (sectionIndex !== -1) {
+			// Create a new object with the toggled state to ensure reactivity
+			const updatedSection = {
+				...sectionStates[sectionIndex],
+				expanded: !sectionStates[sectionIndex].expanded
+			};
+			// Replace the object in the array
+			sectionStates[sectionIndex] = updatedSection;
+		}
 	}
 
 	function selectResource(resource: string) {
@@ -146,39 +48,33 @@
 	</div>
 
 	<nav class="flex-1 overflow-y-auto p-2">
-		{#each navItems as item, index}
+		{#each navigationConfig.sections as section (section.key)}
+			{@const state = sectionStates.find((s) => s.key === section.key)}
 			<div class="mb-1">
 				<button
-					onclick={() => item.children?.length ? toggleSection(index) : selectResource('overview')}
+					onclick={() => toggleSection(section.key)}
 					class="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-800 transition-colors text-left"
-					class:bg-gray-800={$navigation.selectedResource === 'overview' && item.label === 'Overview'}
 				>
-					{#if item.children?.length}
-						<svelte:component
-							this={item.expanded ? ChevronDown : ChevronRight}
-							size={16}
-						/>
+					{#if section.items.length > 0}
+						<svelte:component this={state?.expanded ? ChevronDown : ChevronRight} size={16} />
 					{:else}
 						<div class="w-4"></div>
 					{/if}
-					<svelte:component this={item.icon} size={18} />
-					<span class="flex-1 text-sm">{item.label}</span>
+					<svelte:component this={getIcon(section.icon)} size={18} />
+					<span class="flex-1 text-sm">{section.label}</span>
 				</button>
 
-				{#if item.expanded && item.children}
+				{#if state?.expanded && section.items.length > 0}
 					<div class="ml-6 mt-1">
-						{#each item.children as child}
+						{#each section.items as item (item.label)}
 							<button
-								onclick={() => selectResource(child.resource)}
+								onclick={() => (item.resourceType ? selectResource(item.resourceType) : null)}
 								class="w-full flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors text-left text-sm"
-								class:bg-gray-800={$navigation.selectedResource === child.resource}
+								class:bg-gray-800={$navigation.selectedResource === item.resourceType}
+								title={item.description || ''}
 							>
-								{#if child.icon}
-									<svelte:component this={child.icon} size={14} />
-								{:else}
-									<div class="w-3.5"></div>
-								{/if}
-								<span class="text-gray-300">{child.label}</span>
+								<svelte:component this={getIcon(item.icon)} size={14} />
+								<span class="text-gray-300">{item.label}</span>
 							</button>
 						{/each}
 					</div>
