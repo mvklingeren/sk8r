@@ -6,6 +6,7 @@ export interface MetricDataPoint {
 export interface MetricSeries {
 	label: string;
 	data: MetricDataPoint[];
+	color?: string; // Optional color override for multi-series charts
 }
 
 export interface MetricChartConfig {
@@ -13,12 +14,18 @@ export interface MetricChartConfig {
 	type: 'line' | 'area' | 'bar';
 	title: string;
 	height?: number; // pixels, defaults to 300
-	// Option 1: Use a PromQL query directly
+	// Option 1: Use a single PromQL query
 	query?: string; // PromQL query string
+	// Option 2: Use multiple queries for multi-series charts
+	queries?: {
+		label: string;
+		query: string;
+		color: string;
+	}[];
 	unit?: string; // e.g., 'cores', '%', 'bytes'
-	color?: string; // Chart color
+	color?: string; // Chart color (for single query)
 	fill?: boolean; // Fill area under the line (for line charts)
-	// Option 2: Use metrics array for non-Prometheus sources
+	// Option 3: Use metrics array for non-Prometheus sources
 	metrics?: {
 		label: string;
 		metricPath: string; // e.g., "usage.cpu", "usage.memory"

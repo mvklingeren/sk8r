@@ -78,7 +78,8 @@
 
 		// Prepare datasets
 		const datasets = data.map((series, index) => {
-			const seriesColor = config.color || `hsl(${index * 60}, 70%, 50%)`;
+			// Use series-specific color if provided, otherwise fall back to config color or generate one
+			const seriesColor = series.color || config.color || `hsl(${index * 120}, 70%, 50%)`;
 			const shouldFill = config.fill === true || config.type === 'area';
 			return {
 				label: series.label,
