@@ -12,8 +12,22 @@ spec:
       labels:
         app: sk8tes-app
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
       - name: sk8tes-app
-        image: <your-registry>/sk8tes-app:latest
+        image: mvkdev/sk8tes-app:latest
         ports:
         - containerPort: 3000
+        env:
+        - name: PROMETHEUS_URL
+          value: "http://kube-prometheus-stack-prometheus.monitoring:9090"
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault

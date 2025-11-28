@@ -10,3 +10,5 @@ spec:
       port: 80
       targetPort: 3000
   type: LoadBalancer
+  # If you want to request a specific IP from your MetalLB pool, uncomment the following line
+  # loadBalancerIP: <your-desired-ip>
