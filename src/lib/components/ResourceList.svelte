@@ -17,6 +17,8 @@
 
 	let { resourceType, resources = [], namespace = 'default', onEdit, onDelete, onRefresh }: Props = $props();
 	let searchQuery = $state('');
+	let sortColumn = $state<string | null>(null);
+	let sortDirection = $state<'asc' | 'desc'>('asc');
 	
 	// Get column configuration for this resource type
 	let columns = $derived.by(() => {
@@ -25,16 +27,79 @@
 	});
 	
 	let filteredResources = $derived.by(() => {
-		if (!searchQuery) return resources;
+		let result = resources;
 		
-		return resources.filter(resource => {
-			const name = resource.metadata.name.toLowerCase();
-			const namespace = resource.metadata.namespace?.toLowerCase() || '';
-			const query = searchQuery.toLowerCase();
-			
-			return name.includes(query) || namespace.includes(query);
-		});
+		// Apply search filter
+		if (searchQuery) {
+			result = result.filter(resource => {
+				const name = resource.metadata.name.toLowerCase();
+				const ns = resource.metadata.namespace?.toLowerCase() || '';
+				const query = searchQuery.toLowerCase();
+				
+				return name.includes(query) || ns.includes(query);
+			});
+		}
+		
+		// Apply sorting
+		if (sortColumn) {
+			const column = columns.find(c => c.key === sortColumn);
+			if (column) {
+				result = [...result].sort((a, b) => {
+					const aVal = getSortValue(a, column);
+					const bVal = getSortValue(b, column);
+					
+					let comparison = 0;
+					if (aVal < bVal) comparison = -1;
+					else if (aVal > bVal) comparison = 1;
+					
+					return sortDirection === 'asc' ? comparison : -comparison;
+				});
+			} else if (sortColumn === '__namespace__') {
+				// Sort by namespace
+				result = [...result].sort((a, b) => {
+					const aVal = a.metadata.namespace || '';
+					const bVal = b.metadata.namespace || '';
+					
+					let comparison = aVal.localeCompare(bVal);
+					return sortDirection === 'asc' ? comparison : -comparison;
+				});
+			}
+		}
+		
+		return result;
 	});
+	
+	// Get sortable value for comparison
+	function getSortValue(resource: K8sResource, column: ColumnConfig): string | number {
+		if (column.type === 'age') {
+			// Sort by actual timestamp for age columns
+			const timestamp = extractColumnValue(resource, column.path, column.formatter);
+			return timestamp ? new Date(timestamp).getTime() : 0;
+		}
+		
+		const value = extractColumnValue(resource, column.path, column.formatter);
+		
+		// Try to parse as number for numeric sorting
+		if (typeof value === 'number') return value;
+		if (typeof value === 'string') {
+			const num = parseFloat(value);
+			if (!isNaN(num) && value.match(/^[\d.]+$/)) return num;
+		}
+		
+		return String(value ?? '').toLowerCase();
+	}
+	
+	// Handle column header click for sorting
+	function handleSort(columnKey: string) {
+		if (sortColumn === columnKey) {
+			// Toggle direction if same column
+			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+		} else {
+			// New column, default to ascending
+			sortColumn = columnKey;
+			sortDirection = 'asc';
+		}
+	}
 
 	// Function to get the display value for a column
 	function getColumnValue(resource: K8sResource, column: ColumnConfig): string {
@@ -107,15 +172,35 @@
 				<tr>
 					{#each columns as column}
 						<th 
-							class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+							class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider {column.sortable !== false ? 'cursor-pointer hover:bg-gray-100 select-none transition-colors' : ''}"
 							style={column.flex ? `flex-grow: ${column.flex}` : ''}
+							onclick={() => column.sortable !== false && handleSort(column.key)}
 						>
-							{column.label}
+							<span class="flex items-center justify-between gap-2">
+								<span>{column.label}</span>
+								{#if column.sortable !== false}
+									<span class="text-gray-400 w-3 text-right">
+										{#if sortColumn === column.key}
+											{sortDirection === 'asc' ? '▲' : '▼'}
+										{/if}
+									</span>
+								{/if}
+							</span>
 						</th>
 					{/each}
 					{#if namespace === '*'}
-						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-							Namespace
+						<th 
+							class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none transition-colors"
+							onclick={() => handleSort('__namespace__')}
+						>
+							<span class="flex items-center justify-between gap-2">
+								<span>Namespace</span>
+								<span class="text-gray-400 w-3 text-right">
+									{#if sortColumn === '__namespace__'}
+										{sortDirection === 'asc' ? '▲' : '▼'}
+									{/if}
+								</span>
+							</span>
 						</th>
 					{/if}
 					<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
