@@ -7,8 +7,12 @@
 	import { authToken } from '$lib/stores/auth';
 	import { get } from 'svelte/store';
 	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
 
 	let { children } = $props();
+	
+	// Check if we're on a patterns page (no padding needed)
+	let isPatternPage = $derived($page.url.pathname.startsWith('/patterns'));
 	let searchOpen = $state(false);
 
 	onMount(() => {
@@ -50,7 +54,7 @@
 <div class="flex h-screen bg-gray-50">
 	<Sidebar />
 	<main class="flex-1 overflow-auto">
-		<div class="p-6">
+		<div class={isPatternPage ? '' : 'p-6'}>
 			{@render children()}
 		</div>
 	</main>

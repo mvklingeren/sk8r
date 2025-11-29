@@ -1,11 +1,23 @@
 <script lang="ts">
-	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap } from 'lucide-svelte';
+	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked } from 'lucide-svelte';
 	import { navigationConfig } from '$lib/config/navigationConfig';
 	import type { NavigationSection } from '$lib/types/navigationConfig';
 	import { getIcon } from '$lib/utils/iconMapping';
 	import { navigation } from '$lib/stores/navigation';
 	import { dataSource } from '$lib/stores/dataSource';
 	import { learningMode } from '$lib/stores/learningMode';
+
+	// Design patterns configuration
+	const designPatterns = [
+		{
+			key: 'from-traditional-to-kubernetes',
+			label: 'Traditional → K8s',
+			description: 'From simple hosting to Kubernetes mastery',
+			icon: 'rocket'
+		}
+	];
+
+	let patternsExpanded = $state(false);
 
 	// Create reactive state for expanded sections - properly initialize each section
 	let sectionStates = $state(
@@ -85,6 +97,32 @@
 				{/if}
 			</div>
 		{/each}
+		<!-- Design Patterns Section -->
+		<div class="mb-1 mt-4 pt-4 border-t border-gray-800">
+			<button
+				onclick={() => patternsExpanded = !patternsExpanded}
+				class="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-800 transition-colors text-left"
+			>
+				<svelte:component this={patternsExpanded ? ChevronDown : ChevronRight} size={16} />
+				<BookMarked size={18} class="text-amber-400" />
+				<span class="flex-1 text-sm text-amber-300">Design Patterns</span>
+			</button>
+
+			{#if patternsExpanded}
+				<div class="ml-6 mt-1">
+					{#each designPatterns as pattern (pattern.key)}
+						<a
+							href="/patterns/{pattern.key}"
+							class="w-full flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors text-left text-sm block"
+							title={pattern.description}
+						>
+							<svelte:component this={getIcon(pattern.icon)} size={14} class="text-amber-400" />
+							<span class="text-gray-300">{pattern.label}</span>
+						</a>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</nav>
 
 	<div class="p-4 border-t border-gray-800">
