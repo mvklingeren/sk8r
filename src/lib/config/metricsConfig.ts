@@ -16,7 +16,8 @@ export const resourceMetricsConfig: ResourceMetricsConfig = {
 				timeRange: 5,
 				refreshInterval: 30,
 				yAxis: {
-					min: 0
+					min: 0,
+					label: 'CPU (cores)'
 				}
 			},
 			{
@@ -32,7 +33,8 @@ export const resourceMetricsConfig: ResourceMetricsConfig = {
 				refreshInterval: 30,
 				yAxis: {
 					min: 0,
-					max: 1
+					max: 1,
+					label: 'Memory (%)'
 				}
 			}
 		]

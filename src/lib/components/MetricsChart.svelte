@@ -139,9 +139,16 @@
 						type: 'time',
 						time: {
 							displayFormats: {
+								second: 'HH:mm',
 								minute: 'HH:mm',
 								hour: 'HH:mm'
-							}
+							},
+							tooltipFormat: 'HH:mm:ss'
+						},
+						ticks: {
+							maxTicksLimit: 6, // Limit number of ticks to avoid crowding
+							autoSkip: true,
+							maxRotation: 0 // Keep labels horizontal
 						},
 						grid: {
 							display: false
@@ -149,7 +156,18 @@
 					},
 					y: {
 						beginAtZero: true,
-						...config.yAxis,
+						min: config.yAxis?.min,
+						max: config.yAxis?.max,
+						suggestedMax: config.yAxis?.suggestedMax,
+						title: {
+							display: !!config.yAxis?.label,
+							text: config.yAxis?.label || '',
+							font: {
+								size: 12,
+								weight: 'normal'
+							},
+							color: 'rgb(107, 114, 128)' // gray-500
+						},
 						ticks: {
 							callback: (value) => {
 								return formatValue(value as number, config.unit);

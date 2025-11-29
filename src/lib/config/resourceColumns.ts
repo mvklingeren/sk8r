@@ -42,6 +42,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -79,6 +86,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -123,6 +137,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -148,6 +169,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -179,6 +207,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -218,6 +253,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -272,6 +314,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -315,6 +364,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Version',
 				path: 'status.nodeInfo.kubeletVersion',
 				type: 'text'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -348,6 +404,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -390,6 +453,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -416,6 +486,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -464,6 +541,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -500,6 +584,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -531,6 +622,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -574,6 +672,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -603,6 +708,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -675,6 +787,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	},
@@ -730,6 +849,13 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Age',
 				path: 'metadata.creationTimestamp',
 				type: 'age'
+			},
+			{
+				key: 'labels',
+				label: 'Labels',
+				path: 'metadata.labels',
+				type: 'labels',
+				flex: 2
 			}
 		]
 	}
@@ -750,6 +876,13 @@ export const defaultColumnConfig = {
 			label: 'Age',
 			path: 'metadata.creationTimestamp',
 			type: 'age' as const
+		},
+		{
+			key: 'labels',
+			label: 'Labels',
+			path: 'metadata.labels',
+			type: 'labels' as const,
+			flex: 2
 		}
 	]
 };

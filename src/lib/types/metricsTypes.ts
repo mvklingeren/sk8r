@@ -40,6 +40,7 @@ export interface MetricChartConfig {
 		min?: number;
 		max?: number;
 		suggestedMax?: number;
+		label?: string; // Y-axis description/title
 	};
 }
 

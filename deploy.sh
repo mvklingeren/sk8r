@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script automates the build, push, and deployment of the sk8tes-app.
+# This script automates the build, push, and deployment of the sk8r-app.
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
@@ -9,7 +9,7 @@ set -e
 # Your Docker Hub username
 DOCKERHUB_USERNAME="mvkdev"
 # The name of the application's image
-IMAGE_NAME="sk8tes-app"
+IMAGE_NAME="sk8r-app"
 # The tag for the image
 TAG="latest"
 # --- End of Configuration ---
@@ -25,9 +25,9 @@ kubectl apply -f k8s/
 
 # 3. Restart the deployment to pull the new image
 echo "--- Restarting deployment to pull new image ---"
-kubectl rollout restart deployment sk8tes-app
-kubectl rollout status deployment sk8tes-app --timeout=120s
+kubectl rollout restart deployment sk8r-app
+kubectl rollout status deployment sk8r-app --timeout=120s
 echo "Deployment to Kubernetes complete!"
 
 # 3. You can check the status of the rollout with:
-# kubectl rollout status deployment/sk8tes-app
+# kubectl rollout status deployment/sk8r-app

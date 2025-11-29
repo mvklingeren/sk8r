@@ -2,7 +2,7 @@ export interface ColumnConfig {
 	key: string;
 	label: string;
 	path: string;
-	type: 'text' | 'link' | 'badge' | 'fraction' | 'timestamp' | 'age' | 'list';
+	type: 'text' | 'link' | 'badge' | 'fraction' | 'timestamp' | 'age' | 'list' | 'labels';
 	formatter?: string;
 	colorMap?: Record<string, string>;
 	flex?: number;

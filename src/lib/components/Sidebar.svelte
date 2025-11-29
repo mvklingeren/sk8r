@@ -36,7 +36,7 @@
 	<div class="p-4 border-b border-gray-800">
 		<h1 class="text-xl font-bold flex items-center gap-2">
 			<Box class="w-6 h-6" />
-			SK8TES
+			SK8R
 		</h1>
 		<p class="text-sm text-gray-400 mt-1">Kubernetes Management</p>
 		

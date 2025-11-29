@@ -209,6 +209,12 @@ export const columnFormatters = {
 			return value.length.toString();
 		}
 		return '0';
+	},
+
+	// Labels formatter - returns array of {key, value} objects for rendering as tags
+	labels(resource: K8sResource): Array<{ key: string; value: string }> {
+		const labels = resource.metadata?.labels || {};
+		return Object.entries(labels).map(([key, value]) => ({ key, value: value as string }));
 	}
 };
 

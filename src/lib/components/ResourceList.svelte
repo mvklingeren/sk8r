@@ -52,6 +52,12 @@
 		return String(value);
 	}
 
+	// Function to get labels for a resource
+	function getLabels(resource: K8sResource): Array<{ key: string; value: string }> {
+		const labels = resource.metadata?.labels || {};
+		return Object.entries(labels).map(([key, value]) => ({ key, value: value as string }));
+	}
+
 	// Function to get CSS classes for badge types
 	function getBadgeClass(value: string, colorMap?: Record<string, string>): string {
 		if (!colorMap) return 'bg-gray-100 text-gray-800';
@@ -133,6 +139,17 @@
 									<span class="inline-flex px-2 py-1 text-xs font-medium rounded-full {getBadgeClass(getColumnValue(resource, column), column.colorMap)}">
 										{getColumnValue(resource, column)}
 									</span>
+								{:else if column.type === 'labels'}
+									<div class="flex flex-wrap gap-1 max-w-md">
+										{#each getLabels(resource) as label}
+											<span class="inline-flex px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-md" title="{label.key}={label.value}">
+												{label.key.split('/').pop()}={label.value.length > 20 ? label.value.slice(0, 20) + '…' : label.value}
+											</span>
+										{/each}
+										{#if getLabels(resource).length === 0}
+											<span class="text-gray-400 text-xs">—</span>
+										{/if}
+									</div>
 								{:else if column.type === 'list'}
 									<span class="text-gray-900">
 										{getColumnValue(resource, column)}

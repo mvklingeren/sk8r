@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: sk8tes-app-service
+  name: sk8r-app-service
 spec:
   selector:
-    app: sk8tes-app
+    app: sk8r-app
   ports:
     - protocol: TCP
       port: 80
