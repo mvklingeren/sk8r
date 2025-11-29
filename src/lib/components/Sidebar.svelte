@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { ChevronRight, ChevronDown, Box, Database, Activity } from 'lucide-svelte';
+	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap } from 'lucide-svelte';
 	import { navigationConfig } from '$lib/config/navigationConfig';
 	import type { NavigationSection } from '$lib/types/navigationConfig';
 	import { getIcon } from '$lib/utils/iconMapping';
 	import { navigation } from '$lib/stores/navigation';
 	import { dataSource } from '$lib/stores/dataSource';
+	import { learningMode } from '$lib/stores/learningMode';
 
 	// Create reactive state for expanded sections - properly initialize each section
 	let sectionStates = $state(
@@ -34,11 +35,13 @@
 
 <aside class="w-64 bg-gray-900 text-gray-100 h-full flex flex-col">
 	<div class="p-4 border-b border-gray-800">
-		<h1 class="text-xl font-bold flex items-center gap-2">
-			<Box class="w-6 h-6" />
-			SK8R
-		</h1>
-		<p class="text-sm text-gray-400 mt-1">Kubernetes Management</p>
+		<a href="/" class="block" onclick={() => navigation.reset()}>
+			<h1 class="text-xl font-bold flex items-center gap-2">
+				<Box class="w-6 h-6" />
+				SK8R
+			</h1>
+			<p class="text-sm text-gray-400 mt-1">Kubernetes Management</p>
+		</a>
 		
 		<!-- Search hint -->
 		<div class="mt-3 text-xs text-gray-500 flex items-center gap-2">
@@ -130,6 +133,23 @@
 					<span class="text-xs text-gray-300">Kubernetes API</span>
 				{/if}
 			</div>
+		</div>
+
+		<!-- Learning Mode Toggle -->
+		<div class="mt-3 pt-3 border-t border-gray-700">
+			<button
+				onclick={() => learningMode.toggle()}
+				class="w-full flex items-center gap-2 px-2 py-2 rounded-md transition-colors text-left {$learningMode ? 'bg-amber-900/40 hover:bg-amber-900/60 border border-amber-700/50' : 'hover:bg-gray-800 border border-transparent'}"
+				title="Toggle learning mode to show explanations for Kubernetes resources"
+			>
+				<GraduationCap size={16} class={$learningMode ? 'text-amber-400' : 'text-gray-400'} />
+				<span class="text-xs {$learningMode ? 'text-amber-300' : 'text-gray-400'}">Learning Mode</span>
+				<div class="ml-auto">
+					<div class="w-8 h-4 rounded-full transition-colors {$learningMode ? 'bg-amber-500' : 'bg-gray-600'}">
+						<div class="w-3 h-3 rounded-full bg-white shadow-sm transform transition-transform mt-0.5 {$learningMode ? 'translate-x-4.5 ml-0.5' : 'translate-x-0.5'}"></div>
+					</div>
+				</div>
+			</button>
 		</div>
 	</div>
 </aside>

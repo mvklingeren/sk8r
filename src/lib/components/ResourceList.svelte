@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Trash2, Edit, RefreshCw, Search } from 'lucide-svelte';
+	import { Trash2, Edit, RefreshCw, Search, HelpCircle, ExternalLink, X } from 'lucide-svelte';
 	import type { K8sResource } from '$lib/types/k8s';
 	import type { ColumnConfig } from '$lib/types/columnConfig';
 	import { resourceColumnConfigs, defaultColumnConfig } from '$lib/config/resourceColumns';
 	import { extractColumnValue, getAge } from '$lib/utils/columnFormatters';
+	import { learningContent } from '$lib/config/navigationConfig';
+	import { learningMode } from '$lib/stores/learningMode';
+	import type { LearningContent } from '$lib/types/navigationConfig';
 
 	interface Props {
 		resourceType: string;
@@ -19,6 +22,15 @@
 	let searchQuery = $state('');
 	let sortColumn = $state<string | null>(null);
 	let sortDirection = $state<'asc' | 'desc'>('asc');
+	let showLearningPanel = $state(false);
+	let helpButtonRef = $state<HTMLButtonElement | null>(null);
+	
+	// Get learning content for this resource type
+	let learning = $derived<LearningContent | undefined>(learningContent[resourceType]);
+	
+	// Build the full documentation URL
+	const DOCS_BASE_URL = 'https://kubernetes.io/docs/concepts/';
+	let docsUrl = $derived(learning ? `${DOCS_BASE_URL}${learning.docsPath}` : DOCS_BASE_URL);
 	
 	// Get column configuration for this resource type
 	let columns = $derived.by(() => {
@@ -139,8 +151,77 @@
 	}
 </script>
 
-<div class="bg-white rounded-lg shadow">
-	<div class="px-6 py-4 border-b border-gray-200">
+<div class="bg-white rounded-lg shadow relative">
+	<!-- Learning Panel (Jumbo) -->
+	{#if showLearningPanel && learning && $learningMode}
+		<div 
+			class="absolute z-50 w-[640px] bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl shadow-2xl p-6 learning-panel"
+			style="top: 60px; right: 24px;"
+			role="dialog"
+			aria-labelledby="learning-title"
+		>
+			<!-- Close button -->
+			<button 
+				onclick={() => showLearningPanel = false}
+				class="absolute top-3 right-3 p-1 text-amber-600 hover:text-amber-800 hover:bg-amber-200 rounded-full transition-colors"
+				aria-label="Close learning panel"
+			>
+				<X size={20} />
+			</button>
+			
+			<!-- Header with icon -->
+			<div class="flex items-start gap-4 mb-4">
+				<div class="flex-shrink-0 w-12 h-12 bg-amber-400 rounded-xl flex items-center justify-center shadow-md">
+					<HelpCircle size={28} class="text-white" />
+				</div>
+				<div>
+					<h3 id="learning-title" class="text-xl font-bold text-amber-900">{learning.title}</h3>
+					<p class="text-amber-700 text-sm font-medium mt-1">{learning.summary}</p>
+				</div>
+			</div>
+			
+			<!-- Detailed explanation -->
+			<div class="bg-white/60 rounded-lg p-4 mb-4 border border-amber-200">
+				<p class="text-gray-700 text-sm leading-relaxed">{learning.details}</p>
+			</div>
+			
+			<!-- CLI Commands -->
+			{#if learning.cliCommands && learning.cliCommands.length > 0}
+				<div class="bg-gray-900 rounded-lg p-4 mb-4 border border-gray-700">
+					<h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+						<span class="inline-block w-2 h-2 bg-green-400 rounded-full"></span>
+						Common CLI Commands
+					</h4>
+					<div class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+						{#each learning.cliCommands as cmd}
+							<div class="group">
+								<div class="text-xs text-gray-400 mb-0.5"># {cmd.description}</div>
+								<code class="block text-xs text-green-400 font-mono bg-gray-800 px-2 py-1.5 rounded border border-gray-700 group-hover:border-green-600 transition-colors cursor-pointer select-all">
+									{cmd.command}
+								</code>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+			
+			<!-- Documentation link -->
+			<a 
+				href={docsUrl}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
+			>
+				<ExternalLink size={16} />
+				Docs
+			</a>
+			
+			<!-- Decorative element -->
+			<div class="absolute -bottom-2 -right-2 w-24 h-24 bg-amber-200/30 rounded-full blur-2xl pointer-events-none"></div>
+		</div>
+	{/if}
+
+	<div class="px-6 py-4 border-b border-gray-200 relative">
 		<div class="flex items-center justify-between">
 			<h2 class="text-xl font-semibold text-gray-800 capitalize">{resourceType}</h2>
 			<div class="flex items-center gap-4">
@@ -160,6 +241,19 @@
 					>
 						<RefreshCw size={16} />
 						Refresh
+					</button>
+				{/if}
+				{#if $learningMode && learning}
+					<button
+						bind:this={helpButtonRef}
+						onclick={() => showLearningPanel = !showLearningPanel}
+						onmouseenter={() => showLearningPanel = true}
+						class="flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 {showLearningPanel ? 'bg-amber-500 text-white shadow-lg scale-110' : 'bg-amber-100 text-amber-600 hover:bg-amber-200 hover:scale-105'}"
+						title="Learn about {resourceType}"
+						aria-label="Learn about {resourceType}"
+						aria-expanded={showLearningPanel}
+					>
+						<HelpCircle size={20} />
 					</button>
 				{/if}
 			</div>
@@ -291,3 +385,24 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	.custom-scrollbar::-webkit-scrollbar {
+		width: 6px;
+	}
+	.custom-scrollbar::-webkit-scrollbar-track {
+		background: #1f2937;
+		border-radius: 3px;
+	}
+	.custom-scrollbar::-webkit-scrollbar-thumb {
+		background: #4b5563;
+		border-radius: 3px;
+	}
+	.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+		background: #6b7280;
+	}
+	.custom-scrollbar {
+		scrollbar-width: thin;
+		scrollbar-color: #4b5563 #1f2937;
+	}
+</style>
