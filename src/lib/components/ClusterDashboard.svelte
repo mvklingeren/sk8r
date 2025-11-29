@@ -36,6 +36,8 @@
 	let lastRefresh = $state<Date>(new Date());
 	let intervalId: ReturnType<typeof setInterval> | null = null;
 	let dataSourceType = $state<'prometheus' | 'kubernetes'>('prometheus');
+	let countdownSeconds = $state(30);
+	let countdownIntervalId: ReturnType<typeof setInterval> | null = null;
 
 	const iconMap: Record<string, typeof Server> = {
 		server: Server,
@@ -229,6 +231,9 @@
 	}
 
 	async function refreshAll() {
+		// Reset countdown on manual refresh
+		countdownSeconds = 10;
+		
 		// Try Prometheus first for cards
 		const cardPromises = config.cards.map(card => fetchCardValue(card));
 		await Promise.all(cardPromises);
@@ -250,16 +255,29 @@
 	}
 
 	function startPolling() {
-		// Refresh every 30 seconds
+		// Refresh every 10 seconds
+		countdownSeconds = 10;
 		intervalId = setInterval(() => {
 			refreshAll();
-		}, 30000);
+			countdownSeconds = 10;
+		}, 10000);
+		
+		// Countdown timer
+		countdownIntervalId = setInterval(() => {
+			if (countdownSeconds > 0) {
+				countdownSeconds--;
+			}
+		}, 1000);
 	}
 
 	function stopPolling() {
 		if (intervalId) {
 			clearInterval(intervalId);
 			intervalId = null;
+		}
+		if (countdownIntervalId) {
+			clearInterval(countdownIntervalId);
+			countdownIntervalId = null;
 		}
 	}
 
@@ -299,7 +317,7 @@
 		<div>
 			<h1 class="text-2xl font-bold text-gray-900">Cluster Dashboard</h1>
 			<p class="text-sm text-gray-500 mt-1">
-				Last updated: {lastRefresh.toLocaleTimeString()}
+				Last updated: {lastRefresh.toLocaleTimeString()} · (refreshing in {countdownSeconds}s)
 			</p>
 		</div>
 		<button
@@ -321,7 +339,7 @@
 			
 			<button
 				onclick={() => handleCardClick(card)}
-				class="dashboard-card {colors.bg} {colors.border} border rounded-lg p-3 text-left transition-all hover:scale-105 hover:shadow-lg cursor-pointer"
+				class="dashboard-card {colors.bg} {colors.border} border rounded-lg p-3 text-left transition-all hover:scale-105 hover:shadow-lg cursor-pointer h-[100px]"
 			>
 				<div class="flex items-start justify-between mb-2">
 					<div class="p-1.5 rounded-md bg-white/60">
@@ -337,15 +355,13 @@
 				<div class="space-y-0.5">
 					<p class="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{card.title}</p>
 					{#if data.loading}
-						<div class="h-6 w-12 bg-gray-200 rounded animate-pulse"></div>
+						<div class="h-7 w-12 bg-gray-200 rounded animate-pulse"></div>
 					{:else if data.error}
-						<p class="text-base font-bold text-red-500">Error</p>
+						<p class="text-xl font-bold text-red-500 h-7 leading-7">Error</p>
 					{:else}
-						<p class="text-xl font-bold {colors.text}">{formatValue(data.value, card.format)}</p>
+						<p class="text-xl font-bold {colors.text} h-7 leading-7">{formatValue(data.value, card.format)}</p>
 					{/if}
-					{#if statusIndicator && !data.loading}
-						<p class="text-[10px] text-gray-500">{statusIndicator.text}</p>
-					{/if}
+					<p class="text-[10px] text-gray-500 h-3">{statusIndicator && !data.loading ? statusIndicator.text : ''}</p>
 				</div>
 			</button>
 		{/each}
