@@ -487,18 +487,15 @@ spec:
 
 ```mermaid
 flowchart TB
-    subgraph External["External Traffic"]
-        Users["👤 Users"]
-        CDN["🌐 CDN / Static Hosting"]
-    end
-
-    subgraph Frontend["Frontend Layer"]
-        ReactApp["Frontend (React)"]
-        AdminApp["Admin (React)"]
-    end
+    Users["👤 Users"]
 
     subgraph Cluster["Kubernetes Cluster"]
         Ingress["Ingress<br/>(TLS termination)"]
+        
+        subgraph Frontend["Frontend Layer"]
+            ReactApp["Frontend<br/>(React/nginx)"]
+            AdminApp["Admin<br/>(React/nginx)"]
+        end
         
         subgraph Services["API Layer"]
             API["API Gateway<br/>(Rust)"]
@@ -513,11 +510,9 @@ flowchart TB
         end
     end
 
-    Users --> CDN
-    CDN --> ReactApp
-    CDN --> AdminApp
-    ReactApp --> Ingress
-    AdminApp --> Ingress
+    Users --> Ingress
+    Ingress --> ReactApp
+    Ingress --> AdminApp
     Ingress --> API
     API --> Auth
     API --> Cache
