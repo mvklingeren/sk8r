@@ -22,6 +22,11 @@ echo "Image push complete."
 # 2. Apply all Kubernetes manifests from the k8s directory
 echo "--- Applying Kubernetes manifests ---"
 kubectl apply -f k8s/
+
+# 3. Restart the deployment to pull the new image
+echo "--- Restarting deployment to pull new image ---"
+kubectl rollout restart deployment sk8tes-app
+kubectl rollout status deployment sk8tes-app --timeout=120s
 echo "Deployment to Kubernetes complete!"
 
 # 3. You can check the status of the rollout with:
