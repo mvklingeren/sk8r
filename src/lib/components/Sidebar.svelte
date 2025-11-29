@@ -1,11 +1,14 @@
 <script lang="ts">
-	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked } from 'lucide-svelte';
+	import { onMount } from 'svelte';
+	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked, Sun, Moon, Server, RefreshCw, AlertCircle } from 'lucide-svelte';
 	import { navigationConfig } from '$lib/config/navigationConfig';
 	import type { NavigationSection } from '$lib/types/navigationConfig';
 	import { getIcon } from '$lib/utils/iconMapping';
 	import { navigation } from '$lib/stores/navigation';
 	import { dataSource } from '$lib/stores/dataSource';
 	import { learningMode } from '$lib/stores/learningMode';
+	import { darkMode } from '$lib/stores/darkMode';
+	import { clusterStore, type ClusterContext } from '$lib/stores/cluster';
 
 	// Design patterns configuration
 	const designPatterns = [
@@ -18,6 +21,7 @@
 	];
 
 	let patternsExpanded = $state(false);
+	let clusterSwitching = $state(false);
 
 	// Create reactive state for expanded sections - properly initialize each section
 	let sectionStates = $state(
@@ -26,6 +30,13 @@
 			expanded: section.collapsed === undefined ? false : !section.collapsed
 		}))
 	);
+
+	// Fetch cluster contexts on mount
+	onMount(() => {
+		clusterStore.fetchContexts().catch(err => {
+			console.warn('Failed to fetch cluster contexts:', err);
+		});
+	});
 
 	function toggleSection(sectionKey: string) {
 		const sectionIndex = sectionStates.findIndex((s) => s.key === sectionKey);
@@ -42,6 +53,28 @@
 
 	function selectResource(resource: string) {
 		navigation.selectResource(resource);
+	}
+
+	async function handleClusterChange(event: Event) {
+		const select = event.target as HTMLSelectElement;
+		const newContext = select.value;
+		
+		if (newContext && newContext !== $clusterStore.currentContext) {
+			clusterSwitching = true;
+			try {
+				await clusterStore.switchContext(newContext);
+			} catch (err) {
+				console.error('Failed to switch cluster:', err);
+				// Reset the select to the current context
+				select.value = $clusterStore.currentContext;
+			} finally {
+				clusterSwitching = false;
+			}
+		}
+	}
+
+	async function refreshClusters() {
+		await clusterStore.fetchContexts();
 	}
 </script>
 
@@ -126,16 +159,69 @@
 	</nav>
 
 	<div class="p-4 border-t border-gray-800">
-		<div class="text-xs text-gray-400 mb-3">
-			<div>Cluster: <span class="text-gray-300">default</span></div>
+		<!-- Cluster Selector -->
+		<div class="mb-3">
+			<div class="flex items-center justify-between mb-1">
+				<label for="cluster-select" class="text-xs text-gray-400 flex items-center gap-1.5">
+					<Server size={12} class="text-cyan-400" />
+					Cluster:
+				</label>
+				<button
+					onclick={refreshClusters}
+					class="p-1 hover:bg-gray-700 rounded transition-colors"
+					title="Refresh cluster list"
+					disabled={$clusterStore.loading}
+				>
+					<RefreshCw size={12} class="text-gray-500 hover:text-gray-300 {$clusterStore.loading ? 'animate-spin' : ''}" />
+				</button>
+			</div>
+			
+			{#if $clusterStore.error}
+				<div class="flex items-center gap-1.5 text-xs text-red-400 mb-1">
+					<AlertCircle size={12} />
+					<span class="truncate">{$clusterStore.error}</span>
+				</div>
+			{/if}
+			
+			{#if $clusterStore.contexts.length > 0}
+				<select 
+					id="cluster-select"
+					value={$clusterStore.currentContext}
+					onchange={handleClusterChange}
+					disabled={clusterSwitching || $clusterStore.loading}
+					class="w-full text-xs bg-gray-800 text-gray-300 border border-gray-600 rounded px-2 py-1.5 focus:outline-none focus:border-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+				>
+					{#each $clusterStore.contexts as ctx (ctx.name)}
+						<option value={ctx.name}>
+							{ctx.name} ({ctx.server})
+						</option>
+					{/each}
+				</select>
+				{#if clusterSwitching}
+					<div class="text-xs text-cyan-400 mt-1 flex items-center gap-1">
+						<RefreshCw size={10} class="animate-spin" />
+						Switching cluster...
+					</div>
+				{/if}
+			{:else if $clusterStore.loading}
+				<div class="text-xs text-gray-500 flex items-center gap-1.5 py-1">
+					<RefreshCw size={12} class="animate-spin" />
+					Loading clusters...
+				</div>
+			{:else}
+				<div class="text-xs text-gray-500 py-1">
+					No clusters found
+				</div>
+			{/if}
 		</div>
 		
+		<!-- Namespace Selector -->
 		<div class="mb-2">
 			<label for="namespace-select" class="block text-xs text-gray-400 mb-1">Namespace:</label>
 			<select 
 				id="namespace-select"
 				value={$navigation.namespace}
-				onchange={(e) => navigation.setNamespace(e.target.value)}
+				onchange={(e) => navigation.setNamespace((e.target as HTMLSelectElement).value)}
 				class="w-full text-xs bg-gray-800 text-gray-300 border border-gray-600 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
 			>
 				<option value="*">* All Namespaces</option>
@@ -185,6 +271,27 @@
 				<div class="ml-auto">
 					<div class="w-8 h-4 rounded-full transition-colors {$learningMode ? 'bg-amber-500' : 'bg-gray-600'}">
 						<div class="w-3 h-3 rounded-full bg-white shadow-sm transform transition-transform mt-0.5 {$learningMode ? 'translate-x-4.5 ml-0.5' : 'translate-x-0.5'}"></div>
+					</div>
+				</div>
+			</button>
+		</div>
+
+		<!-- Dark Mode Toggle -->
+		<div class="mt-3 pt-3 border-t border-gray-700">
+			<button
+				onclick={() => darkMode.toggle()}
+				class="w-full flex items-center gap-2 px-2 py-2 rounded-md transition-colors text-left {$darkMode ? 'bg-indigo-900/40 hover:bg-indigo-900/60 border border-indigo-700/50' : 'hover:bg-gray-800 border border-transparent'}"
+				title="Toggle dark mode"
+			>
+				{#if $darkMode}
+					<Moon size={16} class="text-indigo-400" />
+				{:else}
+					<Sun size={16} class="text-gray-400" />
+				{/if}
+				<span class="text-xs {$darkMode ? 'text-indigo-300' : 'text-gray-400'}">Dark Mode</span>
+				<div class="ml-auto">
+					<div class="w-8 h-4 rounded-full transition-colors {$darkMode ? 'bg-indigo-500' : 'bg-gray-600'}">
+						<div class="w-3 h-3 rounded-full bg-white shadow-sm transform transition-transform mt-0.5 {$darkMode ? 'translate-x-4.5 ml-0.5' : 'translate-x-0.5'}"></div>
 					</div>
 				</div>
 			</button>

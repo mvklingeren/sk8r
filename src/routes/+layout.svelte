@@ -5,6 +5,7 @@
 	import GlobalSearch from '$lib/components/GlobalSearch.svelte';
 	import { onMount } from 'svelte';
 	import { authToken } from '$lib/stores/auth';
+	import { darkMode } from '$lib/stores/darkMode';
 	import { get } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
@@ -16,6 +17,9 @@
 	let searchOpen = $state(false);
 
 	onMount(() => {
+		// Initialize dark mode on mount
+		darkMode.initialize();
+		
 		function handleKeydown(event: KeyboardEvent) {
 			// Ctrl+K or Cmd+K to open search
 			if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
@@ -51,9 +55,9 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div class="flex h-screen bg-gray-50">
+<div class="flex h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-200">
 	<Sidebar />
-	<main class="flex-1 overflow-auto">
+	<main class="flex-1 overflow-auto dark:text-slate-100">
 		<div class={isPatternPage ? '' : 'p-6'}>
 			{@render children()}
 		</div>

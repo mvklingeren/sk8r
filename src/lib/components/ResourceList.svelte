@@ -151,7 +151,7 @@
 	}
 </script>
 
-<div class="bg-white rounded-lg shadow relative">
+<div class="bg-white dark:bg-slate-800 rounded-lg shadow relative">
 	<!-- Learning Panel (Jumbo) -->
 	{#if showLearningPanel && learning && $learningMode}
 		<div 
@@ -221,17 +221,17 @@
 		</div>
 	{/if}
 
-	<div class="px-6 py-4 border-b border-gray-200 relative">
+	<div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700 relative">
 		<div class="flex items-center justify-between">
-			<h2 class="text-xl font-semibold text-gray-800 capitalize">{resourceType}</h2>
+			<h2 class="text-xl font-semibold text-gray-800 dark:text-slate-100 capitalize">{resourceType}</h2>
 			<div class="flex items-center gap-4">
 				<div class="relative">
-					<Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+					<Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500" />
 					<input
 						type="text"
 						bind:value={searchQuery}
 						placeholder="Search resources..."
-						class="pl-9 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+						class="pl-9 pr-4 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 					/>
 				</div>
 				{#if onRefresh}
@@ -262,11 +262,11 @@
 
 	<div class="overflow-x-auto">
 		<table class="w-full">
-			<thead class="bg-gray-50">
+			<thead class="bg-gray-50 dark:bg-slate-700">
 				<tr>
 					{#each columns as column}
 						<th 
-							class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider {column.sortable !== false ? 'cursor-pointer hover:bg-gray-100 select-none transition-colors' : ''}"
+							class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider {column.sortable !== false ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 select-none transition-colors' : ''}"
 							style={column.flex ? `flex-grow: ${column.flex}` : ''}
 							onclick={() => column.sortable !== false && handleSort(column.key)}
 						>
@@ -284,7 +284,7 @@
 					{/each}
 					{#if namespace === '*'}
 						<th 
-							class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none transition-colors"
+							class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 select-none transition-colors"
 							onclick={() => handleSort('__namespace__')}
 						>
 							<span class="flex items-center justify-between gap-2">
@@ -297,14 +297,14 @@
 							</span>
 						</th>
 					{/if}
-					<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+					<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
 						Actions
 					</th>
 				</tr>
 			</thead>
-			<tbody class="bg-white divide-y divide-gray-200">
+			<tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
 				{#each filteredResources as resource}
-					<tr class="hover:bg-gray-50 transition-colors">
+					<tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
 						{#each columns as column}
 							<td class="px-6 py-4 whitespace-nowrap text-sm">
 								{#if column.type === 'link'}
@@ -330,18 +330,18 @@
 										{/if}
 									</div>
 								{:else if column.type === 'list'}
-									<span class="text-gray-900">
+									<span class="text-gray-900 dark:text-slate-200">
 										{getColumnValue(resource, column)}
 									</span>
 								{:else}
-									<span class="text-gray-900">
+									<span class="text-gray-900 dark:text-slate-200">
 										{getColumnValue(resource, column)}
 									</span>
 								{/if}
 							</td>
 						{/each}
 						{#if namespace === '*'}
-							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
 								<span class="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
 									{resource.metadata.namespace || 'N/A'}
 								</span>
@@ -375,7 +375,7 @@
 		</table>
 
 		{#if filteredResources.length === 0}
-			<div class="text-center py-12 text-gray-500">
+			<div class="text-center py-12 text-gray-500 dark:text-slate-400">
 				{#if searchQuery}
 					No resources found matching "{searchQuery}"
 				{:else}

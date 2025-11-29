@@ -1,1 +1,38 @@
 @import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+	/* Light mode colors */
+	--color-bg-primary: #f9fafb;
+	--color-bg-secondary: #ffffff;
+	--color-bg-tertiary: #f3f4f6;
+	--color-text-primary: #111827;
+	--color-text-secondary: #4b5563;
+	--color-text-muted: #9ca3af;
+	--color-border: #e5e7eb;
+	--color-border-strong: #d1d5db;
+}
+
+.dark {
+	/* Dark mode colors - rich deep palette */
+	--color-bg-primary: #0f172a;
+	--color-bg-secondary: #1e293b;
+	--color-bg-tertiary: #334155;
+	--color-text-primary: #f1f5f9;
+	--color-text-secondary: #cbd5e1;
+	--color-text-muted: #64748b;
+	--color-border: #334155;
+	--color-border-strong: #475569;
+}
+
+/* Apply theme colors */
+body {
+	background-color: var(--color-bg-primary);
+	color: var(--color-text-primary);
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, h4, h5 {
+    color: var(--color-text-primary);
+}
