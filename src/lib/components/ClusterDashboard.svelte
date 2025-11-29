@@ -15,13 +15,13 @@
 		AlertTriangle,
 		CheckCircle2,
 		LoaderCircle,
-		RefreshCw,
-		Database
+		RefreshCw
 	} from 'lucide-svelte';
 	import MetricsChart from './MetricsChart.svelte';
 	import type { DashboardCardConfig, DashboardConfig } from '$lib/config/dashboardConfig';
 	import type { MetricSeries } from '$lib/types/metricsTypes';
 	import { apiClient } from '$lib/utils/apiClient';
+	import { dataSource as dataSourceStore } from '$lib/stores/dataSource';
 
 	interface Props {
 		config: DashboardConfig;
@@ -35,7 +35,7 @@
 	let chartsLoading = $state(true);
 	let lastRefresh = $state<Date>(new Date());
 	let intervalId: ReturnType<typeof setInterval> | null = null;
-	let dataSource = $state<'prometheus' | 'kubernetes'>('prometheus');
+	let dataSourceType = $state<'prometheus' | 'kubernetes'>('prometheus');
 
 	const iconMap: Record<string, typeof Server> = {
 		server: Server,
@@ -135,7 +135,8 @@
 			}
 			
 			const stats = await response.json();
-			dataSource = 'kubernetes';
+			dataSourceType = 'kubernetes';
+			dataSourceStore.update('kubernetes', true);
 			
 			// Map K8s API stats to card values
 			const mappings: Record<string, { value: number; status?: number }> = {
@@ -240,7 +241,8 @@
 			console.log('Prometheus unavailable, falling back to Kubernetes API');
 			await fetchStatsFromK8sApi();
 		} else {
-			dataSource = 'prometheus';
+			dataSourceType = 'prometheus';
+			dataSourceStore.update('prometheus', true);
 		}
 		
 		// Always try to fetch chart data (will show "no data" if Prometheus unavailable)
@@ -319,38 +321,38 @@
 			
 			<button
 				onclick={() => handleCardClick(card)}
-				class="dashboard-card {colors.bg} {colors.border} border rounded-xl p-4 text-left transition-all hover:scale-105 hover:shadow-lg cursor-pointer"
+				class="dashboard-card {colors.bg} {colors.border} border rounded-lg p-3 text-left transition-all hover:scale-105 hover:shadow-lg cursor-pointer"
 			>
-				<div class="flex items-start justify-between mb-3">
-					<div class="p-2 rounded-lg bg-white/60">
-						<Icon size={20} class={colors.icon} />
+				<div class="flex items-start justify-between mb-2">
+					<div class="p-1.5 rounded-md bg-white/60">
+						<Icon size={16} class={colors.icon} />
 					</div>
 					{#if data.loading}
-						<LoaderCircle size={16} class="animate-spin text-gray-400" />
+						<LoaderCircle size={14} class="animate-spin text-gray-400" />
 					{:else if statusIndicator}
-						<svelte:component this={statusIndicator.icon} size={16} class={statusIndicator.color} />
+						<svelte:component this={statusIndicator.icon} size={14} class={statusIndicator.color} />
 					{/if}
 				</div>
 				
-				<div class="space-y-1">
-					<p class="text-xs font-medium text-gray-500 uppercase tracking-wide">{card.title}</p>
+				<div class="space-y-0.5">
+					<p class="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{card.title}</p>
 					{#if data.loading}
-						<div class="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+						<div class="h-6 w-12 bg-gray-200 rounded animate-pulse"></div>
 					{:else if data.error}
-						<p class="text-lg font-bold text-red-500">Error</p>
+						<p class="text-base font-bold text-red-500">Error</p>
 					{:else}
-						<p class="text-2xl font-bold {colors.text}">{formatValue(data.value, card.format)}</p>
+						<p class="text-xl font-bold {colors.text}">{formatValue(data.value, card.format)}</p>
 					{/if}
 					{#if statusIndicator && !data.loading}
-						<p class="text-xs text-gray-500">{statusIndicator.text}</p>
+						<p class="text-[10px] text-gray-500">{statusIndicator.text}</p>
 					{/if}
 				</div>
 			</button>
 		{/each}
 	</div>
 
-	<!-- Charts Grid - 3 columns on large screens -->
-	<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+	<!-- Charts Grid - 4 columns on large screens -->
+	<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 		{#each config.charts as chart}
 			{@const data = chartData.get(chart.id) || []}
 			<div class="chart-card bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
@@ -372,7 +374,7 @@
 	</div>
 
 	<!-- Quick Actions / Info Section -->
-	<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+	<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 hidden">
 		<div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-5 text-white">
 			<h3 class="font-semibold mb-2">Quick Navigation</h3>
 			<p class="text-sm text-gray-300 mb-3">Jump to commonly used resources</p>
@@ -396,20 +398,11 @@
 		</div>
 		
 		<div class="bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl p-5 text-white">
-			<h3 class="font-semibold mb-2">Data Source</h3>
-			<p class="text-sm text-purple-100 mb-3">
-				{#if dataSource === 'prometheus'}
-					Real-time metrics from Prometheus
-				{:else}
-					Live data from Kubernetes API
-				{/if}
-			</p>
+			<h3 class="font-semibold mb-2">Cluster Health</h3>
+			<p class="text-sm text-purple-100 mb-3">Monitor your cluster status</p>
 			<div class="flex items-center gap-2">
 				<div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-				<span class="text-sm text-purple-100 capitalize">{dataSource}</span>
-				{#if dataSource === 'kubernetes'}
-					<Database size={14} class="text-purple-200" />
-				{/if}
+				<span class="text-sm text-purple-100">All systems operational</span>
 			</div>
 		</div>
 	</div>

@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { ChevronRight, ChevronDown, Box } from 'lucide-svelte';
+	import { ChevronRight, ChevronDown, Box, Database, Activity } from 'lucide-svelte';
 	import { navigationConfig } from '$lib/config/navigationConfig';
 	import type { NavigationSection } from '$lib/types/navigationConfig';
 	import { getIcon } from '$lib/utils/iconMapping';
 	import { navigation } from '$lib/stores/navigation';
+	import { dataSource } from '$lib/stores/dataSource';
 
 	// Create reactive state for expanded sections - properly initialize each section
 	let sectionStates = $state(
@@ -114,6 +115,21 @@
 				<option value="unifi">unifi</option>
 				<option value="zigbee2mqtt">zigbee2mqtt</option>
 			</select>
+		</div>
+
+		<!-- Data Source Status -->
+		<div class="mt-3 pt-3 border-t border-gray-700">
+			<div class="text-xs text-gray-400 mb-2">Data Source:</div>
+			<div class="flex items-center gap-2">
+				<div class="w-2 h-2 rounded-full animate-pulse {$dataSource.connected ? 'bg-green-400' : 'bg-red-400'}"></div>
+				{#if $dataSource.source === 'prometheus'}
+					<Activity size={14} class="text-purple-400" />
+					<span class="text-xs text-gray-300">Prometheus</span>
+				{:else}
+					<Database size={14} class="text-blue-400" />
+					<span class="text-xs text-gray-300">Kubernetes API</span>
+				{/if}
+			</div>
 		</div>
 	</div>
 </aside>

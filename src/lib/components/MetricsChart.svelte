@@ -123,8 +123,7 @@
 						}
 					},
 					legend: {
-						display: data.length > 1,
-						position: 'bottom'
+						display: false
 					},
 					tooltip: {
 						callbacks: {
