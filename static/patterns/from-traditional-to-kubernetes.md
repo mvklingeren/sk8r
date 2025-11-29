@@ -487,39 +487,82 @@ spec:
 
 ```mermaid
 flowchart TB
-    Users["👤 Users"]
+%% External Actors
+User[["User / Browser"]]
+DNS(("DNS / CDN"))
 
-    subgraph Cluster["Kubernetes Cluster"]
-        Ingress["Ingress<br/>(TLS termination)"]
-        
-        subgraph Frontend["Frontend Layer"]
-            ReactApp["Frontend<br/>(React/nginx)"]
-            AdminApp["Admin<br/>(React/nginx)"]
-        end
-        
-        subgraph Services["API Layer"]
-            API["API Gateway<br/>(Rust)"]
-            Auth["Auth Service"]
-        end
-        
-        subgraph Data["Data Layer"]
-            Cache["Cache<br/>(Redis)"]
-            Queue["Queue<br/>(Redis)"]
-            Workers["Workers<br/>(Background)"]
-            DB["Database<br/>(Postgres)"]
-        end
+%% Kubernetes Cluster Boundary
+subgraph Cluster["Kubernetes Cluster (Production)"]
+    
+    %% Ingress Layer
+    subgraph IngressLayer["Ingress & Routing"]
+        LB["Cloud Load Balancer"]
+        IngressCtrl["Ingress Controller<br/>(Nginx/Traefik)"]
+        CertManager["Cert Manager<br/>(Let's Encrypt)"]
     end
 
-    Users --> Ingress
-    Ingress --> ReactApp
-    Ingress --> AdminApp
-    Ingress --> API
-    API --> Auth
-    API --> Cache
-    API --> Queue
-    Queue --> Workers
-    Workers --> DB
-    API --> DB
+    %% Frontend Namespace/Layer
+    subgraph FELayer["Frontend Namespace"]
+        style FELayer fill:#e1f5fe,stroke:#01579b
+        
+        subgraph FE_Pod["Frontend Pod (Deployment)"]
+            NginxFE["Nginx Container<br/>(Serves Static Build)"]
+        end
+        SVC_FE["Service: Frontend<br/>(ClusterIP)"]
+    end
+
+    %% Backend Namespace/Layer
+    subgraph APILayer["API Namespace"]
+        style APILayer fill:#fff3e0,stroke:#e65100
+        
+        subgraph API_Pod["API Pod (Deployment)"]
+            RustAPI["Rust API Container"]
+            EnvVars["ConfigMap / Secrets"]
+        end
+        
+        SVC_API["Service: API<br/>(ClusterIP)"]
+        HPA["HPA<br/>(Auto-scaler)"]
+    end
+
+    %% Data Namespace/Layer
+    subgraph DataLayer["Data Persistence"]
+        style DataLayer fill:#e8f5e9,stroke:#1b5e20
+        
+        subgraph Redis_Set["Redis (StatefulSet)"]
+            Redis["Redis Master/Replica"]
+        end
+        
+        subgraph DB_Set["Postgres (StatefulSet)"]
+            Postgres["Postgres Primary"]
+            PVC[("Persistent Vol<br/>Claim (PVC)")]
+        end
+        
+        Worker["Worker Deployment<br/>(Background Jobs)"]
+    end
+end
+
+%% Flow Connections
+User -->|"https://app.com"| DNS
+DNS -->|"Traffic"| LB
+LB --> IngressCtrl
+
+%% Ingress Routing Rules
+IngressCtrl -.->|"Host: app.com<br/>Path: / (Default)"| SVC_FE
+IngressCtrl -.->|"Host: app.com<br/>Path: /api"| SVC_API
+CertManager -.->|"Manage TLS"| IngressCtrl
+
+%% Internal Cluster Routing
+SVC_FE --> NginxFE
+SVC_API --> RustAPI
+HPA -.->|"Scales"| API_Pod
+RustAPI -.->|"Reads"| EnvVars
+
+%% Data Flow
+RustAPI -->|"Write Job"| Redis
+Redis -->|"Pop Job"| Worker
+Worker -->|"Process"| Postgres
+RustAPI -->|"CRUD"| Postgres
+Postgres --- PVC
 ```
 
 Each component:
