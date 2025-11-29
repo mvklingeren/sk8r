@@ -485,37 +485,46 @@ spec:
 
 ### Full Microservices Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         Ingress                              │
-│                    (TLS termination)                         │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-        ┌─────────────┼─────────────┐
-        ▼             ▼             ▼
-   ┌─────────┐  ┌─────────┐  ┌─────────┐
-   │Frontend │  │   API   │  │  Admin  │
-   │ (React) │  │ (Rust)  │  │ (React) │
-   └─────────┘  └────┬────┘  └─────────┘
-                     │
-        ┌────────────┼────────────┐
-        ▼            ▼            ▼
-   ┌─────────┐  ┌─────────┐  ┌─────────┐
-   │  Auth   │  │  Queue  │  │  Cache  │
-   │Service  │  │ (Redis) │  │ (Redis) │
-   └─────────┘  └────┬────┘  └─────────┘
-                     │
-                     ▼
-              ┌─────────────┐
-              │  Workers    │
-              │ (Background)│
-              └──────┬──────┘
-                     │
-                     ▼
-              ┌─────────────┐
-              │  Database   │
-              │ (Postgres)  │
-              └─────────────┘
+```mermaid
+flowchart TB
+    subgraph External["External Traffic"]
+        Users["👤 Users"]
+        CDN["🌐 CDN / Static Hosting"]
+    end
+
+    subgraph Frontend["Frontend Layer"]
+        ReactApp["Frontend (React)"]
+        AdminApp["Admin (React)"]
+    end
+
+    subgraph Cluster["Kubernetes Cluster"]
+        Ingress["Ingress<br/>(TLS termination)"]
+        
+        subgraph Services["API Layer"]
+            API["API Gateway<br/>(Rust)"]
+            Auth["Auth Service"]
+        end
+        
+        subgraph Data["Data Layer"]
+            Cache["Cache<br/>(Redis)"]
+            Queue["Queue<br/>(Redis)"]
+            Workers["Workers<br/>(Background)"]
+            DB["Database<br/>(Postgres)"]
+        end
+    end
+
+    Users --> CDN
+    CDN --> ReactApp
+    CDN --> AdminApp
+    ReactApp --> Ingress
+    AdminApp --> Ingress
+    Ingress --> API
+    API --> Auth
+    API --> Cache
+    API --> Queue
+    Queue --> Workers
+    Workers --> DB
+    API --> DB
 ```
 
 Each component:

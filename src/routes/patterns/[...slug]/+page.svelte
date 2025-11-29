@@ -1,7 +1,53 @@
 <script lang="ts">
-	import { ArrowLeft, BookOpen, ExternalLink } from 'lucide-svelte';
+	import { ArrowLeft, BookOpen } from 'lucide-svelte';
+	import { onMount } from 'svelte';
 
 	let { data } = $props();
+
+	onMount(async () => {
+		// Dynamically import mermaid to avoid SSR issues
+		const mermaid = (await import('mermaid')).default;
+		mermaid.initialize({
+			startOnLoad: false,
+			theme: 'dark',
+			themeVariables: {
+				primaryColor: '#3b82f6',
+				primaryTextColor: '#f9fafb',
+				primaryBorderColor: '#60a5fa',
+				lineColor: '#6b7280',
+				secondaryColor: '#1f2937',
+				tertiaryColor: '#111827',
+				background: '#030712',
+				mainBkg: '#1f2937',
+				secondBkg: '#111827',
+				nodeBorder: '#4b5563',
+				clusterBkg: '#1f2937',
+				clusterBorder: '#374151',
+				titleColor: '#f9fafb',
+				edgeLabelBackground: '#1f2937'
+			}
+		});
+
+		// Find all mermaid code blocks and render them
+		const mermaidBlocks = document.querySelectorAll('pre code.language-mermaid');
+		for (const block of mermaidBlocks) {
+			const pre = block.parentElement;
+			if (!pre) continue;
+
+			const code = block.textContent || '';
+			const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+
+			try {
+				const { svg } = await mermaid.render(id, code);
+				const wrapper = document.createElement('div');
+				wrapper.className = 'mermaid-diagram';
+				wrapper.innerHTML = svg;
+				pre.replaceWith(wrapper);
+			} catch (e) {
+				console.error('Mermaid rendering error:', e);
+			}
+		}
+	});
 </script>
 
 <svelte:head>
@@ -199,6 +245,23 @@
 
 	:global(.prose pre code .string) {
 		color: #34d399;
+	}
+
+	/* Mermaid diagram styling */
+	:global(.mermaid-diagram) {
+		background: #111827;
+		border: 1px solid #374151;
+		border-radius: 0.5rem;
+		padding: 1.5rem;
+		margin: 1.5rem 0;
+		overflow-x: auto;
+	}
+
+	:global(.mermaid-diagram svg) {
+		max-width: 100%;
+		height: auto;
+		display: block;
+		margin: 0 auto;
 	}
 </style>
 
