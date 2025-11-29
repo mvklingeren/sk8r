@@ -1,12 +1,12 @@
-# From Traditional Hosting to Kubernetes Mastery
+# From traditional hosting to Kubernetes mastery
 
 A progressive guide to evolving your application deployment from simple hosting to a fully production-ready Kubernetes setup.
 
 ---
 
-## Level 0: Where You Are Now
+## Level 0: Where are you now?
 
-### Traditional Hosting
+### Traditional hosting
 
 Most developers start here. You have:
 
@@ -92,6 +92,8 @@ spec:
     targetPort: 80
 ```
 
+**A quick note on image tags:** Notice the `image` field ends with `:latest`. While convenient for a first try, this is a bad practice in production. It makes deployments unpredictable and rollbacks difficult. For real applications, you should always use a unique, immutable tag like a version number (`my-react-app:1.2.3`) or a git commit SHA (`my-react-app:b2a34c1`).
+
 **Your Rust Backend:**
 
 ```yaml
@@ -131,6 +133,38 @@ spec:
     targetPort: 3000
 ```
 
+### The Missing Database
+
+What about the `db` service from our `docker-compose.yml`? A naive translation might look like this:
+
+```yaml
+# postgres-deployment-WRONG.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "somepassword" # This should be a secret!
+```
+
+**This is wrong because:** if the `postgres` pod crashes or gets rescheduled, all your data is **gone**. The pod's internal storage is ephemeral. This is a critical mistake for any stateful application.
+
 **What you've gained:**
 - Kubernetes restarts crashed containers automatically
 - Declarative state (what you want, not how to get there)
@@ -138,7 +172,7 @@ spec:
 
 **What's still wrong:**
 - Credentials hardcoded in YAML
-- No persistent storage for database
+- Database will lose all data on restart (no persistent storage)
 - No external access (Ingress)
 - No scaling
 
@@ -148,7 +182,7 @@ spec:
 
 ### ConfigMaps: Externalizing Configuration
 
-Stop rebuilding images just to change a config value.
+Stop rebuilding images just to change a config value. Note that we have removed the `/api` proxy from the Nginx config; we will let our Ingress controller handle that routing in a later step, which is a cleaner and more scalable pattern.
 
 ```yaml
 # frontend-config.yaml
@@ -163,9 +197,6 @@ data:
       location / {
         root /usr/share/nginx/html;
         try_files $uri $uri/ /index.html;
-      }
-      location /api {
-        proxy_pass http://backend:3000;
       }
     }
   
@@ -217,7 +248,7 @@ stringData:  # Use stringData for plain text, data for base64
   API_KEY: "third-party-api-key"
 ```
 
-Reference in your deployment:
+Reference them in your deployment by updating the `env` section to use `envFrom` to load all key-value pairs from the Secret.
 
 ```yaml
 spec:
@@ -227,13 +258,6 @@ spec:
     envFrom:
     - secretRef:
         name: backend-secrets
-    # Or individual values:
-    env:
-    - name: DB_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: backend-secrets
-          key: DATABASE_URL
 ```
 
 **What you've gained:**
@@ -247,29 +271,32 @@ spec:
 
 ### Your Database Needs Storage That Survives
 
-Pods are ephemeral. Your PostgreSQL data shouldn't be.
+Pods are ephemeral. As we saw in Level 1, a database deployed as a simple `Deployment` will lose all its data on a restart. To fix this, we need storage that exists independently of the pod.
 
-```yaml
-# postgres-pvc.yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: postgres-data
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: local-path  # Or your cluster's storage class
-```
+We also need to ensure our database has a stable identity (for network and storage). A `Deployment` is not designed for this. This is where `StatefulSets` come in.
 
 ### StatefulSet for Databases
 
-Deployments are for stateless apps. StatefulSets give you:
-- Stable network identity (postgres-0, postgres-1)
-- Ordered startup/shutdown
-- Persistent storage per replica
+Deployments are for stateless apps. StatefulSets give databases what they need:
+- Stable network identity (e.g., `postgres-0`, `postgres-1`)
+- Ordered startup and shutdown
+- A unique, persistent storage volume for each replica
+
+First, let's create the secret for our database password.
+
+```yaml
+# postgres-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+type: Opaque
+stringData:
+  # Note: In production, this password should be generated and injected by a tool like Vault or External Secrets.
+  password: "really-strong-password" 
+```
+
+Now, we define the `StatefulSet`. It uses `volumeClaimTemplates` to automatically create a `PersistentVolumeClaim` (a request for storage) for each pod replica.
 
 ```yaml
 # postgres-statefulset.yaml
@@ -309,15 +336,18 @@ spec:
       name: data
     spec:
       accessModes: ["ReadWriteOnce"]
+      storageClassName: local-path # This is important! See note below.
       resources:
         requests:
           storage: 10Gi
 ```
 
+**A note on `storageClassName`**: The example uses `storageClassName: local-path`. This is great for local testing (like Minikube/K3s) but has a major limitation: it ties the storage to a specific physical node. If that node goes down, the pod cannot be rescheduled elsewhere. For production, you must use a network-based `storageClassName` provided by your cloud (e.g., `gp2-csi` on AWS, `premium-rwo` on Azure, `standard-rwo` on GKE) to allow for true node-failure resilience.
+
 **What you've gained:**
 - Data persists across pod restarts
-- Data survives node failures (with proper storage)
-- Stable DNS: `postgres-0.postgres.namespace.svc.cluster.local`
+- With proper network storage, data can survive node failures
+- Stable DNS for your database pods: `postgres-0.postgres.namespace.svc.cluster.local`
 
 ---
 
@@ -325,16 +355,16 @@ spec:
 
 ### From NodePort Hacks to Proper Ingress
 
-**The wrong way** (but we've all done it):
+**The wrong way** (but we've all done it for a quick test):
 ```yaml
 spec:
   type: NodePort
   ports:
   - port: 80
-    nodePort: 30080  # Access via http://node-ip:30080
+    nodePort: 30080  # Access via http://<any-node-ip>:30080
 ```
 
-**The right way - Ingress:**
+**The right way - Ingress:** An Ingress is an API object that manages external access to services in a cluster, typically HTTP. It can provide load balancing, SSL termination, and name-based virtual hosting.
 
 ```yaml
 # ingress.yaml
@@ -348,12 +378,18 @@ spec:
   tls:
   - hosts:
     - myapp.example.com
-    - api.myapp.example.com
-    secretName: myapp-tls
+    secretName: myapp-tls # cert-manager will create/populate this
   rules:
   - host: myapp.example.com
     http:
       paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 3000
       - path: /
         pathType: Prefix
         backend:
@@ -361,19 +397,11 @@ spec:
             name: frontend
             port:
               number: 80
-  - host: api.myapp.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: backend
-            port:
-              number: 3000
 ```
 
 ### Automatic TLS with cert-manager
+
+Manually managing SSL certificates is tedious and error-prone. `cert-manager` automates it. After installing `cert-manager` in your cluster, you create an `Issuer` or `ClusterIssuer` that defines how certificates should be obtained.
 
 ```yaml
 # cluster-issuer.yaml
@@ -390,14 +418,14 @@ spec:
     solvers:
     - http01:
         ingress:
-          class: traefik  # or nginx
+          class: nginx  # or traefik, etc. Must match your Ingress controller.
 ```
 
 **What you've gained:**
-- Proper domain names
-- Automatic HTTPS certificates
-- Path-based and host-based routing
-- Load balancing across replicas
+- A single entry point for your app with a proper domain name.
+- Automatic HTTPS certificates from Let's Encrypt.
+- Clean, path-based routing to separate frontend and backend services.
+- Native load balancing across replicas.
 
 ---
 
@@ -405,26 +433,26 @@ spec:
 
 ### Health Checks
 
-Tell Kubernetes how to know if your app is healthy:
+Tell Kubernetes how to know if your app is healthy, so it can make smart decisions about restarts and traffic routing.
 
 ```yaml
 spec:
   containers:
   - name: backend
     image: my-rust-api:latest
-    livenessProbe:      # Is the container alive?
+    livenessProbe:      # Is the container alive? If not, restart it.
       httpGet:
         path: /health
         port: 3000
       initialDelaySeconds: 10
       periodSeconds: 10
-    readinessProbe:     # Is it ready to receive traffic?
+    readinessProbe:     # Is it ready to receive traffic? If not, remove from Service.
       httpGet:
         path: /ready
         port: 3000
       initialDelaySeconds: 5
       periodSeconds: 5
-    startupProbe:       # For slow-starting containers
+    startupProbe:       # For slow-starting containers. Delays other probes.
       httpGet:
         path: /health
         port: 3000
@@ -434,22 +462,24 @@ spec:
 
 ### Resource Limits
 
-Don't let one app starve others:
+Don't let one runaway app starve other applications in the cluster.
 
 ```yaml
 spec:
   containers:
   - name: backend
     resources:
-      requests:         # Guaranteed resources
+      requests:         # Guaranteed resources (for scheduling)
         memory: "256Mi"
-        cpu: "250m"
-      limits:           # Maximum allowed
+        cpu: "250m" # 0.25 of a CPU core
+      limits:           # Maximum allowed (enforced by cgroups)
         memory: "512Mi"
-        cpu: "500m"
+        cpu: "500m" # 0.5 of a CPU core
 ```
 
 ### Scaling
+
+Handle traffic spikes by automatically scaling your stateless services.
 
 ```yaml
 # Horizontal Pod Autoscaler
@@ -472,18 +502,26 @@ spec:
         type: Utilization
         averageUtilization: 70
 ```
+With `minReplicas: 2`, you are ensuring high availability. To protect your application during voluntary disruptions (like node upgrades), you should also create a `PodDisruptionBudget` (PDB) to ensure a minimum number of pods are always running.
 
 **What you've gained:**
-- Automatic restarts of unhealthy containers
-- Traffic only goes to ready pods
-- Protection against resource exhaustion
-- Automatic scaling based on load
+- Automatic restarts of unhealthy containers.
+- Zero-downtime deployments (traffic only goes to ready pods).
+- Protection against resource exhaustion and "noisy neighbors".
+- Automatic scaling based on real-time load.
 
 ---
 
 ## Level 6: The Complete Picture
 
 ### Full Microservices Architecture
+
+Now let's put it all together. Our final architecture doesn't just include our frontend and backend. As an application grows, it's common to add other components for performance and reliability. Our picture includes:
+
+-   **A Cache (Redis):** A fast, in-memory store to reduce database load and speed up responses. We'll run this as a `StatefulSet`.
+-   **A Background Worker:** A separate deployment for handling long-running or asynchronous jobs (e.g., sending emails, processing data) without blocking the API. It communicates with the API via a job queue, often backed by Redis.
+
+This diagram shows how all the pieces we've discussed (and these new ones) fit together in a production-grade setup.
 
 ```mermaid
 flowchart TB
@@ -580,7 +618,7 @@ Each component:
 | Aspect | Traditional | Kubernetes |
 |--------|-------------|------------|
 | Deployment | SSH + git pull | `kubectl apply -f` |
-| Scaling | Buy bigger server | Add replicas |
+| Scaling | Buy bigger server | `kubectl scale` / HPA |
 | Config | .env files, hardcoded | ConfigMaps, Secrets |
 | Storage | Local disk | PersistentVolumes |
 | Networking | nginx reverse proxy | Ingress + Services |
@@ -600,4 +638,3 @@ Now that you understand the journey, explore these resources in your cluster:
 - **[PersistentVolumeClaims](/persistentvolumeclaims)** - Request storage
 - **[Ingresses](/ingresses)** - Expose your services
 - **[Certificates](/certificates)** - Manage TLS certificates
-
