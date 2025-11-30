@@ -236,26 +236,26 @@
 						class="pl-9 pr-4 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 					/>
 				</div>
-				{#if onRefresh}
-					<button
-						onclick={onRefresh}
-						class="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-					>
-						<RefreshCw size={16} />
-						Refresh
-					</button>
-				{/if}
+				
 				{#if $learningMode && learning}
 					<button
 						bind:this={helpButtonRef}
 						onclick={() => showLearningPanel = !showLearningPanel}
 						onmouseenter={() => showLearningPanel = true}
-						class="flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 {showLearningPanel ? 'bg-amber-500 text-white shadow-lg scale-110' : 'bg-amber-100 text-amber-600 hover:bg-amber-200 hover:scale-105'}"
+						class="flex items-center justify-center w-10 h-10 rounded-md transition-all duration-200 {showLearningPanel ? 'bg-amber-500 text-white shadow-lg scale-110' : 'bg-amber-100 text-amber-600 hover:bg-amber-200 hover:scale-105'}"
 						title="Learn about {resourceType}"
 						aria-label="Learn about {resourceType}"
 						aria-expanded={showLearningPanel}
 					>
 						<HelpCircle size={20} />
+					</button>
+				{/if}
+				{#if onRefresh}
+					<button
+						onclick={onRefresh}
+						class="flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+					>
+						<RefreshCw size={16} />
 					</button>
 				{/if}
 			</div>

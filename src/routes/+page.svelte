@@ -11,7 +11,7 @@
 	import { apiClient } from '$lib/utils/apiClient';
 	import { browser } from '$app/environment';
 	import { dashboardConfig } from '$lib/config/dashboardConfig';
-	import { Plus } from 'lucide-svelte';
+	import { resourceCreator } from '$lib/stores/resourceCreator';
 	
 	// Lazy load components to avoid SSR issues with shiki/js-yaml
 	let ResourceCreator: any = $state(null);
@@ -30,9 +30,6 @@
 
 	let { data }: Props = $props();
 	let initialized = $state(false);
-	let showCreator = $state(false);
-	let creatorMode = $state<'create' | 'edit'>('create');
-	let editYaml = $state<string | undefined>(undefined);
 	
 	// Pod logs state
 	let showLogs = $state(false);
@@ -83,7 +80,7 @@
 		// Ctrl+N or Cmd+N to open create dialog
 		if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
 			e.preventDefault();
-			openCreator();
+			resourceCreator.open();
 		}
 	}
 
@@ -103,12 +100,6 @@
 		};
 	});
 
-	function openCreator() {
-		creatorMode = 'create';
-		editYaml = undefined;
-		showCreator = true;
-	}
-
 	async function handleEdit(resource: K8sResource) {
 		// Convert resource to YAML for editing
 		// Remove managed fields and other metadata that shouldn't be edited
@@ -126,14 +117,13 @@
 		
 		// Dynamically import js-yaml only when needed
 		const yaml = await import('js-yaml');
-		editYaml = yaml.dump(cleanResource, { 
+		const yamlStr = yaml.dump(cleanResource, { 
 			indent: 2, 
 			lineWidth: -1,
 			noRefs: true,
 			sortKeys: false
 		});
-		creatorMode = 'edit';
-		showCreator = true;
+		resourceCreator.openEdit(yamlStr);
 	}
 
 	async function handleDelete(resource: K8sResource) {
@@ -258,18 +248,6 @@
 
 <div>
 	{#if data.resourceType === 'overview' || !data.resourceType}
-		<!-- Dashboard header with Create button -->
-		<div class="flex items-center justify-between mb-6">
-			<div></div>
-			<button
-				onclick={openCreator}
-				class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-				title="Create Resource (Ctrl+N)"
-			>
-				<Plus size={18} />
-				Create Resource
-			</button>
-		</div>
 		<ClusterDashboard config={dashboardConfig} />
 		
 		<!-- Events Panel on Dashboard -->
@@ -281,18 +259,6 @@
 			<p class="text-red-800">Error: {data.error}</p>
 		</div>
 	{:else}
-		<!-- Resource list header with Create button -->
-		<div class="flex items-center justify-end mb-4">
-			<button
-				onclick={openCreator}
-				class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-				title="Create Resource (Ctrl+N)"
-			>
-				<Plus size={18} />
-				Create Resource
-			</button>
-		</div>
-
 		{#if data.metricsEnabled && data.metricsCharts.length > 0}
 			<MetricsPanel
 				charts={data.metricsCharts}
@@ -323,11 +289,11 @@
 {#if ResourceCreator}
 	<svelte:component 
 		this={ResourceCreator}
-		isOpen={showCreator}
-		onClose={() => showCreator = false}
+		isOpen={$resourceCreator.isOpen}
+		onClose={() => resourceCreator.close()}
 		onSuccess={handleCreatorSuccess}
-		initialYaml={editYaml}
-		mode={creatorMode}
+		initialYaml={$resourceCreator.initialYaml}
+		mode={$resourceCreator.mode}
 	/>
 {/if}
 

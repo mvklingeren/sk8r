@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked, Sun, Moon, Server, RefreshCw, AlertCircle } from 'lucide-svelte';
+	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked, Sun, Moon, Server, RefreshCw, AlertCircle, Plus } from 'lucide-svelte';
 	import { navigationConfig } from '$lib/config/navigationConfig';
 	import type { NavigationSection } from '$lib/types/navigationConfig';
 	import { getIcon } from '$lib/utils/iconMapping';
@@ -9,6 +9,7 @@
 	import { learningMode } from '$lib/stores/learningMode';
 	import { darkMode } from '$lib/stores/darkMode';
 	import { clusterStore, type ClusterContext } from '$lib/stores/cluster';
+	import { resourceCreator } from '$lib/stores/resourceCreator';
 
 	// Design patterns configuration
 	const designPatterns = [
@@ -79,7 +80,7 @@
 </script>
 
 <aside class="w-64 bg-gray-900 text-gray-100 h-full flex flex-col">
-	<div class="p-4 border-b border-gray-800">
+	<div class="px-4 pt-4 pb-1 border-b border-gray-800">
 		<a href="/" class="block" onclick={() => navigation.reset()}>
 			<h1 class="text-xl font-bold flex items-center gap-2">
 				<Box class="w-6 h-6" />
@@ -96,7 +97,20 @@
 		</div>
 	</div>
 
-	<nav class="flex-1 overflow-y-auto p-2">
+	<nav class="flex-1 overflow-y-auto px-2 flex flex-col">
+
+		<!-- Create Resource Button (bottom-aligned) -->
+		<div class="pb-4 pt-2">
+			<button
+				onclick={() => resourceCreator.open()}
+				class="w-full flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+				title="Create Resource (Ctrl+N)"
+			>
+				<Plus size={18} />
+				<span class="text-sm font-medium">Create Resource</span>
+			</button>
+		</div>
+
 		{#each navigationConfig.sections as section (section.key)}
 			{@const state = sectionStates.find((s) => s.key === section.key)}
 			<div class="mb-1">
@@ -156,6 +170,7 @@
 				</div>
 			{/if}
 		</div>
+
 	</nav>
 
 	<div class="p-4 border-t border-gray-800">
