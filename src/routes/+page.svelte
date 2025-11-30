@@ -42,6 +42,9 @@
 	let eventsFilterKind = $state('');
 	let eventsFilterName = $state('');
 	let eventsFilterNamespace = $state('');
+	
+	// Events panel expanded state (for hiding table)
+	let eventsExpanded = $state(false);
 
 	// On initial load, sync the store FROM the server data (URL params)
 	$effect(() => {
@@ -276,12 +279,20 @@
 			onRefresh={handleRefresh}
 			onLogs={data.resourceType === 'pods' ? handleLogs : undefined}
 			onEvents={handleEvents}
+			hideTable={eventsExpanded}
+			onToggleEvents={() => eventsExpanded = !eventsExpanded}
 		/>
 		
-		<!-- Events Panel below resource list -->
-		<div class="mt-6">
-			<EventsPanel collapsed={true} namespace={data.namespace === '*' ? '' : data.namespace} />
-		</div>
+		<!-- Events Panel below resource list (only visible when events toggle is on) -->
+		{#if eventsExpanded}
+			<div class="mt-6">
+				<EventsPanel 
+					collapsed={false} 
+					namespace={data.namespace === '*' ? '' : data.namespace} 
+					onCollapseChange={(collapsed) => eventsExpanded = !collapsed}
+				/>
+			</div>
+		{/if}
 	{/if}
 </div>
 

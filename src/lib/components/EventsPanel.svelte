@@ -45,6 +45,7 @@
 		collapsed?: boolean;
 		maxEvents?: number;
 		onClose?: () => void;
+		onCollapseChange?: (collapsed: boolean) => void;
 	}
 
 	let { 
@@ -53,12 +54,18 @@
 		filterName = '',
 		collapsed = false,
 		maxEvents = 100,
-		onClose
+		onClose,
+		onCollapseChange
 	}: Props = $props();
 
 	let events = $state<K8sEvent[]>([]);
 	let isCollapsed = $state(collapsed);
 	let isConnected = $state(false);
+	
+	// Sync internal state with prop changes
+	$effect(() => {
+		isCollapsed = collapsed;
+	});
 	let isLoading = $state(false);
 	let isPaused = $state(false);
 	let error = $state<string | null>(null);
@@ -224,10 +231,10 @@
 	<!-- Header -->
 	<div 
 		class="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700 cursor-pointer select-none"
-		onclick={() => { isCollapsed = !isCollapsed; if (!isCollapsed && !isConnected) connect(); }}
+		onclick={() => { isCollapsed = !isCollapsed; onCollapseChange?.(isCollapsed); if (!isCollapsed && !isConnected) connect(); }}
 		role="button"
 		tabindex="0"
-		onkeydown={(e) => e.key === 'Enter' && (isCollapsed = !isCollapsed)}
+		onkeydown={(e) => { if (e.key === 'Enter') { isCollapsed = !isCollapsed; onCollapseChange?.(isCollapsed); } }}
 	>
 		<div class="flex items-center gap-3">
 			<Activity size={18} class="text-cyan-400" />

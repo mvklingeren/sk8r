@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Trash2, Edit, RefreshCw, Search, HelpCircle, ExternalLink, X, ScrollText, Activity } from 'lucide-svelte';
+	import { Trash2, Edit, RefreshCw, Search, HelpCircle, ExternalLink, X, ScrollText, Activity, Table } from 'lucide-svelte';
 	import type { K8sResource } from '$lib/types/k8s';
 	import type { ColumnConfig } from '$lib/types/columnConfig';
 	import { resourceColumnConfigs, defaultColumnConfig } from '$lib/config/resourceColumns';
@@ -18,9 +18,11 @@
 		onRefresh?: () => void;
 		onLogs?: (resource: K8sResource) => void;
 		onEvents?: (resource: K8sResource) => void;
+		hideTable?: boolean;
+		onToggleEvents?: () => void;
 	}
 
-	let { resourceType, resources = [], namespace = 'default', onEdit, onDelete, onRefresh, onLogs, onEvents }: Props = $props();
+	let { resourceType, resources = [], namespace = 'default', onEdit, onDelete, onRefresh, onLogs, onEvents, hideTable = false, onToggleEvents }: Props = $props();
 	let searchQuery = $state('');
 	let sortColumn = $state<string | null>(null);
 	let sortDirection = $state<'asc' | 'desc'>('asc');
@@ -258,10 +260,25 @@
 						<RefreshCw size={16} />
 					</button>
 				{/if}
+
+				{#if onToggleEvents}
+					<button
+						onclick={onToggleEvents}
+						class="flex items-center justify-center w-10 h-10 rounded-md transition-colors {hideTable ? 'bg-purple-500 text-white hover:bg-purple-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-slate-600 dark:text-slate-300 dark:hover:bg-slate-500'}"
+						title={hideTable ? 'Show Table' : 'Show Events Stream'}
+					>
+						{#if hideTable}
+							<Table size={16} />
+						{:else}
+							<Activity size={16} />
+						{/if}
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>
 
+	{#if !hideTable}
 	<div class="overflow-x-auto">
 		<table class="w-full">
 			<thead class="bg-gray-50 dark:bg-slate-700">
@@ -404,6 +421,7 @@
 			</div>
 		{/if}
 	</div>
+	{/if}
 </div>
 
 <style>
