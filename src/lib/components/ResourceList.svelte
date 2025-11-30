@@ -321,7 +321,7 @@
 					</th>
 				</tr>
 			</thead>
-			<tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+			<tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
 				{#each filteredResources as resource}
 					<tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
 						{#each columns as column}
