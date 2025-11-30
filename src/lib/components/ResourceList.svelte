@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Trash2, Edit, RefreshCw, Search, HelpCircle, ExternalLink, X, ScrollText, Activity, Table } from 'lucide-svelte';
+	import { Trash2, Edit, RefreshCw, Search, HelpCircle, ExternalLink, X, ScrollText, Activity, Table, Terminal } from 'lucide-svelte';
 	import type { K8sResource } from '$lib/types/k8s';
 	import type { ColumnConfig } from '$lib/types/columnConfig';
 	import { resourceColumnConfigs, defaultColumnConfig } from '$lib/config/resourceColumns';
@@ -17,12 +17,13 @@
 		onDelete?: (resource: K8sResource) => void;
 		onRefresh?: () => void;
 		onLogs?: (resource: K8sResource) => void;
+		onExec?: (resource: K8sResource) => void;
 		onEvents?: (resource: K8sResource) => void;
 		hideTable?: boolean;
 		onToggleEvents?: () => void;
 	}
 
-	let { resourceType, resources = [], namespace = 'default', onEdit, onDelete, onRefresh, onLogs, onEvents, hideTable = false, onToggleEvents }: Props = $props();
+	let { resourceType, resources = [], namespace = 'default', onEdit, onDelete, onRefresh, onLogs, onExec, onEvents, hideTable = false, onToggleEvents }: Props = $props();
 	let searchQuery = $state('');
 	let sortColumn = $state<string | null>(null);
 	let sortDirection = $state<'asc' | 'desc'>('asc');
@@ -375,6 +376,15 @@
 										title="View Logs"
 									>
 										<ScrollText size={16} />
+									</button>
+								{/if}
+								{#if onExec}
+									<button
+										onclick={() => onExec(resource)}
+										class="text-emerald-600 hover:text-emerald-900 transition-colors"
+										title="Open Terminal"
+									>
+										<Terminal size={16} />
 									</button>
 								{/if}
 								{#if onEvents}

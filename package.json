@@ -7,6 +7,7 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
+		"start": "node server.js",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -45,17 +46,23 @@
 	"dependencies": {
 		"@kubernetes/client-node": "^1.4.0",
 		"@types/js-yaml": "^4.0.9",
+		"@types/ws": "^8.18.1",
+		"@xterm/addon-fit": "^0.10.0",
+		"@xterm/addon-web-links": "^0.11.0",
+		"@xterm/xterm": "^5.5.0",
 		"ajv": "^8.17.1",
 		"ajv-formats": "^3.0.1",
 		"chart.js": "^4.5.1",
 		"chartjs-adapter-date-fns": "^3.0.0",
 		"date-fns": "^4.1.0",
+		"express": "^5.1.0",
 		"fast-json-patch": "^3.1.1",
 		"js-yaml": "^4.1.1",
 		"json-logic-js": "^2.0.5",
 		"lucide-svelte": "^0.555.0",
 		"marked": "^17.0.1",
 		"mermaid": "^11.12.1",
-		"shiki": "^3.17.0"
+		"shiki": "^3.17.0",
+		"ws": "^8.18.3"
 	}
 }

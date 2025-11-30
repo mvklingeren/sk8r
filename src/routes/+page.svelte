@@ -16,6 +16,7 @@
 	// Lazy load components to avoid SSR issues with shiki/js-yaml
 	let ResourceCreator: any = $state(null);
 	let PodLogsViewer: any = $state(null);
+	let PodTerminal: any = $state(null);
 
 	interface Props {
 		data: {
@@ -36,6 +37,12 @@
 	let logsPodName = $state('');
 	let logsPodNamespace = $state('');
 	let logsPodContainers = $state<string[]>([]);
+	
+	// Pod terminal state
+	let showTerminal = $state(false);
+	let terminalPodName = $state('');
+	let terminalPodNamespace = $state('');
+	let terminalPodContainers = $state<string[]>([]);
 	
 	// Events panel state for resource-specific events
 	let showResourceEvents = $state(false);
@@ -91,12 +98,14 @@
 		document.addEventListener('keydown', handleKeydown);
 		
 		// Lazy load components
-		const [creatorModule, logsModule] = await Promise.all([
+		const [creatorModule, logsModule, terminalModule] = await Promise.all([
 			import('$lib/components/ResourceCreator.svelte'),
-			import('$lib/components/PodLogsViewer.svelte')
+			import('$lib/components/PodLogsViewer.svelte'),
+			import('$lib/components/PodTerminal.svelte')
 		]);
 		ResourceCreator = creatorModule.default;
 		PodLogsViewer = logsModule.default;
+		PodTerminal = terminalModule.default;
 		
 		return () => {
 			document.removeEventListener('keydown', handleKeydown);
@@ -165,6 +174,15 @@
 		logsPodNamespace = resource.metadata.namespace || data.namespace;
 		logsPodContainers = containers;
 		showLogs = true;
+	}
+
+	function handleExec(resource: K8sResource) {
+		// Extract container names from pod spec
+		const containers = resource.spec?.containers?.map((c: { name: string }) => c.name) || [];
+		terminalPodName = resource.metadata.name;
+		terminalPodNamespace = resource.metadata.namespace || data.namespace;
+		terminalPodContainers = containers;
+		showTerminal = true;
 	}
 
 	function handleEvents(resource: K8sResource) {
@@ -278,6 +296,7 @@
 			onDelete={handleDelete}
 			onRefresh={handleRefresh}
 			onLogs={data.resourceType === 'pods' ? handleLogs : undefined}
+			onExec={data.resourceType === 'pods' ? handleExec : undefined}
 			onEvents={handleEvents}
 			hideTable={eventsExpanded}
 			onToggleEvents={() => eventsExpanded = !eventsExpanded}
@@ -316,6 +335,17 @@
 		namespace={logsPodNamespace}
 		containers={logsPodContainers}
 		onClose={() => showLogs = false}
+	/>
+{/if}
+
+<!-- Pod Terminal Modal (lazy loaded) -->
+{#if PodTerminal && showTerminal}
+	<svelte:component 
+		this={PodTerminal}
+		podName={terminalPodName}
+		namespace={terminalPodNamespace}
+		containers={terminalPodContainers}
+		onClose={() => showTerminal = false}
 	/>
 {/if}
 
