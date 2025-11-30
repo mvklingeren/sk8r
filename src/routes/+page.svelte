@@ -267,7 +267,7 @@
 	}
 </script>
 
-<div>
+<div class={eventsExpanded ? 'flex flex-col h-[calc(100vh-3rem)]' : ''}>
 	{#if data.resourceType === 'overview' || !data.resourceType}
 		<ClusterDashboard config={dashboardConfig} />
 		
@@ -304,11 +304,12 @@
 		
 		<!-- Events Panel below resource list (only visible when events toggle is on) -->
 		{#if eventsExpanded}
-			<div class="mt-6">
+			<div class="mt-6 flex-1 flex flex-col min-h-0">
 				<EventsPanel 
 					collapsed={false} 
 					namespace={data.namespace === '*' ? '' : data.namespace} 
 					onCollapseChange={(collapsed) => eventsExpanded = !collapsed}
+					fillHeight={true}
 				/>
 			</div>
 		{/if}
@@ -317,8 +318,7 @@
 
 <!-- Resource Creator Modal (lazy loaded) -->
 {#if ResourceCreator}
-	<svelte:component 
-		this={ResourceCreator}
+	<ResourceCreator
 		isOpen={$resourceCreator.isOpen}
 		onClose={() => resourceCreator.close()}
 		onSuccess={handleCreatorSuccess}
@@ -329,8 +329,7 @@
 
 <!-- Pod Logs Viewer Modal (lazy loaded) -->
 {#if PodLogsViewer && showLogs}
-	<svelte:component 
-		this={PodLogsViewer}
+	<PodLogsViewer
 		podName={logsPodName}
 		namespace={logsPodNamespace}
 		containers={logsPodContainers}
@@ -340,8 +339,7 @@
 
 <!-- Pod Terminal Modal (lazy loaded) -->
 {#if PodTerminal && showTerminal}
-	<svelte:component 
-		this={PodTerminal}
+	<PodTerminal
 		podName={terminalPodName}
 		namespace={terminalPodNamespace}
 		containers={terminalPodContainers}

@@ -44,6 +44,7 @@
 		filterName?: string;
 		collapsed?: boolean;
 		maxEvents?: number;
+		fillHeight?: boolean;
 		onClose?: () => void;
 		onCollapseChange?: (collapsed: boolean) => void;
 	}
@@ -54,6 +55,7 @@
 		filterName = '',
 		collapsed = false,
 		maxEvents = 100,
+		fillHeight = false,
 		onClose,
 		onCollapseChange
 	}: Props = $props();
@@ -73,7 +75,7 @@
 	let autoScroll = $state(true);
 
 	let eventSource: EventSource | null = null;
-	let eventsContainer: HTMLDivElement;
+	let eventsContainer = $state<HTMLDivElement | null>(null);
 
 	// Filtered events based on type filter
 	let filteredEvents = $derived.by(() => {
@@ -227,7 +229,7 @@
 	});
 </script>
 
-<div class="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+<div class="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden {fillHeight ? 'flex flex-col h-full' : ''}">
 	<!-- Header -->
 	<div 
 		class="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700 cursor-pointer select-none"
@@ -354,7 +356,7 @@
 	{#if !isCollapsed}
 		<div 
 			bind:this={eventsContainer}
-			class="max-h-64 overflow-y-auto"
+			class="{fillHeight ? 'flex-1 min-h-0' : 'max-h-64'} overflow-y-auto"
 		>
 			{#if error}
 				<div class="p-4 text-center text-red-400 text-sm">

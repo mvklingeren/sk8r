@@ -15,8 +15,8 @@
 	let yamlModule: any = $state(null);
 	let highlightedHtml = $state('');
 	let error = $state<{ message: string; line?: number } | null>(null);
-	let textareaRef: HTMLTextAreaElement;
-	let preRef: HTMLPreElement;
+	let textareaRef = $state<HTMLTextAreaElement | null>(null);
+	let preRef = $state<HTMLPreElement | null>(null);
 	let copied = $state(false);
 
 	// Line numbers

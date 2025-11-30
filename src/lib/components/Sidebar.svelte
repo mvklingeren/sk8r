@@ -113,30 +113,36 @@
 
 		{#each navigationConfig.sections as section (section.key)}
 			{@const state = sectionStates.find((s) => s.key === section.key)}
+			{@const SectionIcon = getIcon(section.icon)}
 			<div class="mb-1">
 				<button
 					onclick={() => toggleSection(section.key)}
 					class="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-800 transition-colors text-left"
 				>
 					{#if section.items.length > 0}
-						<svelte:component this={state?.expanded ? ChevronDown : ChevronRight} size={16} />
+						{#if state?.expanded}
+							<ChevronDown size={16} />
+						{:else}
+							<ChevronRight size={16} />
+						{/if}
 					{:else}
 						<div class="w-4"></div>
 					{/if}
-					<svelte:component this={getIcon(section.icon)} size={18} />
+					<SectionIcon size={18} />
 					<span class="flex-1 text-sm">{section.label}</span>
 				</button>
 
 				{#if state?.expanded && section.items.length > 0}
 					<div class="ml-6 mt-1">
 						{#each section.items as item (item.label)}
+							{@const ItemIcon = getIcon(item.icon)}
 							<button
 								onclick={() => (item.resourceType ? selectResource(item.resourceType) : null)}
 								class="w-full flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors text-left text-sm"
 								class:bg-gray-800={$navigation.selectedResource === item.resourceType}
 								title={item.description || ''}
 							>
-								<svelte:component this={getIcon(item.icon)} size={14} />
+								<ItemIcon size={14} />
 								<span class="text-gray-300">{item.label}</span>
 							</button>
 						{/each}
@@ -150,7 +156,11 @@
 				onclick={() => patternsExpanded = !patternsExpanded}
 				class="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-800 transition-colors text-left"
 			>
-				<svelte:component this={patternsExpanded ? ChevronDown : ChevronRight} size={16} />
+				{#if patternsExpanded}
+					<ChevronDown size={16} />
+				{:else}
+					<ChevronRight size={16} />
+				{/if}
 				<BookMarked size={18} class="text-amber-400" />
 				<span class="flex-1 text-sm text-amber-300">Design Patterns</span>
 			</button>
@@ -158,12 +168,13 @@
 			{#if patternsExpanded}
 				<div class="ml-6 mt-1">
 					{#each designPatterns as pattern (pattern.key)}
+						{@const PatternIcon = getIcon(pattern.icon)}
 						<a
 							href="/patterns/{pattern.key}"
 							class="w-full flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors text-left text-sm block"
 							title={pattern.description}
 						>
-							<svelte:component this={getIcon(pattern.icon)} size={14} class="text-amber-400" />
+							<PatternIcon size={14} class="text-amber-400" />
 							<span class="text-gray-300">{pattern.label}</span>
 						</a>
 					{/each}

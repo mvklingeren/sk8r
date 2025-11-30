@@ -21,7 +21,7 @@
 	let results = $state<SearchResult[]>([]);
 	let loading = $state(false);
 	let selectedIndex = $state(0);
-	let searchInput: HTMLInputElement;
+	let searchInput = $state<HTMLInputElement | null>(null);
 
 	// Resource types that we can search through
 	const searchableResources = [
@@ -142,7 +142,17 @@
 
 {#if isOpen}
 	<!-- Backdrop -->
-	<div class="fixed inset-0 z-50 backdrop-blur-sm" style="background-color: rgba(0, 0, 0, 0.2);" onclick={onClose}></div>
+	<div
+		role="button"
+		tabindex="-1"
+		onclick={onClose}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') onClose();
+		}}
+		class="fixed inset-0 z-50 backdrop-blur-sm"
+		style="background-color: rgba(0, 0, 0, 0.2);"
+		aria-label="Close search"
+	></div>
 	
 	<!-- Search Modal -->
 	<div class="fixed top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl bg-white rounded-lg shadow-2xl z-50 border border-gray-200">

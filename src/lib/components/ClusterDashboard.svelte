@@ -348,7 +348,8 @@
 					{#if data.loading}
 						<LoaderCircle size={14} class="animate-spin text-gray-400" />
 					{:else if statusIndicator}
-						<svelte:component this={statusIndicator.icon} size={14} class={statusIndicator.color} />
+						{@const StatusIcon = statusIndicator.icon}
+						<StatusIcon size={14} class={statusIndicator.color} />
 					{/if}
 				</div>
 				

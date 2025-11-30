@@ -22,7 +22,7 @@
 	let success = $state<string | null>(null);
 	let showTemplates = $state(true);
 
-	let editorRef: { getValue: () => string; isValid: () => boolean; getError: () => { message: string; line?: number } | null };
+	let editorRef = $state<{ getValue: () => string; isValid: () => boolean; getError: () => { message: string; line?: number } | null } | null>(null);
 
 	// Group templates by category
 	const templateGroups = [
