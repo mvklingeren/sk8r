@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Trash2, Edit, RefreshCw, Search, HelpCircle, ExternalLink, X } from 'lucide-svelte';
+	import { Trash2, Edit, RefreshCw, Search, HelpCircle, ExternalLink, X, ScrollText, Activity } from 'lucide-svelte';
 	import type { K8sResource } from '$lib/types/k8s';
 	import type { ColumnConfig } from '$lib/types/columnConfig';
 	import { resourceColumnConfigs, defaultColumnConfig } from '$lib/config/resourceColumns';
@@ -16,9 +16,11 @@
 		onEdit?: (resource: K8sResource) => void;
 		onDelete?: (resource: K8sResource) => void;
 		onRefresh?: () => void;
+		onLogs?: (resource: K8sResource) => void;
+		onEvents?: (resource: K8sResource) => void;
 	}
 
-	let { resourceType, resources = [], namespace = 'default', onEdit, onDelete, onRefresh }: Props = $props();
+	let { resourceType, resources = [], namespace = 'default', onEdit, onDelete, onRefresh, onLogs, onEvents }: Props = $props();
 	let searchQuery = $state('');
 	let sortColumn = $state<string | null>(null);
 	let sortDirection = $state<'asc' | 'desc'>('asc');
@@ -349,6 +351,24 @@
 						{/if}
 						<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
 							<div class="flex items-center justify-end gap-2">
+								{#if onLogs}
+									<button
+										onclick={() => onLogs(resource)}
+										class="text-cyan-600 hover:text-cyan-900 transition-colors"
+										title="View Logs"
+									>
+										<ScrollText size={16} />
+									</button>
+								{/if}
+								{#if onEvents}
+									<button
+										onclick={() => onEvents(resource)}
+										class="text-purple-600 hover:text-purple-900 transition-colors"
+										title="View Events"
+									>
+										<Activity size={16} />
+									</button>
+								{/if}
 								{#if onEdit}
 									<button
 										onclick={() => onEdit(resource)}

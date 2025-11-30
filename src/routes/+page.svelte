@@ -1,14 +1,21 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { navigation } from '$lib/stores/navigation';
 	import ResourceList from '$lib/components/ResourceList.svelte';
 	import MetricsPanel from '$lib/components/MetricsPanel.svelte';
 	import ClusterDashboard from '$lib/components/ClusterDashboard.svelte';
+	import EventsPanel from '$lib/components/EventsPanel.svelte';
 	import type { K8sResource } from '$lib/types/k8s';
 	import type { MetricChartConfig, MetricSeries } from '$lib/types/metricsTypes';
 	import { goto } from '$app/navigation';
 	import { apiClient } from '$lib/utils/apiClient';
 	import { browser } from '$app/environment';
 	import { dashboardConfig } from '$lib/config/dashboardConfig';
+	import { Plus } from 'lucide-svelte';
+	
+	// Lazy load components to avoid SSR issues with shiki/js-yaml
+	let ResourceCreator: any = $state(null);
+	let PodLogsViewer: any = $state(null);
 
 	interface Props {
 		data: {
@@ -23,6 +30,21 @@
 
 	let { data }: Props = $props();
 	let initialized = $state(false);
+	let showCreator = $state(false);
+	let creatorMode = $state<'create' | 'edit'>('create');
+	let editYaml = $state<string | undefined>(undefined);
+	
+	// Pod logs state
+	let showLogs = $state(false);
+	let logsPodName = $state('');
+	let logsPodNamespace = $state('');
+	let logsPodContainers = $state<string[]>([]);
+	
+	// Events panel state for resource-specific events
+	let showResourceEvents = $state(false);
+	let eventsFilterKind = $state('');
+	let eventsFilterName = $state('');
+	let eventsFilterNamespace = $state('');
 
 	// On initial load, sync the store FROM the server data (URL params)
 	$effect(() => {
@@ -56,32 +78,115 @@
 		}
 	});
 
-	function handleEdit(resource: K8sResource) {
-		console.log('Edit resource:', resource);
+	// Keyboard shortcut for creating resources
+	function handleKeydown(e: KeyboardEvent) {
+		// Ctrl+N or Cmd+N to open create dialog
+		if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+			e.preventDefault();
+			openCreator();
+		}
+	}
+
+	onMount(async () => {
+		document.addEventListener('keydown', handleKeydown);
+		
+		// Lazy load components
+		const [creatorModule, logsModule] = await Promise.all([
+			import('$lib/components/ResourceCreator.svelte'),
+			import('$lib/components/PodLogsViewer.svelte')
+		]);
+		ResourceCreator = creatorModule.default;
+		PodLogsViewer = logsModule.default;
+		
+		return () => {
+			document.removeEventListener('keydown', handleKeydown);
+		};
+	});
+
+	function openCreator() {
+		creatorMode = 'create';
+		editYaml = undefined;
+		showCreator = true;
+	}
+
+	async function handleEdit(resource: K8sResource) {
+		// Convert resource to YAML for editing
+		// Remove managed fields and other metadata that shouldn't be edited
+		const cleanResource = {
+			apiVersion: resource.apiVersion,
+			kind: resource.kind,
+			metadata: {
+				name: resource.metadata.name,
+				namespace: resource.metadata.namespace,
+				labels: resource.metadata.labels,
+				annotations: resource.metadata.annotations
+			},
+			spec: resource.spec
+		};
+		
+		// Dynamically import js-yaml only when needed
+		const yaml = await import('js-yaml');
+		editYaml = yaml.dump(cleanResource, { 
+			indent: 2, 
+			lineWidth: -1,
+			noRefs: true,
+			sortKeys: false
+		});
+		creatorMode = 'edit';
+		showCreator = true;
 	}
 
 	async function handleDelete(resource: K8sResource) {
 		if (confirm(`Are you sure you want to delete ${resource.metadata.name}?`)) {
 			try {
-				const response = await apiClient(`/api/resources/${data.resourceType}/${resource.metadata.name}`, {
+				const response = await fetch('/api/resources', {
 					method: 'DELETE',
 					headers: {
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify({ namespace: data.namespace })
+					body: JSON.stringify({ 
+						kind: resource.kind,
+						apiVersion: resource.apiVersion,
+						name: resource.metadata.name,
+						namespace: resource.metadata.namespace || data.namespace
+					})
 				});
 				
 				if (response.ok) {
-					goto(window.location.href);
+					handleRefresh();
+				} else {
+					const result = await response.json();
+					alert(`Failed to delete: ${result.error}`);
 				}
 			} catch (error) {
 				console.error('Failed to delete resource:', error);
+				alert('Failed to delete resource');
 			}
 		}
 	}
 
+	function handleLogs(resource: K8sResource) {
+		// Extract container names from pod spec
+		const containers = resource.spec?.containers?.map((c: { name: string }) => c.name) || [];
+		logsPodName = resource.metadata.name;
+		logsPodNamespace = resource.metadata.namespace || data.namespace;
+		logsPodContainers = containers;
+		showLogs = true;
+	}
+
+	function handleEvents(resource: K8sResource) {
+		eventsFilterKind = resource.kind;
+		eventsFilterName = resource.metadata.name;
+		eventsFilterNamespace = resource.metadata.namespace || data.namespace;
+		showResourceEvents = true;
+	}
+
 	function handleRefresh() {
 		goto(window.location.href);
+	}
+
+	function handleCreatorSuccess() {
+		handleRefresh();
 	}
 
 	async function fetchNodeMetrics(): Promise<Map<string, MetricSeries[]>> {
@@ -153,12 +258,41 @@
 
 <div>
 	{#if data.resourceType === 'overview' || !data.resourceType}
+		<!-- Dashboard header with Create button -->
+		<div class="flex items-center justify-between mb-6">
+			<div></div>
+			<button
+				onclick={openCreator}
+				class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+				title="Create Resource (Ctrl+N)"
+			>
+				<Plus size={18} />
+				Create Resource
+			</button>
+		</div>
 		<ClusterDashboard config={dashboardConfig} />
+		
+		<!-- Events Panel on Dashboard -->
+		<div class="mt-6">
+			<EventsPanel collapsed={true} />
+		</div>
 	{:else if data.error}
 		<div class="bg-red-50 border border-red-200 rounded-lg p-4">
 			<p class="text-red-800">Error: {data.error}</p>
 		</div>
 	{:else}
+		<!-- Resource list header with Create button -->
+		<div class="flex items-center justify-end mb-4">
+			<button
+				onclick={openCreator}
+				class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+				title="Create Resource (Ctrl+N)"
+			>
+				<Plus size={18} />
+				Create Resource
+			</button>
+		</div>
+
 		{#if data.metricsEnabled && data.metricsCharts.length > 0}
 			<MetricsPanel
 				charts={data.metricsCharts}
@@ -174,6 +308,49 @@
 			onEdit={handleEdit}
 			onDelete={handleDelete}
 			onRefresh={handleRefresh}
+			onLogs={data.resourceType === 'pods' ? handleLogs : undefined}
+			onEvents={handleEvents}
 		/>
+		
+		<!-- Events Panel below resource list -->
+		<div class="mt-6">
+			<EventsPanel collapsed={true} namespace={data.namespace === '*' ? '' : data.namespace} />
+		</div>
 	{/if}
 </div>
+
+<!-- Resource Creator Modal (lazy loaded) -->
+{#if ResourceCreator}
+	<svelte:component 
+		this={ResourceCreator}
+		isOpen={showCreator}
+		onClose={() => showCreator = false}
+		onSuccess={handleCreatorSuccess}
+		initialYaml={editYaml}
+		mode={creatorMode}
+	/>
+{/if}
+
+<!-- Pod Logs Viewer Modal (lazy loaded) -->
+{#if PodLogsViewer && showLogs}
+	<svelte:component 
+		this={PodLogsViewer}
+		podName={logsPodName}
+		namespace={logsPodNamespace}
+		containers={logsPodContainers}
+		onClose={() => showLogs = false}
+	/>
+{/if}
+
+<!-- Resource-specific Events Panel Modal -->
+{#if showResourceEvents}
+	<div class="fixed inset-0 bg-black/50 z-40" onclick={() => showResourceEvents = false} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && (showResourceEvents = false)}></div>
+	<div class="fixed inset-x-4 bottom-4 md:inset-x-8 lg:inset-x-16 z-50 max-h-96">
+		<EventsPanel
+			filterKind={eventsFilterKind}
+			filterName={eventsFilterName}
+			namespace={eventsFilterNamespace}
+			onClose={() => showResourceEvents = false}
+		/>
+	</div>
+{/if}

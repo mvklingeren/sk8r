@@ -1,8 +1,18 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { ArrowLeft, Edit, Trash2, ExternalLink } from 'lucide-svelte';
+	import { onMount } from 'svelte';
+	import { ArrowLeft, Edit, Trash2, ExternalLink, ScrollText } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import type { K8sResource } from '$lib/types/k8s';
+	import PodLogsViewer from '$lib/components/PodLogsViewer.svelte';
+	
+	// Lazy load ResourceCreator to avoid SSR issues with shiki/js-yaml
+	let ResourceCreator: any = $state(null);
+	
+	onMount(async () => {
+		const module = await import('$lib/components/ResourceCreator.svelte');
+		ResourceCreator = module.default;
+	});
 
 	interface Props {
 		data: {
@@ -14,6 +24,18 @@
 	}
 
 	let { data }: Props = $props();
+	let showLogs = $state(false);
+	let showEditor = $state(false);
+	let editYaml = $state<string>('');
+
+	// Check if this is a pod resource
+	let isPod = $derived(data.resourceType === 'pods');
+
+	// Get container names from pod spec
+	let containers = $derived.by(() => {
+		if (!isPod || !data.resource.spec?.containers) return [];
+		return data.resource.spec.containers.map((c: { name: string }) => c.name);
+	});
 
 	function goBack() {
 		const params = new URLSearchParams();
@@ -40,16 +62,72 @@
 		return `${minutes}m`;
 	}
 
-	function handleEdit() {
-		// TODO: Open edit modal/page
-		console.log('Edit resource:', data.resource);
+	async function handleEdit() {
+		// Convert resource to YAML for editing
+		// Remove managed fields and other metadata that shouldn't be edited
+		const cleanResource = {
+			apiVersion: data.resource.apiVersion,
+			kind: data.resource.kind,
+			metadata: {
+				name: data.resource.metadata.name,
+				namespace: data.resource.metadata.namespace,
+				labels: data.resource.metadata.labels,
+				annotations: data.resource.metadata.annotations
+			},
+			spec: data.resource.spec
+		};
+		
+		// Dynamically import js-yaml only when needed
+		const yaml = await import('js-yaml');
+		editYaml = yaml.dump(cleanResource, { 
+			indent: 2, 
+			lineWidth: -1,
+			noRefs: true,
+			sortKeys: false
+		});
+		showEditor = true;
 	}
 
-	function handleDelete() {
+	async function handleDelete() {
 		if (confirm(`Are you sure you want to delete ${data.name}?`)) {
-			// TODO: Implement delete and redirect
-			console.log('Delete resource:', data.resource);
+			try {
+				const response = await fetch('/api/resources', {
+					method: 'DELETE',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ 
+						kind: data.resource.kind,
+						apiVersion: data.resource.apiVersion,
+						name: data.resource.metadata.name,
+						namespace: data.resource.metadata.namespace || data.namespace
+					})
+				});
+				
+				if (response.ok) {
+					goBack();
+				} else {
+					const result = await response.json();
+					alert(`Failed to delete: ${result.error}`);
+				}
+			} catch (error) {
+				console.error('Failed to delete resource:', error);
+				alert('Failed to delete resource');
+			}
 		}
+	}
+
+	function openLogs() {
+		showLogs = true;
+	}
+
+	function closeLogs() {
+		showLogs = false;
+	}
+
+	function handleEditSuccess() {
+		// Refresh the page to show updated resource
+		goto(window.location.href);
 	}
 </script>
 
@@ -76,6 +154,15 @@
 		</div>
 
 		<div class="flex items-center gap-2">
+			{#if isPod}
+				<button
+					onclick={openLogs}
+					class="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors"
+				>
+					<ScrollText size={16} />
+					Logs
+				</button>
+			{/if}
 			<button
 				onclick={handleEdit}
 				class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -193,3 +280,25 @@
 		</div>
 	</div>
 </div>
+
+<!-- Pod Logs Viewer Modal -->
+{#if showLogs && isPod}
+	<PodLogsViewer
+		podName={data.name}
+		namespace={data.namespace}
+		containers={containers}
+		onClose={closeLogs}
+	/>
+{/if}
+
+<!-- Resource Editor Modal (lazy loaded) -->
+{#if ResourceCreator}
+	<svelte:component 
+		this={ResourceCreator}
+		isOpen={showEditor}
+		onClose={() => showEditor = false}
+		onSuccess={handleEditSuccess}
+		initialYaml={editYaml}
+		mode="edit"
+	/>
+{/if}
