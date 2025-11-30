@@ -14,6 +14,22 @@
 
 	let canvas: HTMLCanvasElement;
 	let chart: Chart | null = null;
+	let isDarkMode = $state(false);
+
+	// Detect dark mode by checking for 'dark' class on document
+	function checkDarkMode(): boolean {
+		if (typeof document === 'undefined') return false;
+		return document.documentElement.classList.contains('dark');
+	}
+
+	// Theme colors for Chart.js
+	function getThemeColors() {
+		return {
+			text: isDarkMode ? 'rgb(226, 232, 240)' : 'rgb(107, 114, 128)', // slate-200 / gray-500
+			gridLines: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+			tickColor: isDarkMode ? 'rgb(148, 163, 184)' : 'rgb(107, 114, 128)', // slate-400 / gray-500
+		};
+	}
 
 	function formatValue(value: number, unit?: string): string {
 		switch (unit) {
@@ -46,6 +62,9 @@
 		if (chart) {
 			chart.destroy();
 		}
+
+		// Get theme-aware colors
+		const themeColors = getThemeColors();
 
 		// Helper to convert color to rgba with opacity
 		function colorToRgba(color: string, opacity: number): string {
@@ -118,6 +137,7 @@
 							size: 16,
 							weight: 'normal'
 						},
+						color: themeColors.text,
 						padding: {
 							bottom: 20
 						}
@@ -126,6 +146,11 @@
 						display: false
 					},
 					tooltip: {
+						backgroundColor: isDarkMode ? 'rgb(30, 41, 59)' : 'rgba(0, 0, 0, 0.8)', // slate-800
+						titleColor: isDarkMode ? 'rgb(226, 232, 240)' : 'rgb(255, 255, 255)', // slate-200
+						bodyColor: isDarkMode ? 'rgb(203, 213, 225)' : 'rgb(255, 255, 255)', // slate-300
+						borderColor: isDarkMode ? 'rgb(71, 85, 105)' : 'transparent', // slate-600
+						borderWidth: isDarkMode ? 1 : 0,
 						callbacks: {
 							label: (context) => {
 								const value = formatValue(context.parsed.y, config.unit);
@@ -146,9 +171,10 @@
 							tooltipFormat: 'HH:mm:ss'
 						},
 						ticks: {
-							maxTicksLimit: 6, // Limit number of ticks to avoid crowding
+							maxTicksLimit: 6,
 							autoSkip: true,
-							maxRotation: 0 // Keep labels horizontal
+							maxRotation: 0,
+							color: themeColors.tickColor
 						},
 						grid: {
 							display: false
@@ -166,15 +192,16 @@
 								size: 12,
 								weight: 'normal'
 							},
-							color: 'rgb(107, 114, 128)' // gray-500
+							color: themeColors.text
 						},
 						ticks: {
+							color: themeColors.tickColor,
 							callback: (value) => {
 								return formatValue(value as number, config.unit);
 							}
 						},
 						grid: {
-							color: 'rgba(0, 0, 0, 0.05)'
+							color: themeColors.gridLines
 						}
 					}
 				}
@@ -182,13 +209,39 @@
 		});
 	}
 
+	let themeObserver: MutationObserver | null = null;
+
 	onMount(() => {
+		// Initialize dark mode state
+		isDarkMode = checkDarkMode();
 		createChart();
+
+		// Watch for theme changes on the document element
+		themeObserver = new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				if (mutation.attributeName === 'class') {
+					const newDarkMode = checkDarkMode();
+					if (newDarkMode !== isDarkMode) {
+						isDarkMode = newDarkMode;
+						// Recreate chart with new theme colors
+						createChart();
+					}
+				}
+			}
+		});
+
+		themeObserver.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['class']
+		});
 	});
 
 	onDestroy(() => {
 		if (chart) {
 			chart.destroy();
+		}
+		if (themeObserver) {
+			themeObserver.disconnect();
 		}
 	});
 

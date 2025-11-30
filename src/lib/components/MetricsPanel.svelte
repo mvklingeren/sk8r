@@ -70,28 +70,28 @@
 {#if charts.length > 0}
 	<div class="metrics-panel {className}">
 		{#if loading}
-			<div class="loading-container">
+			<div class="flex items-center justify-center gap-4 p-12 bg-gray-50 dark:bg-slate-800 rounded-lg">
 				<LoaderCircle class="animate-spin text-blue-500" size={32} />
-				<span class="text-gray-600">Loading metrics...</span>
+				<span class="text-gray-600 dark:text-slate-300">Loading metrics...</span>
 			</div>
 		{:else if error}
-			<div class="error-container">
-				<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-					<p class="text-yellow-800 text-sm">
+			<div class="my-4">
+				<div class="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
+					<p class="text-yellow-800 dark:text-yellow-200 text-sm">
 						{error}
 					</p>
 					{#if error.includes('metrics-server')}
-						<p class="text-yellow-700 text-xs mt-2">
-							Ensure metrics-server is installed: <code class="bg-yellow-100 px-1">kubectl apply -f https://github.com/kubernetes-metrics/metrics-server/releases/latest/download/components.yaml</code>
+						<p class="text-yellow-700 dark:text-yellow-300 text-xs mt-2">
+							Ensure metrics-server is installed: <code class="bg-yellow-100 dark:bg-yellow-800 px-1">kubectl apply -f https://github.com/kubernetes-metrics/metrics-server/releases/latest/download/components.yaml</code>
 						</p>
 					{/if}
 				</div>
 			</div>
 		{:else}
-			<div class="charts-grid">
+			<div class="grid grid-cols-1 lg:grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-6">
 				{#each charts as chart}
 					{@const chartData = metricsData.get(chart.id) || []}
-					<div class="chart-wrapper">
+					<div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 shadow-sm">
 						<MetricsChart config={chart} data={chartData} />
 					</div>
 				{/each}
@@ -103,39 +103,5 @@
 <style>
 	.metrics-panel {
 		margin-bottom: 1.5rem;
-	}
-
-	.loading-container {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		padding: 3rem;
-		background-color: #f9fafb;
-		border-radius: 0.5rem;
-	}
-
-	.error-container {
-		margin: 1rem 0;
-	}
-
-	.charts-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-		gap: 1.5rem;
-	}
-
-	.chart-wrapper {
-		background-color: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.5rem;
-		padding: 1rem;
-		box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-	}
-
-	@media (max-width: 768px) {
-		.charts-grid {
-			grid-template-columns: 1fr;
-		}
 	}
 </style>

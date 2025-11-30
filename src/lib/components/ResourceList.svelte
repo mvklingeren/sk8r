@@ -340,7 +340,7 @@
 								{:else if column.type === 'labels'}
 									<div class="flex flex-wrap gap-1 max-w-md">
 										{#each getLabels(resource) as label}
-											<span class="inline-flex px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-md" title="{label.key}={label.value}">
+											<span class="inline-flex px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-slate-200 rounded-md" title="{label.key}={label.value}">
 												{label.key.split('/').pop()}={label.value.length > 20 ? label.value.slice(0, 20) + '…' : label.value}
 											</span>
 										{/each}
