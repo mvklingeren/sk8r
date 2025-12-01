@@ -332,6 +332,9 @@ export class K8sApiServiceSimple {
 				result = await k8sApi.readNamespacedEvent({ name, namespace });
 				break;
 			// Cluster-scoped resources
+			case 'namespaces':
+				result = await k8sApi.readNamespace({ name });
+				break;
 			case 'nodes':
 					result = await k8sApi.readNode({ name });
 					break;
