@@ -1,4 +1,4 @@
-# sk8r - A Kubernetes Dashboard
+# sk8r - A Kubernetes Dashboard clone
 
 sk8r is a modern, open-source dashboard for your Kubernetes cluster. It provides a user-friendly interface to visualize and manage your cluster resources, view logs, and monitor metrics.
 
@@ -21,53 +21,14 @@ Before you begin, ensure you have the following:
 
 ## Installation
 
-### Automated Deployment
+The sk8r dashboard is distributed as a Docker image `mvkdev/sk8r-app:latest`.
 
-The easiest way to deploy sk8r is to use the provided deployment script.
-
-1.  **Clone the repository:**
+1.  **Build and push the Docker image (if you are a maintainer or contributing):**
     ```sh
-    git clone https://github.com/your-username/sk8r.git
-    cd sk8r
+    docker buildx build --platform linux/amd64,linux/arm64 -t mvkdev/sk8r-app:latest --push .
     ```
 
-2.  **Configure the container registry:**
-    Open the `deploy.sh` script and update the `DOCKERHUB_USERNAME` variable to your own Docker Hub username or another container registry URL.
-    ```sh
-    # deploy.sh
-    DOCKERHUB_USERNAME="your-docker-username"
-    ```
-
-3.  **Run the deployment script:**
-    This script will build the Docker image, push it to your registry, and apply the Kubernetes manifests.
-    ```sh
-    chmod +x deploy.sh
-    ./deploy.sh
-    ```
-
-### Manual Installation
-
-If you prefer to install it manually, follow these steps:
-
-1.  **Build and push the Docker image:**
-    ```sh
-    # Replace 'your-docker-username' with your actual username
-    docker build -t your-docker-username/sk8r-app:latest .
-    docker push your-docker-username/sk8r-app:latest
-    ```
-
-2.  **Update the deployment manifest:**
-    Edit `k8s/deployment.yaml` and change the `image` field to match the image you just pushed.
-    ```yaml
-    # k8s/deployment.yaml
-    ...
-      containers:
-      - name: sk8r-app
-        image: your-docker-username/sk8r-app:latest # <-- Update this line
-    ...
-    ```
-
-3.  **Apply the Kubernetes manifests:**
+2.  **Apply the Kubernetes manifests:**
     ```sh
     kubectl apply -f k8s/
     ```
