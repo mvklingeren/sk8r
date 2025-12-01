@@ -11,33 +11,34 @@ sk8r is a modern, open-source dashboard for your Kubernetes cluster. It provides
 -   **Metrics:** Visualize cluster and application metrics with Prometheus integration.
 -   **Interactive Pod Shell:** Access a terminal inside your running pods.
 
+## Quick Start
+
+Deploy sk8r to your Kubernetes cluster with a single command:
+
+```sh
+kubectl apply -f https://raw.githubusercontent.com/mvkdev/sk8r/main/k8s/rbac.yaml \
+              -f https://raw.githubusercontent.com/mvkdev/sk8r/main/k8s/nodes-rbac.yaml \
+              -f https://raw.githubusercontent.com/mvkdev/sk8r/main/k8s/deployment.yaml \
+              -f https://raw.githubusercontent.com/mvkdev/sk8r/main/k8s/service.yaml
+```
+
+Or clone the repository and apply all manifests:
+
+```sh
+git clone https://github.com/mvkdev/sk8r.git
+cd sk8r
+kubectl apply -f k8s/
+```
+
 ## Prerequisites
 
-Before you begin, ensure you have the following:
-
--   A running Kubernetes cluster.
--   `kubectl` installed and configured to connect to your cluster.
--   `docker` installed and running to build the container image.
--   A container registry (like Docker Hub) to push your image to.
--   **Prometheus:** The dashboard requires Prometheus for metrics. The default configuration expects Prometheus to be available at `http://kube-prometheus-stack-prometheus.monitoring:9090`. We recommend installing the [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) Helm chart, which provides this endpoint out of the box.
-
-## Installation
-
-The sk8r dashboard is distributed as a Docker image `mvkdev/sk8r-app:latest`.
-
-1.  **Build and push the Docker image (if you are a maintainer or contributing):**
-    ```sh
-    docker buildx build --platform linux/amd64,linux/arm64 -t mvkdev/sk8r-app:latest --push .
-    ```
-
-2.  **Apply the Kubernetes manifests:**
-    ```sh
-    kubectl apply -f k8s/
-    ```
+-   A running Kubernetes cluster
+-   `kubectl` installed and configured to connect to your cluster
+-   **(Optional) Prometheus:** For metrics visualization, the dashboard expects Prometheus to be available at `http://kube-prometheus-stack-prometheus.monitoring:9090`. We recommend installing the [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) Helm chart.
 
 ## Accessing the Dashboard
 
-The application is exposed via a `LoadBalancer` service. To find the external IP address to access the dashboard, run:
+The application is exposed via a `LoadBalancer` service. To find the external IP address:
 
 ```sh
 kubectl get service sk8r-app-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
@@ -45,7 +46,56 @@ kubectl get service sk8r-app-service -o jsonpath='{.status.loadBalancer.ingress[
 
 Open your browser and navigate to the IP address returned by the command.
 
-## Development
+## Configuration
+
+### Custom Namespace
+
+By default, sk8r is deployed to the `default` namespace. To deploy to a different namespace:
+
+```sh
+kubectl create namespace sk8r
+kubectl apply -f k8s/ -n sk8r
+```
+
+Note: You'll need to update the RBAC manifests to reference the correct namespace for the ServiceAccount.
+
+### Prometheus URL
+
+If your Prometheus instance is running at a different address, update the `PROMETHEUS_URL` environment variable in the deployment:
+
+```yaml
+env:
+- name: PROMETHEUS_URL
+  value: "http://your-prometheus-service:9090"
+```
+
+### Alternative Service Types
+
+The default service type is `LoadBalancer`. For other environments:
+
+**NodePort:**
+```yaml
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 3000
+      nodePort: 30080  # Optional: specify a port
+```
+
+**ClusterIP with Ingress:**
+```yaml
+spec:
+  type: ClusterIP
+```
+
+Then create an Ingress resource pointing to the `sk8r-app-service`.
+
+---
+
+## Contributing
+
+### Development
 
 To run the application locally for development:
 
@@ -59,3 +109,19 @@ To run the application locally for development:
     npm run dev
     ```
     The application will be available at `http://localhost:5173`.
+
+### Building from Source
+
+If you want to build and push your own Docker image:
+
+1.  **Build and push the Docker image:**
+    ```sh
+    docker buildx build --platform linux/amd64,linux/arm64 -t your-registry/sk8r-app:latest --push .
+    ```
+
+2.  **Update the deployment to use your image:**
+    ```sh
+    kubectl set image deployment/sk8r-app sk8r-app=your-registry/sk8r-app:latest
+    ```
+
+    Or edit `k8s/deployment.yaml` to reference your image before applying.
