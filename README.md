@@ -2,6 +2,8 @@
 
 sk8r is a modern, open-source dashboard for your Kubernetes cluster. It provides a user-friendly interface to visualize and manage your cluster resources, view logs, and monitor metrics.
 
+![Sk8tes Dashboard](docs/images/screenshot.png)
+
 ## Features
 
 -   **Resource Management:** View, create, and manage Kubernetes resources like Pods, Deployments, Services, etc.
