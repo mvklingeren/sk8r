@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import { sveltekit } from '@sveltejs/kit/vite';
 import type { Plugin } from 'vite';
+import { version } from './package.json';
 
 // WebSocket plugin for development server
 function webSocketPlugin(): Plugin {
@@ -31,6 +32,9 @@ function webSocketPlugin(): Plugin {
 }
 
 export default defineConfig({
+	define: {
+		__APP_VERSION__: JSON.stringify(version)
+	},
 	plugins: [tailwindcss(), sveltekit(), webSocketPlugin()],
 	ssr: {
 		noExternal: ['lucide-svelte']

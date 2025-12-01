@@ -10,7 +10,6 @@
 	import { darkMode } from '$lib/stores/darkMode';
 	import { clusterStore, type ClusterContext } from '$lib/stores/cluster';
 	import { resourceCreator } from '$lib/stores/resourceCreator';
-	import packageJson from '../../../package.json';
 
 	// Design patterns configuration
 	const designPatterns = [
@@ -326,7 +325,7 @@
 
 		<!-- Version -->
 		<div class="mt-3 pt-3 border-t border-gray-700 text-center">
-			<span class="text-xs text-gray-500">v{packageJson.version}</span>
+			<span class="text-xs text-gray-500">v{__APP_VERSION__}</span>
 		</div>
 	</div>
 </aside>
