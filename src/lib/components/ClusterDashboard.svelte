@@ -339,30 +339,36 @@
 			
 			<button
 				onclick={() => handleCardClick(card)}
-				class="dashboard-card {colors.bg} {colors.border} border rounded-lg p-3 text-left transition-all hover:scale-105 hover:shadow-lg cursor-pointer h-[100px]"
+				class="dashboard-card group bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700 border rounded-lg p-3 text-left transition-all hover:scale-105 hover:shadow-lg cursor-pointer"
+				data-color={card.color}
 			>
-				<div class="flex items-start justify-between mb-2">
-					<div class="p-1.5 rounded-md bg-white/60 dark:bg-slate-800/60">
-						<Icon size={16} class={colors.icon} />
+				<div class="flex items-start justify-between gap-3">
+					<div class="flex items-start gap-3 flex-1 min-w-0">
+						<div class="p-1.5 rounded-md bg-white/60 dark:bg-slate-800/60 flex-shrink-0">
+							<Icon size={16} class="text-gray-500 dark:text-gray-400 group-hover-icon" />
+						</div>
+						
+						<div class="space-y-0.5 flex-1 min-w-0">
+							<p class="text-[10px] font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide truncate">{card.title}</p>
+							{#if data.loading}
+								<div class="h-6 w-16 bg-gray-200 dark:bg-slate-600 rounded animate-pulse"></div>
+							{:else if data.error}
+								<p class="text-xl font-bold text-red-500 h-6 leading-6">Error</p>
+							{:else}
+								<p class="text-xl font-bold text-gray-900 dark:text-gray-100 group-hover-text h-6 leading-6 truncate">{formatValue(data.value, card.format)}</p>
+							{/if}
+							<p class="text-[10px] text-gray-500 dark:text-slate-400 h-3 truncate">{statusIndicator && !data.loading ? statusIndicator.text : ''}</p>
+						</div>
 					</div>
-					{#if data.loading}
-						<LoaderCircle size={14} class="animate-spin text-gray-400 dark:text-slate-500" />
-					{:else if statusIndicator}
-						{@const StatusIcon = statusIndicator.icon}
-						<StatusIcon size={14} class={statusIndicator.color} />
-					{/if}
-				</div>
-				
-				<div class="space-y-0.5">
-					<p class="text-[10px] font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">{card.title}</p>
-					{#if data.loading}
-						<div class="h-7 w-12 bg-gray-200 dark:bg-slate-600 rounded animate-pulse"></div>
-					{:else if data.error}
-						<p class="text-xl font-bold text-red-500 h-7 leading-7">Error</p>
-					{:else}
-						<p class="text-xl font-bold {colors.text} h-7 leading-7">{formatValue(data.value, card.format)}</p>
-					{/if}
-					<p class="text-[10px] text-gray-500 dark:text-slate-400 h-3">{statusIndicator && !data.loading ? statusIndicator.text : ''}</p>
+					
+					<div class="flex-shrink-0">
+						{#if data.loading}
+							<LoaderCircle size={14} class="animate-spin text-gray-400 dark:text-slate-500" />
+						{:else if statusIndicator}
+							{@const StatusIcon = statusIndicator.icon}
+							<StatusIcon size={14} class={statusIndicator.color} />
+						{/if}
+					</div>
 				</div>
 			</button>
 		{/each}
@@ -450,6 +456,215 @@
 
 	.dashboard-card:hover::before {
 		opacity: 0.3;
+	}
+
+	/* Hover color styles */
+	:global(.dashboard-card[data-color="blue"]:hover) {
+		background-color: rgb(239 246 255);
+		border-color: rgb(191 219 254);
+	}
+
+	:global(.dark .dashboard-card[data-color="blue"]:hover) {
+		background-color: rgb(30 58 138 / 0.3);
+		border-color: rgb(29 78 216);
+	}
+
+	:global(.dashboard-card[data-color="blue"]:hover .group-hover-icon) {
+		color: rgb(59 130 246);
+	}
+
+	:global(.dark .dashboard-card[data-color="blue"]:hover .group-hover-icon) {
+		color: rgb(96 165 250);
+	}
+
+	:global(.dashboard-card[data-color="blue"]:hover .group-hover-text) {
+		color: rgb(30 64 175);
+	}
+
+	:global(.dark .dashboard-card[data-color="blue"]:hover .group-hover-text) {
+		color: rgb(219 234 254);
+	}
+
+	:global(.dashboard-card[data-color="green"]:hover) {
+		background-color: rgb(240 253 244);
+		border-color: rgb(187 247 208);
+	}
+
+	:global(.dark .dashboard-card[data-color="green"]:hover) {
+		background-color: rgb(20 83 45 / 0.3);
+		border-color: rgb(34 197 94);
+	}
+
+	:global(.dashboard-card[data-color="green"]:hover .group-hover-icon) {
+		color: rgb(34 197 94);
+	}
+
+	:global(.dark .dashboard-card[data-color="green"]:hover .group-hover-icon) {
+		color: rgb(74 222 128);
+	}
+
+	:global(.dashboard-card[data-color="green"]:hover .group-hover-text) {
+		color: rgb(20 83 45);
+	}
+
+	:global(.dark .dashboard-card[data-color="green"]:hover .group-hover-text) {
+		color: rgb(220 252 231);
+	}
+
+	:global(.dashboard-card[data-color="yellow"]:hover) {
+		background-color: rgb(254 252 232);
+		border-color: rgb(254 240 138);
+	}
+
+	:global(.dark .dashboard-card[data-color="yellow"]:hover) {
+		background-color: rgb(113 63 18 / 0.3);
+		border-color: rgb(202 138 4);
+	}
+
+	:global(.dashboard-card[data-color="yellow"]:hover .group-hover-icon) {
+		color: rgb(234 179 8);
+	}
+
+	:global(.dark .dashboard-card[data-color="yellow"]:hover .group-hover-icon) {
+		color: rgb(250 204 21);
+	}
+
+	:global(.dashboard-card[data-color="yellow"]:hover .group-hover-text) {
+		color: rgb(113 63 18);
+	}
+
+	:global(.dark .dashboard-card[data-color="yellow"]:hover .group-hover-text) {
+		color: rgb(254 249 195);
+	}
+
+	:global(.dashboard-card[data-color="red"]:hover) {
+		background-color: rgb(254 242 242);
+		border-color: rgb(254 202 202);
+	}
+
+	:global(.dark .dashboard-card[data-color="red"]:hover) {
+		background-color: rgb(127 29 29 / 0.3);
+		border-color: rgb(185 28 28);
+	}
+
+	:global(.dashboard-card[data-color="red"]:hover .group-hover-icon) {
+		color: rgb(239 68 68);
+	}
+
+	:global(.dark .dashboard-card[data-color="red"]:hover .group-hover-icon) {
+		color: rgb(248 113 113);
+	}
+
+	:global(.dashboard-card[data-color="red"]:hover .group-hover-text) {
+		color: rgb(127 29 29);
+	}
+
+	:global(.dark .dashboard-card[data-color="red"]:hover .group-hover-text) {
+		color: rgb(254 226 226);
+	}
+
+	:global(.dashboard-card[data-color="purple"]:hover) {
+		background-color: rgb(250 245 255);
+		border-color: rgb(233 213 255);
+	}
+
+	:global(.dark .dashboard-card[data-color="purple"]:hover) {
+		background-color: rgb(88 28 135 / 0.3);
+		border-color: rgb(147 51 234);
+	}
+
+	:global(.dashboard-card[data-color="purple"]:hover .group-hover-icon) {
+		color: rgb(168 85 247);
+	}
+
+	:global(.dark .dashboard-card[data-color="purple"]:hover .group-hover-icon) {
+		color: rgb(192 132 252);
+	}
+
+	:global(.dashboard-card[data-color="purple"]:hover .group-hover-text) {
+		color: rgb(88 28 135);
+	}
+
+	:global(.dark .dashboard-card[data-color="purple"]:hover .group-hover-text) {
+		color: rgb(243 232 255);
+	}
+
+	:global(.dashboard-card[data-color="cyan"]:hover) {
+		background-color: rgb(236 254 255);
+		border-color: rgb(165 243 252);
+	}
+
+	:global(.dark .dashboard-card[data-color="cyan"]:hover) {
+		background-color: rgb(22 78 99 / 0.3);
+		border-color: rgb(14 116 144);
+	}
+
+	:global(.dashboard-card[data-color="cyan"]:hover .group-hover-icon) {
+		color: rgb(6 182 212);
+	}
+
+	:global(.dark .dashboard-card[data-color="cyan"]:hover .group-hover-icon) {
+		color: rgb(34 211 238);
+	}
+
+	:global(.dashboard-card[data-color="cyan"]:hover .group-hover-text) {
+		color: rgb(22 78 99);
+	}
+
+	:global(.dark .dashboard-card[data-color="cyan"]:hover .group-hover-text) {
+		color: rgb(207 250 254);
+	}
+
+	:global(.dashboard-card[data-color="orange"]:hover) {
+		background-color: rgb(255 247 237);
+		border-color: rgb(254 215 170);
+	}
+
+	:global(.dark .dashboard-card[data-color="orange"]:hover) {
+		background-color: rgb(154 52 18 / 0.3);
+		border-color: rgb(194 65 12);
+	}
+
+	:global(.dashboard-card[data-color="orange"]:hover .group-hover-icon) {
+		color: rgb(249 115 22);
+	}
+
+	:global(.dark .dashboard-card[data-color="orange"]:hover .group-hover-icon) {
+		color: rgb(251 146 60);
+	}
+
+	:global(.dashboard-card[data-color="orange"]:hover .group-hover-text) {
+		color: rgb(154 52 18);
+	}
+
+	:global(.dark .dashboard-card[data-color="orange"]:hover .group-hover-text) {
+		color: rgb(255 237 213);
+	}
+
+	:global(.dashboard-card[data-color="gray"]:hover) {
+		background-color: rgb(249 250 251);
+		border-color: rgb(229 231 235);
+	}
+
+	:global(.dark .dashboard-card[data-color="gray"]:hover) {
+		background-color: rgb(17 24 39 / 0.3);
+		border-color: rgb(55 65 81);
+	}
+
+	:global(.dashboard-card[data-color="gray"]:hover .group-hover-icon) {
+		color: rgb(107 114 128);
+	}
+
+	:global(.dark .dashboard-card[data-color="gray"]:hover .group-hover-icon) {
+		color: rgb(156 163 175);
+	}
+
+	:global(.dashboard-card[data-color="gray"]:hover .group-hover-text) {
+		color: rgb(17 24 39);
+	}
+
+	:global(.dark .dashboard-card[data-color="gray"]:hover .group-hover-text) {
+		color: rgb(243 244 246);
 	}
 
 	.chart-card {
