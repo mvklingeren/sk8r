@@ -137,17 +137,17 @@
 		<div class="flex items-center gap-4">
 			<button
 				onclick={goBack}
-				class="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+				class="flex items-center gap-2 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors"
 			>
 				<ArrowLeft size={20} />
 				Back to {data.resourceType}
 			</button>
 			
-			<div class="text-sm text-gray-500">/</div>
+			<div class="text-sm text-gray-500 dark:text-slate-500">/</div>
 			
 			<div>
-				<h1 class="text-2xl font-bold text-gray-900">{data.name}</h1>
-				<p class="text-sm text-gray-600 capitalize">
+				<h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">{data.name}</h1>
+				<p class="text-sm text-gray-600 dark:text-slate-400 capitalize">
 					{data.resource.kind} in {data.namespace}
 				</p>
 			</div>
@@ -184,52 +184,52 @@
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 		<!-- Metadata Panel -->
 		<div class="lg:col-span-1">
-			<div class="bg-white rounded-lg shadow p-6">
-				<h2 class="text-lg font-semibold text-gray-900 mb-4">Metadata</h2>
+			<div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+				<h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Metadata</h2>
 				
 				<dl class="space-y-3">
 					<div>
-						<dt class="text-sm font-medium text-gray-500">Name</dt>
-						<dd class="text-sm text-gray-900">{data.resource.metadata.name}</dd>
+						<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">Name</dt>
+						<dd class="text-sm text-gray-900 dark:text-slate-200">{data.resource.metadata.name}</dd>
 					</div>
 					
 					<div>
-						<dt class="text-sm font-medium text-gray-500">Namespace</dt>
-						<dd class="text-sm text-gray-900">{data.resource.metadata.namespace || 'N/A'}</dd>
+						<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">Namespace</dt>
+						<dd class="text-sm text-gray-900 dark:text-slate-200">{data.resource.metadata.namespace || 'N/A'}</dd>
 					</div>
 					
 					<div>
-						<dt class="text-sm font-medium text-gray-500">Kind</dt>
-						<dd class="text-sm text-gray-900">{data.resource.kind}</dd>
+						<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">Kind</dt>
+						<dd class="text-sm text-gray-900 dark:text-slate-200">{data.resource.kind}</dd>
 					</div>
 					
 					<div>
-						<dt class="text-sm font-medium text-gray-500">API Version</dt>
-						<dd class="text-sm text-gray-900">{data.resource.apiVersion}</dd>
+						<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">API Version</dt>
+						<dd class="text-sm text-gray-900 dark:text-slate-200">{data.resource.apiVersion}</dd>
 					</div>
 					
 					<div>
-						<dt class="text-sm font-medium text-gray-500">Created</dt>
-						<dd class="text-sm text-gray-900">
+						<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">Created</dt>
+						<dd class="text-sm text-gray-900 dark:text-slate-200">
 							{getAge(data.resource.metadata.creationTimestamp)} ago
 						</dd>
 					</div>
 					
 					{#if data.resource.metadata.uid}
 						<div>
-							<dt class="text-sm font-medium text-gray-500">UID</dt>
-							<dd class="text-xs text-gray-900 font-mono break-all">{data.resource.metadata.uid}</dd>
+							<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">UID</dt>
+							<dd class="text-xs text-gray-900 dark:text-slate-200 font-mono break-all">{data.resource.metadata.uid}</dd>
 						</div>
 					{/if}
 				</dl>
 
 				{#if data.resource.metadata.labels && Object.keys(data.resource.metadata.labels).length > 0}
 					<div class="mt-6">
-						<h3 class="text-sm font-medium text-gray-500 mb-2">Labels</h3>
+						<h3 class="text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Labels</h3>
 						<div class="space-y-1">
 							{#each Object.entries(data.resource.metadata.labels) as [key, value]}
 								<div class="flex items-center gap-2">
-									<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono">
+									<span class="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 px-2 py-1 rounded font-mono">
 										{key}: {value}
 									</span>
 								</div>
@@ -240,12 +240,12 @@
 
 				{#if data.resource.metadata.annotations && Object.keys(data.resource.metadata.annotations).length > 0}
 					<div class="mt-6">
-						<h3 class="text-sm font-medium text-gray-500 mb-2">Annotations</h3>
+						<h3 class="text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Annotations</h3>
 						<div class="space-y-1 max-h-40 overflow-y-auto">
 							{#each Object.entries(data.resource.metadata.annotations) as [key, value]}
 								<div class="text-xs">
-									<div class="font-medium text-gray-600">{key}</div>
-									<div class="text-gray-500 break-all font-mono">{value}</div>
+									<div class="font-medium text-gray-600 dark:text-slate-300">{key}</div>
+									<div class="text-gray-500 dark:text-slate-400 break-all font-mono">{value}</div>
 								</div>
 							{/each}
 						</div>
@@ -258,23 +258,23 @@
 		<div class="lg:col-span-2 space-y-6">
 			<!-- Status Panel (if exists) -->
 			{#if data.resource.status}
-				<div class="bg-white rounded-lg shadow p-6">
-					<h2 class="text-lg font-semibold text-gray-900 mb-4">Status</h2>
-					<pre class="text-sm bg-gray-50 p-4 rounded overflow-auto max-h-60">{JSON.stringify(data.resource.status, null, 2)}</pre>
+				<div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+					<h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Status</h2>
+					<pre class="text-sm bg-gray-50 dark:bg-slate-900 dark:text-slate-300 p-4 rounded overflow-auto max-h-60">{JSON.stringify(data.resource.status, null, 2)}</pre>
 				</div>
 			{/if}
 
 			<!-- Spec Panel (if exists) -->
 			{#if data.resource.spec}
-				<div class="bg-white rounded-lg shadow p-6">
-					<h2 class="text-lg font-semibold text-gray-900 mb-4">Specification</h2>
-					<pre class="text-sm bg-gray-50 p-4 rounded overflow-auto max-h-80">{JSON.stringify(data.resource.spec, null, 2)}</pre>
+				<div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+					<h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Specification</h2>
+					<pre class="text-sm bg-gray-50 dark:bg-slate-900 dark:text-slate-300 p-4 rounded overflow-auto max-h-80">{JSON.stringify(data.resource.spec, null, 2)}</pre>
 				</div>
 			{/if}
 
 			<!-- Raw YAML -->
-			<div class="bg-white rounded-lg shadow p-6">
-				<h2 class="text-lg font-semibold text-gray-900 mb-4">Raw YAML</h2>
+			<div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+				<h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Raw YAML</h2>
 				<pre class="text-sm bg-gray-900 text-green-400 p-4 rounded overflow-auto max-h-96">{JSON.stringify(data.resource, null, 2)}</pre>
 			</div>
 		</div>
