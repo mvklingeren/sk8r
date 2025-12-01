@@ -50,14 +50,14 @@
 	};
 
 	const colorClasses: Record<string, { bg: string; text: string; border: string; icon: string }> = {
-		blue: { bg: 'bg-blue-50', text: 'text-blue-900', border: 'border-blue-200', icon: 'text-blue-500' },
-		green: { bg: 'bg-green-50', text: 'text-green-900', border: 'border-green-200', icon: 'text-green-500' },
-		yellow: { bg: 'bg-yellow-50', text: 'text-yellow-900', border: 'border-yellow-200', icon: 'text-yellow-500' },
-		red: { bg: 'bg-red-50', text: 'text-red-900', border: 'border-red-200', icon: 'text-red-500' },
-		purple: { bg: 'bg-purple-50', text: 'text-purple-900', border: 'border-purple-200', icon: 'text-purple-500' },
-		cyan: { bg: 'bg-cyan-50', text: 'text-cyan-900', border: 'border-cyan-200', icon: 'text-cyan-500' },
-		orange: { bg: 'bg-orange-50', text: 'text-orange-900', border: 'border-orange-200', icon: 'text-orange-500' },
-		gray: { bg: 'bg-gray-50', text: 'text-gray-900', border: 'border-gray-200', icon: 'text-gray-500' }
+		blue: { bg: 'bg-blue-50 dark:bg-blue-900/30', text: 'text-blue-900 dark:text-blue-100', border: 'border-blue-200 dark:border-blue-700', icon: 'text-blue-500 dark:text-blue-400' },
+		green: { bg: 'bg-green-50 dark:bg-green-900/30', text: 'text-green-900 dark:text-green-100', border: 'border-green-200 dark:border-green-700', icon: 'text-green-500 dark:text-green-400' },
+		yellow: { bg: 'bg-yellow-50 dark:bg-yellow-900/30', text: 'text-yellow-900 dark:text-yellow-100', border: 'border-yellow-200 dark:border-yellow-700', icon: 'text-yellow-500 dark:text-yellow-400' },
+		red: { bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-900 dark:text-red-100', border: 'border-red-200 dark:border-red-700', icon: 'text-red-500 dark:text-red-400' },
+		purple: { bg: 'bg-purple-50 dark:bg-purple-900/30', text: 'text-purple-900 dark:text-purple-100', border: 'border-purple-200 dark:border-purple-700', icon: 'text-purple-500 dark:text-purple-400' },
+		cyan: { bg: 'bg-cyan-50 dark:bg-cyan-900/30', text: 'text-cyan-900 dark:text-cyan-100', border: 'border-cyan-200 dark:border-cyan-700', icon: 'text-cyan-500 dark:text-cyan-400' },
+		orange: { bg: 'bg-orange-50 dark:bg-orange-900/30', text: 'text-orange-900 dark:text-orange-100', border: 'border-orange-200 dark:border-orange-700', icon: 'text-orange-500 dark:text-orange-400' },
+		gray: { bg: 'bg-gray-50 dark:bg-gray-900/30', text: 'text-gray-900 dark:text-gray-100', border: 'border-gray-200 dark:border-gray-700', icon: 'text-gray-500 dark:text-gray-400' }
 	};
 
 	function formatValue(value: number, format: string): string {
@@ -315,14 +315,14 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between mb-6">
 		<div>
-			<h1 class="text-2xl font-bold text-gray-900">Cluster Dashboard</h1>
-			<p class="text-sm text-gray-500 mt-1">
+			<h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">Cluster Dashboard</h1>
+			<p class="text-sm text-gray-500 dark:text-slate-400 mt-1">
 				Last updated: {lastRefresh.toLocaleTimeString()} · (refreshing in {countdownSeconds}s)
 			</p>
 		</div>
 		<button
 			onclick={() => refreshAll()}
-			class="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+			class="flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-slate-600 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-slate-500 transition-colors"
 		>
 			<RefreshCw size={16} />
 			Refresh
@@ -342,11 +342,11 @@
 				class="dashboard-card {colors.bg} {colors.border} border rounded-lg p-3 text-left transition-all hover:scale-105 hover:shadow-lg cursor-pointer h-[100px]"
 			>
 				<div class="flex items-start justify-between mb-2">
-					<div class="p-1.5 rounded-md bg-white/60">
+					<div class="p-1.5 rounded-md bg-white/60 dark:bg-slate-800/60">
 						<Icon size={16} class={colors.icon} />
 					</div>
 					{#if data.loading}
-						<LoaderCircle size={14} class="animate-spin text-gray-400" />
+						<LoaderCircle size={14} class="animate-spin text-gray-400 dark:text-slate-500" />
 					{:else if statusIndicator}
 						{@const StatusIcon = statusIndicator.icon}
 						<StatusIcon size={14} class={statusIndicator.color} />
@@ -354,15 +354,15 @@
 				</div>
 				
 				<div class="space-y-0.5">
-					<p class="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{card.title}</p>
+					<p class="text-[10px] font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">{card.title}</p>
 					{#if data.loading}
-						<div class="h-7 w-12 bg-gray-200 rounded animate-pulse"></div>
+						<div class="h-7 w-12 bg-gray-200 dark:bg-slate-600 rounded animate-pulse"></div>
 					{:else if data.error}
 						<p class="text-xl font-bold text-red-500 h-7 leading-7">Error</p>
 					{:else}
 						<p class="text-xl font-bold {colors.text} h-7 leading-7">{formatValue(data.value, card.format)}</p>
 					{/if}
-					<p class="text-[10px] text-gray-500 h-3">{statusIndicator && !data.loading ? statusIndicator.text : ''}</p>
+					<p class="text-[10px] text-gray-500 dark:text-slate-400 h-3">{statusIndicator && !data.loading ? statusIndicator.text : ''}</p>
 				</div>
 			</button>
 		{/each}
@@ -372,13 +372,13 @@
 	<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 		{#each config.charts as chart}
 			{@const data = chartData.get(chart.id) || []}
-			<div class="chart-card bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+			<div class="chart-card bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 shadow-sm">
 				{#if chartsLoading && data.length === 0}
 					<div class="flex items-center justify-center h-[200px]">
-						<LoaderCircle size={32} class="animate-spin text-gray-400" />
+						<LoaderCircle size={32} class="animate-spin text-gray-400 dark:text-slate-500" />
 					</div>
 				{:else if data.length === 0}
-					<div class="flex flex-col items-center justify-center h-[200px] text-gray-400">
+					<div class="flex flex-col items-center justify-center h-[200px] text-gray-400 dark:text-slate-500">
 						<Activity size={32} class="mb-2 opacity-50" />
 						<p class="text-sm">No data available</p>
 						<p class="text-xs mt-1">Check Prometheus connection</p>

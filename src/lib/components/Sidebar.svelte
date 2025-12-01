@@ -10,6 +10,7 @@
 	import { darkMode } from '$lib/stores/darkMode';
 	import { clusterStore, type ClusterContext } from '$lib/stores/cluster';
 	import { resourceCreator } from '$lib/stores/resourceCreator';
+	import { version } from '$app/environment';
 
 	// Design patterns configuration
 	const designPatterns = [
@@ -321,6 +322,11 @@
 					</div>
 				</div>
 			</button>
+		</div>
+
+		<!-- Version -->
+		<div class="mt-3 pt-3 border-t border-gray-700 text-center">
+			<span class="text-xs text-gray-500">v{version}</span>
 		</div>
 	</div>
 </aside>

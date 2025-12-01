@@ -18,6 +18,7 @@ spec:
       containers:
       - name: sk8r-app
         image: mvkdev/sk8r-app:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
         env:

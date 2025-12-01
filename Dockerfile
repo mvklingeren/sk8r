@@ -24,8 +24,14 @@ FROM node:22-alpine
 WORKDIR /app
 
 # Copy the build output from the builder stage
-COPY --from=builder /app/build .
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/build ./build
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package.json .
+COPY --from=builder --chown=node:node /app/server.js .
+COPY --from=builder --chown=node:node /app/websocket.js .
+
+# Run as non-root user
+USER node
 
 # Set the PORT environment variable
 ENV PORT=3000
@@ -34,4 +40,4 @@ ENV PORT=3000
 EXPOSE 3000
 
 # Define the command to start the server
-CMD ["node", "index.js"]
+CMD ["node", "server.js"]

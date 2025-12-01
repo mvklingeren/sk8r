@@ -2,7 +2,7 @@
 import { handler } from './build/handler.js';
 import express from 'express';
 import { createServer } from 'http';
-import { createWebSocketServer, handleUpgrade, cleanupAllConnections } from './build/server/lib/server/websocket.js';
+import { createWebSocketServer, handleUpgrade, cleanupAllConnections } from './websocket.js';
 
 const app = express();
 const server = createServer(app);

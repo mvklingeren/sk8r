@@ -23,7 +23,11 @@ echo "Image push complete."
 echo "--- Applying Kubernetes manifests ---"
 kubectl apply -f k8s/
 
-# 3. Restart the deployment to pull the new image
+# 3. Wait for image propagation to Docker Hub CDN
+echo "--- Waiting for image propagation (10 seconds) ---"
+sleep 10
+
+# 4. Restart the deployment to pull the new image
 echo "--- Restarting deployment to pull new image ---"
 kubectl rollout restart deployment sk8r-app
 kubectl rollout status deployment sk8r-app --timeout=120s

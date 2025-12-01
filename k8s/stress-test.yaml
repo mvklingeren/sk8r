@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stress-test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stress-ng
+  namespace: stress-test
+  labels:
+    app: stress-ng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stress-ng
+  template:
+    metadata:
+      labels:
+        app: stress-ng
+    spec:
+      containers:
+      - name: stress-ng
+        image: alexeiled/stress-ng
+        args:
+        # CPU stress: 2 workers spinning on sqrt/rand operations
+        - --cpu
+        - "2"
+        # Memory stress: 1 worker allocating/freeing 256MB
+        - --vm
+        - "1"
+        - --vm-bytes
+        - "256M"
+        # Run for 5 minutes (300 seconds), set to 0 for infinite
+        - --timeout
+        - "300s"
+        # Show periodic stats
+        - --metrics-brief
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "256Mi"
+          limits:
+            cpu: "2"
+            memory: "512Mi"
+---
+# Higher intensity version for heavy load testing
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stress-ng-heavy
+  namespace: stress-test
+  labels:
+    app: stress-ng-heavy
+spec:
+  replicas: 0  # Start with 0, scale up when needed
+  selector:
+    matchLabels:
+      app: stress-ng-heavy
+  template:
+    metadata:
+      labels:
+        app: stress-ng-heavy
+    spec:
+      containers:
+      - name: stress-ng
+        image: alexeiled/stress-ng
+        args:
+        # CPU stress: 4 workers
+        - --cpu
+        - "4"
+        # Memory stress: 2 workers allocating 512MB each
+        - --vm
+        - "2"
+        - --vm-bytes
+        - "512M"
+        # I/O stress
+        - --io
+        - "2"
+        # Run indefinitely
+        - --timeout
+        - "0"
+        - --metrics-brief
+        resources:
+          requests:
+            cpu: "1"
+            memory: "1Gi"
+          limits:
+            cpu: "4"
+            memory: "2Gi"
