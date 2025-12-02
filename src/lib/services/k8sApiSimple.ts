@@ -431,8 +431,10 @@ export class K8sApiServiceSimple {
 	async listNamespaces(): Promise<string[]> {
 		try {
 			const k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
-			const namespaces = await k8sApi.listNamespace({});
-			return namespaces.body.items.map(ns => ns.metadata?.name || '').filter(name => name);
+			const response = await k8sApi.listNamespace({});
+			// Handle both response structures (with and without .body wrapper)
+			const items = response.body?.items || (response as any).items || [];
+			return items.map((ns: any) => ns.metadata?.name || '').filter((name: string) => name);
 		} catch (error) {
 			console.error('Error listing namespaces:', error);
 			return ['default'];
