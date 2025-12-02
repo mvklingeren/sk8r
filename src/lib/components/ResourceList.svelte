@@ -43,6 +43,22 @@
 		return config.columns;
 	});
 	
+	// Calculate proportional column widths based on flex values
+	// Actions column gets flex: 1, namespace column (if shown) gets flex: 1
+	let columnWidths = $derived.by(() => {
+		const extraColumns = (namespace === '*' ? 1 : 0) + 1; // namespace + actions
+		const totalFlex = columns.reduce((sum, col) => sum + (col.flex || 1), 0) + extraColumns;
+		
+		return {
+			columns: columns.map(col => ({
+				...col,
+				width: `${((col.flex || 1) / totalFlex) * 100}%`
+			})),
+			namespaceWidth: `${(1 / totalFlex) * 100}%`,
+			actionsWidth: `${(1 / totalFlex) * 100}%`
+		};
+	});
+	
 	let filteredResources = $derived.by(() => {
 		let result = resources;
 		
@@ -281,13 +297,13 @@
 
 	{#if !hideTable}
 	<div class="overflow-x-auto">
-		<table class="w-full">
+		<table class="w-full" style="table-layout: fixed;">
 			<thead class="bg-gray-50 dark:bg-slate-700">
 				<tr>
-					{#each columns as column}
+					{#each columnWidths.columns as column}
 						<th 
 							class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider {column.sortable !== false ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 select-none transition-colors' : ''}"
-							style={column.flex ? `flex-grow: ${column.flex}` : ''}
+							style="width: {column.width};"
 							onclick={() => column.sortable !== false && handleSort(column.key)}
 						>
 							<span class="flex items-center justify-between gap-2">
@@ -305,6 +321,7 @@
 					{#if namespace === '*'}
 						<th 
 							class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 select-none transition-colors"
+							style="width: {columnWidths.namespaceWidth};"
 							onclick={() => handleSort('__namespace__')}
 						>
 							<span class="flex items-center justify-between gap-2">
@@ -317,7 +334,10 @@
 							</span>
 						</th>
 					{/if}
-					<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+					<th 
+						class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider"
+						style="width: {columnWidths.actionsWidth};"
+					>
 						Actions
 					</th>
 				</tr>
@@ -325,8 +345,8 @@
 			<tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
 				{#each filteredResources as resource}
 					<tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-						{#each columns as column}
-							<td class="px-6 py-4 whitespace-nowrap text-sm">
+						{#each columnWidths.columns as column}
+							<td class="px-6 py-4 text-sm overflow-hidden text-ellipsis whitespace-nowrap" title={getColumnValue(resource, column)}>
 								{#if column.type === 'link'}
 									<a
 										href="/{resourceType}/{resource.metadata.name}?namespace={resource.metadata.namespace || 'default'}"
@@ -339,7 +359,7 @@
 										{getColumnValue(resource, column)}
 									</span>
 								{:else if column.type === 'labels'}
-									<div class="flex flex-wrap gap-1 max-w-md">
+									<div class="flex flex-wrap gap-1">
 										{#each getLabels(resource) as label}
 											<span class="inline-flex px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-slate-200 rounded-md" title="{label.key}={label.value}">
 												{label.key.split('/').pop()}={label.value.length > 20 ? label.value.slice(0, 20) + '…' : label.value}
@@ -353,15 +373,11 @@
 									<span class="text-gray-900 dark:text-slate-200">
 										{getColumnValue(resource, column)}
 									</span>
-{:else}
-								<span 
-									class="text-gray-900 dark:text-slate-200 {column.maxWidth ? 'block overflow-hidden text-ellipsis' : ''}"
-									style={column.maxWidth ? `max-width: ${column.maxWidth}` : ''}
-									title={column.maxWidth ? getColumnValue(resource, column) : ''}
-								>
-									{getColumnValue(resource, column)}
-								</span>
-							{/if}
+								{:else}
+									<span class="text-gray-900 dark:text-slate-200">
+										{getColumnValue(resource, column)}
+									</span>
+								{/if}
 							</td>
 						{/each}
 						{#if namespace === '*'}
