@@ -156,7 +156,7 @@
 	}
 </script>
 
-<div class="bg-white dark:bg-slate-800 rounded-lg shadow relative">
+<div class="bg-white dark:bg-slate-800 rounded-lg shadow relative max-w-full overflow-hidden">
 	<!-- Learning Panel (Jumbo) -->
 	{#if showLearningPanel && learning && $learningMode}
 		<div 
@@ -353,11 +353,15 @@
 									<span class="text-gray-900 dark:text-slate-200">
 										{getColumnValue(resource, column)}
 									</span>
-								{:else}
-									<span class="text-gray-900 dark:text-slate-200">
-										{getColumnValue(resource, column)}
-									</span>
-								{/if}
+{:else}
+								<span 
+									class="text-gray-900 dark:text-slate-200 {column.maxWidth ? 'block overflow-hidden text-ellipsis' : ''}"
+									style={column.maxWidth ? `max-width: ${column.maxWidth}` : ''}
+									title={column.maxWidth ? getColumnValue(resource, column) : ''}
+								>
+									{getColumnValue(resource, column)}
+								</span>
+							{/if}
 							</td>
 						{/each}
 						{#if namespace === '*'}

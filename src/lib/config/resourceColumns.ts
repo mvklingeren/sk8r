@@ -742,14 +742,16 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				label: 'Object',
 				path: 'involvedObject',
 				type: 'text',
-				formatter: 'eventObject'
+				formatter: 'eventObject',
+				maxWidth: '300px'
 			},
 			{
 				key: 'message',
 				label: 'Message',
 				path: 'message',
 				type: 'text',
-				flex: 3
+				flex: 3,
+				maxWidth: '200px'
 			},
 			{
 				key: 'count',

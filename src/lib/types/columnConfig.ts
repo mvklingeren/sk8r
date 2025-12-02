@@ -7,6 +7,7 @@ export interface ColumnConfig {
 	colorMap?: Record<string, string>;
 	flex?: number;
 	sortable?: boolean;
+	maxWidth?: string; // e.g., '300px', '20rem'
 }
 
 export interface ResourceColumnConfig {
