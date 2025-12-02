@@ -41,7 +41,7 @@
 	let countdownSeconds = $state(30);
 	let countdownIntervalId: ReturnType<typeof setInterval> | null = null;
 
-	// Time range options for chart data
+	// Time range options for chart data (0 = custom)
 	const timeRangeOptions = [
 		{ value: 5, label: '5m' },
 		{ value: 15, label: '15m' },
@@ -50,21 +50,56 @@
 		{ value: 180, label: '3h' },
 		{ value: 360, label: '6h' },
 		{ value: 720, label: '12h' },
-		{ value: 1440, label: '24h' }
+		{ value: 1440, label: '24h' },
+		{ value: 0, label: 'Custom' }
 	];
 
 	const TIME_RANGE_STORAGE_KEY = 'dashboard-time-range';
+	const CUSTOM_RANGE_STORAGE_KEY = 'dashboard-custom-range';
+
+	// Custom range state
+	let showCustomRangeModal = $state(false);
+	let isCustomRangeActive = $state(false);
+	let customStartDate = $state('');
+	let customEndDate = $state('');
+	let customStartTimestamp = $state<number | null>(null);
+	let customEndTimestamp = $state<number | null>(null);
+	let useCurrentEndTime = $state(true); // When true, end time updates to "now" on each refresh
 
 	function getStoredTimeRange(): number {
 		if (typeof localStorage === 'undefined') return 30;
 		const stored = localStorage.getItem(TIME_RANGE_STORAGE_KEY);
 		if (stored) {
 			const parsed = parseInt(stored, 10);
+			// Check for custom range (0)
+			if (parsed === 0) {
+				return 0;
+			}
 			if (timeRangeOptions.some(opt => opt.value === parsed)) {
 				return parsed;
 			}
 		}
 		return 30; // default 30 minutes
+	}
+
+	function getStoredCustomRange(): { start: number; end: number | null; useCurrentEndTime: boolean } | null {
+		if (typeof localStorage === 'undefined') return null;
+		const stored = localStorage.getItem(CUSTOM_RANGE_STORAGE_KEY);
+		if (stored) {
+			try {
+				const parsed = JSON.parse(stored);
+				if (parsed.start !== undefined) {
+					return {
+						start: parsed.start,
+						end: parsed.end ?? null,
+						useCurrentEndTime: parsed.useCurrentEndTime ?? false
+					};
+				}
+			} catch {
+				return null;
+			}
+		}
+		return null;
 	}
 
 	function saveTimeRange(value: number) {
@@ -73,18 +108,116 @@
 		}
 	}
 
+	function saveCustomRange(start: number, end: number | null, useCurrent: boolean) {
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem(CUSTOM_RANGE_STORAGE_KEY, JSON.stringify({ 
+				start, 
+				end: useCurrent ? null : end,
+				useCurrentEndTime: useCurrent 
+			}));
+		}
+	}
+
+	// Format datetime-local input value
+	function formatDateTimeLocal(date: Date): string {
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		const hours = String(date.getHours()).padStart(2, '0');
+		const minutes = String(date.getMinutes()).padStart(2, '0');
+		return `${year}-${month}-${day}T${hours}:${minutes}`;
+	}
+
+	// Format custom range label for display
+	function formatCustomRangeLabel(): string {
+		if (!customStartTimestamp) return 'Custom';
+		const start = new Date(customStartTimestamp * 1000);
+		const formatShort = (d: Date) => {
+			const month = String(d.getMonth() + 1).padStart(2, '0');
+			const day = String(d.getDate()).padStart(2, '0');
+			const hours = String(d.getHours()).padStart(2, '0');
+			const mins = String(d.getMinutes()).padStart(2, '0');
+			return `${month}/${day} ${hours}:${mins}`;
+		};
+		
+		if (useCurrentEndTime) {
+			return `${formatShort(start)} - Now`;
+		}
+		
+		if (!customEndTimestamp) return 'Custom';
+		const end = new Date(customEndTimestamp * 1000);
+		return `${formatShort(start)} - ${formatShort(end)}`;
+	}
+
 	let selectedTimeRange = $state(30);
 	let timeRangeDropdownOpen = $state(false);
 
 	function selectTimeRange(value: number) {
+		if (value === 0) {
+			// Open custom range modal
+			timeRangeDropdownOpen = false;
+			openCustomRangeModal();
+			return;
+		}
+		
 		selectedTimeRange = value;
+		isCustomRangeActive = false;
+		customStartTimestamp = null;
+		customEndTimestamp = null;
 		saveTimeRange(value);
 		timeRangeDropdownOpen = false;
 		// Refresh chart data with new time range
 		fetchChartData();
 	}
 
+	function openCustomRangeModal() {
+		// Set default values: start = 1 hour ago, end = now (with checkbox checked)
+		const now = new Date();
+		const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+		customEndDate = formatDateTimeLocal(now);
+		customStartDate = formatDateTimeLocal(oneHourAgo);
+		useCurrentEndTime = true; // Default to using current time
+		showCustomRangeModal = true;
+	}
+
+	function applyCustomRange() {
+		if (!customStartDate) return;
+		
+		const start = Math.floor(new Date(customStartDate).getTime() / 1000);
+		const now = Math.floor(Date.now() / 1000);
+		
+		// Determine end time based on checkbox
+		let end: number;
+		if (useCurrentEndTime) {
+			end = now;
+		} else {
+			if (!customEndDate) return;
+			end = Math.floor(new Date(customEndDate).getTime() / 1000);
+		}
+		
+		if (start >= end) {
+			alert('Start time must be before end time');
+			return;
+		}
+		
+		customStartTimestamp = start;
+		customEndTimestamp = useCurrentEndTime ? null : end;
+		isCustomRangeActive = true;
+		selectedTimeRange = 0;
+		saveTimeRange(0);
+		saveCustomRange(start, useCurrentEndTime ? null : end, useCurrentEndTime);
+		showCustomRangeModal = false;
+		fetchChartData();
+	}
+
+	function cancelCustomRange() {
+		showCustomRangeModal = false;
+	}
+
 	function getSelectedTimeRangeLabel(): string {
+		if (isCustomRangeActive && customStartTimestamp && customEndTimestamp) {
+			return formatCustomRangeLabel();
+		}
 		return timeRangeOptions.find(opt => opt.value === selectedTimeRange)?.label || '30m';
 	}
 
@@ -93,6 +226,7 @@
 		if (!target.closest('.time-range-dropdown')) {
 			timeRangeDropdownOpen = false;
 		}
+		// Don't close modal on click outside - user must use buttons
 	}
 
 	const iconMap: Record<string, typeof Server> = {
@@ -218,7 +352,7 @@
 		}
 	}
 
-	// Calculate appropriate step interval based on time range
+	// Calculate appropriate step interval based on time range in minutes
 	// Aim for ~60-120 data points for good chart resolution
 	function getStepForTimeRange(minutes: number): number {
 		if (minutes <= 15) return 15;      // 15s step for 5-15m range
@@ -226,15 +360,43 @@
 		if (minutes <= 180) return 60;     // 1m step for 1-3h range
 		if (minutes <= 360) return 120;    // 2m step for 3-6h range
 		if (minutes <= 720) return 300;    // 5m step for 6-12h range
-		return 600;                         // 10m step for 12-24h range
+		if (minutes <= 1440) return 600;   // 10m step for 12-24h range
+		if (minutes <= 4320) return 1800;  // 30m step for 1-3 days
+		if (minutes <= 10080) return 3600; // 1h step for 3-7 days
+		return 7200;                        // 2h step for longer ranges
+	}
+
+	// Build query URL based on whether custom range is active
+	function buildQueryUrl(query: string, step: number, endTimestamp: number): string {
+		const baseUrl = `/api/prometheus/query?q=${encodeURIComponent(query)}&type=range&step=${step}`;
+		
+		if (isCustomRangeActive && customStartTimestamp) {
+			// Use absolute start/end timestamps
+			return `${baseUrl}&start=${customStartTimestamp}&end=${endTimestamp}`;
+		} else {
+			// Use relative time range in minutes
+			return `${baseUrl}&range=${selectedTimeRange}`;
+		}
 	}
 
 	async function fetchChartData() {
 		chartsLoading = true;
 		
-		// Use selected time range from UI
-		const timeRange = selectedTimeRange;
-		const step = getStepForTimeRange(timeRange);
+		// Determine the end timestamp - use current time if useCurrentEndTime is enabled
+		const now = Math.floor(Date.now() / 1000);
+		const effectiveEndTimestamp = (isCustomRangeActive && useCurrentEndTime) 
+			? now 
+			: (customEndTimestamp ?? now);
+		
+		// Calculate step based on time range
+		let rangeMinutes: number;
+		if (isCustomRangeActive && customStartTimestamp) {
+			// Calculate minutes from custom range
+			rangeMinutes = Math.ceil((effectiveEndTimestamp - customStartTimestamp) / 60);
+		} else {
+			rangeMinutes = selectedTimeRange;
+		}
+		const step = getStepForTimeRange(rangeMinutes);
 
 		for (const chart of config.charts) {
 			const seriesData: MetricSeries[] = [];
@@ -243,7 +405,7 @@
 				// Handle multiple queries (for multi-series charts like Network In/Out)
 				if (chart.queries && chart.queries.length > 0) {
 					for (const q of chart.queries) {
-						const queryUrl = `/api/prometheus/query?q=${encodeURIComponent(q.query)}&type=range&range=${timeRange}&step=${step}`;
+						const queryUrl = buildQueryUrl(q.query, step, effectiveEndTimestamp);
 						const response = await apiClient(queryUrl);
 						
 						if (!response.ok) {
@@ -266,7 +428,7 @@
 				}
 				// Handle single query
 				else if (chart.query) {
-					const queryUrl = `/api/prometheus/query?q=${encodeURIComponent(chart.query)}&type=range&range=${timeRange}&step=${step}`;
+					const queryUrl = buildQueryUrl(chart.query, step, effectiveEndTimestamp);
 					const response = await apiClient(queryUrl);
 					
 					if (!response.ok) {
@@ -354,6 +516,21 @@
 	onMount(() => {
 		// Load saved time range from localStorage
 		selectedTimeRange = getStoredTimeRange();
+		
+		// If custom range was saved, restore it
+		if (selectedTimeRange === 0) {
+			const customRange = getStoredCustomRange();
+			if (customRange) {
+				customStartTimestamp = customRange.start;
+				customEndTimestamp = customRange.end;
+				useCurrentEndTime = customRange.useCurrentEndTime;
+				isCustomRangeActive = true;
+			} else {
+				// No valid custom range, fall back to default
+				selectedTimeRange = 30;
+			}
+		}
+		
 		refreshAll();
 		startPolling();
 	});
@@ -529,6 +706,69 @@
 		</div>
 	</div>
 </div>
+
+<!-- Custom Date/Time Range Modal -->
+{#if showCustomRangeModal}
+	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-modal="true">
+		<div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 border border-gray-200 dark:border-slate-600">
+			<h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Custom Time Range</h2>
+			
+			<div class="space-y-4">
+				<div>
+					<label for="custom-start" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+						Start Date & Time
+					</label>
+					<input
+						id="custom-start"
+						type="datetime-local"
+						bind:value={customStartDate}
+						class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+					/>
+				</div>
+				
+				<div>
+					<label for="custom-end" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+						End Date & Time
+					</label>
+					<input
+						id="custom-end"
+						type="datetime-local"
+						bind:value={customEndDate}
+						disabled={useCurrentEndTime}
+						class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-slate-800"
+					/>
+				</div>
+				
+				<div class="flex items-center gap-2">
+					<input
+						id="use-current-time"
+						type="checkbox"
+						bind:checked={useCurrentEndTime}
+						class="w-4 h-4 text-blue-600 bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+					/>
+					<label for="use-current-time" class="text-sm text-gray-700 dark:text-slate-300 cursor-pointer select-none">
+						Use current date and time
+					</label>
+				</div>
+			</div>
+			
+			<div class="flex justify-end gap-3 mt-6">
+				<button
+					onclick={cancelCustomRange}
+					class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={applyCustomRange}
+					class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+				>
+					Apply
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.cluster-dashboard {

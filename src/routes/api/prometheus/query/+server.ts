@@ -7,6 +7,12 @@ export const GET: RequestHandler = async ({ url }) => {
 	const type = url.searchParams.get('type') || 'instant'; // 'instant' or 'range'
 	const rangeMinutes = parseInt(url.searchParams.get('range') || '5', 10);
 	const step = parseInt(url.searchParams.get('step') || '15', 10);
+	
+	// Support for custom date range with start/end timestamps (Unix seconds)
+	const startParam = url.searchParams.get('start');
+	const endParam = url.searchParams.get('end');
+	const start = startParam ? parseInt(startParam, 10) : undefined;
+	const end = endParam ? parseInt(endParam, 10) : undefined;
 
 	if (!query) {
 		return json({ error: 'Query parameter "q" is required.' }, { status: 400 });
@@ -17,7 +23,11 @@ export const GET: RequestHandler = async ({ url }) => {
 		
 		if (type === 'range') {
 			// Use range query for charts (returns multiple data points)
-			const result = await prometheusService.queryRange(query, { rangeMinutes, step });
+			// If start/end are provided, use absolute timestamps; otherwise use rangeMinutes
+			const options = start !== undefined && end !== undefined
+				? { start, end, step }
+				: { rangeMinutes, step };
+			const result = await prometheusService.queryRange(query, options);
 			return json(result);
 		} else {
 			// Use instant query for current values (returns single data point)
