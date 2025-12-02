@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sk8r-app-view
+  name: sk8tes-view
 subjects:
 - kind: ServiceAccount
   name: default

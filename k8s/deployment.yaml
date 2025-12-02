@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sk8r-app
+  name: sk8tes
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: sk8r-app
+      app: sk8tes
   template:
     metadata:
       labels:
-        app: sk8r-app
+        app: sk8tes
     spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
       containers:
-      - name: sk8r-app
-        image: mvkdev/sk8r-app:latest
+      - name: sk8tes
+        image: mvkdev/sk8tes:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
