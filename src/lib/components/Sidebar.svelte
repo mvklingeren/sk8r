@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked, Sun, Moon, Server, RefreshCw, AlertCircle, Plus } from 'lucide-svelte';
+	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked, Sun, Moon, Server, RefreshCw, AlertCircle, Plus, Folder } from 'lucide-svelte';
 	import { navigationConfig } from '$lib/config/navigationConfig';
 	import type { NavigationSection } from '$lib/types/navigationConfig';
 	import { getIcon } from '$lib/utils/iconMapping';
@@ -9,6 +9,7 @@
 	import { learningMode } from '$lib/stores/learningMode';
 	import { darkMode } from '$lib/stores/darkMode';
 	import { clusterStore, type ClusterContext } from '$lib/stores/cluster';
+	import { namespaceStore } from '$lib/stores/namespaces';
 	import { resourceCreator } from '$lib/stores/resourceCreator';
 
 	// Design patterns configuration
@@ -32,10 +33,13 @@
 		}))
 	);
 
-	// Fetch cluster contexts on mount
+	// Fetch cluster contexts and namespaces on mount
 	onMount(() => {
 		clusterStore.fetchContexts().catch(err => {
 			console.warn('Failed to fetch cluster contexts:', err);
+		});
+		namespaceStore.fetchNamespaces().catch(err => {
+			console.warn('Failed to fetch namespaces:', err);
 		});
 	});
 
@@ -76,6 +80,10 @@
 
 	async function refreshClusters() {
 		await clusterStore.fetchContexts();
+	}
+
+	async function refreshNamespaces() {
+		await namespaceStore.fetchNamespaces();
 	}
 </script>
 
@@ -243,31 +251,57 @@
 		
 		<!-- Namespace Selector -->
 		<div class="mb-2">
-			<label for="namespace-select" class="block text-xs text-gray-400 mb-1">Namespace:</label>
-			<select 
-				id="namespace-select"
-				value={$navigation.namespace}
-				onchange={(e) => navigation.setNamespace((e.target as HTMLSelectElement).value)}
-				class="w-full text-xs bg-gray-800 text-gray-300 border border-gray-600 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
-			>
-				<option value="*">* All Namespaces</option>
-				<option value="default">default</option>
-				<option value="kube-system">kube-system</option>
-				<option value="cert-manager">cert-manager</option>
-				<option value="home-assistant">home-assistant</option>
-				<option value="influxdb">influxdb</option>
-				<option value="kubernetes-dashboard">kubernetes-dashboard</option>
-				<option value="linstor-csi">linstor-csi</option>
-				<option value="local-path-storage">local-path-storage</option>
-				<option value="metallb-system">metallb-system</option>
-				<option value="monitoring">monitoring</option>
-				<option value="pihole">pihole</option>
-				<option value="ring-doorbell">ring-doorbell</option>
-				<option value="seafile">seafile</option>
-				<option value="traefik">traefik</option>
-				<option value="unifi">unifi</option>
-				<option value="zigbee2mqtt">zigbee2mqtt</option>
-			</select>
+			<div class="flex items-center justify-between mb-1">
+				<label for="namespace-select" class="text-xs text-gray-400 flex items-center gap-1.5">
+					<Folder size={12} class="text-purple-400" />
+					Namespace:
+				</label>
+				<button
+					onclick={refreshNamespaces}
+					class="p-1 hover:bg-gray-700 rounded transition-colors"
+					title="Refresh namespace list"
+					disabled={$namespaceStore.loading}
+				>
+					<RefreshCw size={12} class="text-gray-500 hover:text-gray-300 {$namespaceStore.loading ? 'animate-spin' : ''}" />
+				</button>
+			</div>
+			
+			{#if $namespaceStore.error}
+				<div class="flex items-center gap-1.5 text-xs text-red-400 mb-1">
+					<AlertCircle size={12} />
+					<span class="truncate">{$namespaceStore.error}</span>
+				</div>
+			{/if}
+			
+			{#if $namespaceStore.namespaces.length > 0}
+				<select 
+					id="namespace-select"
+					value={$navigation.namespace}
+					onchange={(e) => navigation.setNamespace((e.target as HTMLSelectElement).value)}
+					disabled={$namespaceStore.loading}
+					class="w-full text-xs bg-gray-800 text-gray-300 border border-gray-600 rounded px-2 py-1.5 focus:outline-none focus:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+				>
+					<option value="*">* All Namespaces</option>
+					{#each $namespaceStore.namespaces as ns (ns)}
+						<option value={ns}>{ns}</option>
+					{/each}
+				</select>
+			{:else if $namespaceStore.loading}
+				<div class="text-xs text-gray-500 flex items-center gap-1.5 py-1">
+					<RefreshCw size={12} class="animate-spin" />
+					Loading namespaces...
+				</div>
+			{:else}
+				<select 
+					id="namespace-select"
+					value={$navigation.namespace}
+					onchange={(e) => navigation.setNamespace((e.target as HTMLSelectElement).value)}
+					class="w-full text-xs bg-gray-800 text-gray-300 border border-gray-600 rounded px-2 py-1.5 focus:outline-none focus:border-purple-500"
+				>
+					<option value="*">* All Namespaces</option>
+					<option value="default">default</option>
+				</select>
+			{/if}
 		</div>
 
 		<!-- Data Source Status -->
