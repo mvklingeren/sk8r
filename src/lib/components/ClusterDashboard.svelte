@@ -15,7 +15,9 @@
 		AlertTriangle,
 		CheckCircle2,
 		LoaderCircle,
-		RefreshCw
+		RefreshCw,
+		Clock,
+		ChevronDown
 	} from 'lucide-svelte';
 	import MetricsChart from './MetricsChart.svelte';
 	import type { DashboardCardConfig, DashboardConfig } from '$lib/config/dashboardConfig';
@@ -38,6 +40,60 @@
 	let dataSourceType = $state<'prometheus' | 'kubernetes'>('prometheus');
 	let countdownSeconds = $state(30);
 	let countdownIntervalId: ReturnType<typeof setInterval> | null = null;
+
+	// Time range options for chart data
+	const timeRangeOptions = [
+		{ value: 5, label: '5m' },
+		{ value: 15, label: '15m' },
+		{ value: 30, label: '30m' },
+		{ value: 60, label: '1h' },
+		{ value: 180, label: '3h' },
+		{ value: 360, label: '6h' },
+		{ value: 720, label: '12h' },
+		{ value: 1440, label: '24h' }
+	];
+
+	const TIME_RANGE_STORAGE_KEY = 'dashboard-time-range';
+
+	function getStoredTimeRange(): number {
+		if (typeof localStorage === 'undefined') return 30;
+		const stored = localStorage.getItem(TIME_RANGE_STORAGE_KEY);
+		if (stored) {
+			const parsed = parseInt(stored, 10);
+			if (timeRangeOptions.some(opt => opt.value === parsed)) {
+				return parsed;
+			}
+		}
+		return 30; // default 30 minutes
+	}
+
+	function saveTimeRange(value: number) {
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem(TIME_RANGE_STORAGE_KEY, value.toString());
+		}
+	}
+
+	let selectedTimeRange = $state(30);
+	let timeRangeDropdownOpen = $state(false);
+
+	function selectTimeRange(value: number) {
+		selectedTimeRange = value;
+		saveTimeRange(value);
+		timeRangeDropdownOpen = false;
+		// Refresh chart data with new time range
+		fetchChartData();
+	}
+
+	function getSelectedTimeRangeLabel(): string {
+		return timeRangeOptions.find(opt => opt.value === selectedTimeRange)?.label || '30m';
+	}
+
+	function handleClickOutside(event: MouseEvent) {
+		const target = event.target as HTMLElement;
+		if (!target.closest('.time-range-dropdown')) {
+			timeRangeDropdownOpen = false;
+		}
+	}
 
 	const iconMap: Record<string, typeof Server> = {
 		server: Server,
@@ -162,18 +218,32 @@
 		}
 	}
 
+	// Calculate appropriate step interval based on time range
+	// Aim for ~60-120 data points for good chart resolution
+	function getStepForTimeRange(minutes: number): number {
+		if (minutes <= 15) return 15;      // 15s step for 5-15m range
+		if (minutes <= 60) return 30;      // 30s step for 30m-1h range
+		if (minutes <= 180) return 60;     // 1m step for 1-3h range
+		if (minutes <= 360) return 120;    // 2m step for 3-6h range
+		if (minutes <= 720) return 300;    // 5m step for 6-12h range
+		return 600;                         // 10m step for 12-24h range
+	}
+
 	async function fetchChartData() {
 		chartsLoading = true;
 		
+		// Use selected time range from UI
+		const timeRange = selectedTimeRange;
+		const step = getStepForTimeRange(timeRange);
+
 		for (const chart of config.charts) {
 			const seriesData: MetricSeries[] = [];
-			const timeRange = chart.timeRange || 30;
 
 			try {
 				// Handle multiple queries (for multi-series charts like Network In/Out)
 				if (chart.queries && chart.queries.length > 0) {
 					for (const q of chart.queries) {
-						const queryUrl = `/api/prometheus/query?q=${encodeURIComponent(q.query)}&type=range&range=${timeRange}&step=60`;
+						const queryUrl = `/api/prometheus/query?q=${encodeURIComponent(q.query)}&type=range&range=${timeRange}&step=${step}`;
 						const response = await apiClient(queryUrl);
 						
 						if (!response.ok) {
@@ -196,7 +266,7 @@
 				}
 				// Handle single query
 				else if (chart.query) {
-					const queryUrl = `/api/prometheus/query?q=${encodeURIComponent(chart.query)}&type=range&range=${timeRange}&step=60`;
+					const queryUrl = `/api/prometheus/query?q=${encodeURIComponent(chart.query)}&type=range&range=${timeRange}&step=${step}`;
 					const response = await apiClient(queryUrl);
 					
 					if (!response.ok) {
@@ -282,6 +352,8 @@
 	}
 
 	onMount(() => {
+		// Load saved time range from localStorage
+		selectedTimeRange = getStoredTimeRange();
 		refreshAll();
 		startPolling();
 	});
@@ -311,6 +383,8 @@
 	}
 </script>
 
+<svelte:window onclick={handleClickOutside} />
+
 <div class="cluster-dashboard">
 	<!-- Header -->
 	<div class="flex items-center justify-between mb-6">
@@ -320,13 +394,38 @@
 				Last updated: {lastRefresh.toLocaleTimeString()} · (refreshing in {countdownSeconds}s)
 			</p>
 		</div>
-		<button
-			onclick={() => refreshAll()}
-			class="flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-slate-600 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-slate-500 transition-colors"
-		>
-			<RefreshCw size={16} />
-			Refresh
-		</button>
+		<div class="flex items-center gap-2">
+			<!-- Time Range Selector -->
+			<div class="relative time-range-dropdown">
+				<button
+					onclick={() => timeRangeDropdownOpen = !timeRangeDropdownOpen}
+					class="flex items-center gap-2 px-3 py-2 bg-gray-900 dark:bg-slate-600 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-slate-500 transition-colors"
+				>
+					<Clock size={16} />
+					<span class="text-sm font-medium">{getSelectedTimeRangeLabel()}</span>
+					<ChevronDown size={14} class="transition-transform {timeRangeDropdownOpen ? 'rotate-180' : ''}" />
+				</button>
+				{#if timeRangeDropdownOpen}
+					<div class="absolute right-0 mt-1 w-32 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg z-50 overflow-hidden">
+						{#each timeRangeOptions as option}
+							<button
+								onclick={() => selectTimeRange(option.value)}
+								class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors {selectedTimeRange === option.value ? 'bg-gray-100 dark:bg-slate-700 font-medium text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-slate-300'}"
+							>
+								{option.label}
+							</button>
+						{/each}
+					</div>
+				{/if}
+			</div>
+			<!-- Refresh Button -->
+			<button
+				onclick={() => refreshAll()}
+				class="flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-slate-600 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-slate-500 transition-colors"
+			>
+				<RefreshCw size={16} />
+			</button>
+		</div>
 	</div>
 
 	<!-- Summary Cards -->
