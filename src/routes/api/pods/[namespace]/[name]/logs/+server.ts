@@ -1,8 +1,24 @@
 import type { RequestHandler } from './$types';
-import { KubeConfig, Log } from '@kubernetes/client-node';
-import { Readable } from 'stream';
+import { Log } from '@kubernetes/client-node';
+import { Writable } from 'stream';
+import { getK8sCredentials, createKubeConfig } from '$lib/server/k8sAuth';
 
-export const GET: RequestHandler = async ({ params, url }) => {
+export const GET: RequestHandler = async ({ params, url, request }) => {
+	const credentials = getK8sCredentials(request);
+	if (!credentials) {
+		return new Response(
+			`event: error\ndata: ${JSON.stringify('Missing or invalid Kubernetes credentials')}\n\n`,
+			{
+				status: 401,
+				headers: {
+					'Content-Type': 'text/event-stream',
+					'Cache-Control': 'no-cache',
+					'Connection': 'keep-alive'
+				}
+			}
+		);
+	}
+
 	const { namespace, name } = params;
 	const container = url.searchParams.get('container') || undefined;
 	const follow = url.searchParams.get('follow') === 'true';
@@ -10,10 +26,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	const timestamps = url.searchParams.get('timestamps') === 'true';
 	const previous = url.searchParams.get('previous') === 'true';
 
-	// Load kubeconfig
-	const kc = new KubeConfig();
-	kc.loadFromDefault();
-
+	// Load kubeconfig from credentials
+	const kc = createKubeConfig(credentials.server, credentials.token);
 	const log = new Log(kc);
 
 	// Create a readable stream for SSE
@@ -34,36 +48,35 @@ export const GET: RequestHandler = async ({ params, url }) => {
 				// Send initial connection event
 				sendEvent('Connected to pod logs', 'connected');
 
-				// Create a writable stream to capture log output
-				const logStream = new Readable({
-					read() {}
-				});
-
 				// Buffer for incomplete lines
 				let buffer = '';
 
-				logStream.on('data', (chunk: Buffer) => {
-					const text = chunk.toString('utf8');
-					buffer += text;
-					
-					// Split by newlines and send complete lines
-					const lines = buffer.split('\n');
-					buffer = lines.pop() || ''; // Keep incomplete line in buffer
-					
-					for (const line of lines) {
-						if (line.trim()) {
-							sendEvent(line, 'log');
+				// Create a writable stream to capture log output
+				const logStream = new Writable({
+					write(chunk: Buffer, _encoding, callback) {
+						const text = chunk.toString('utf8');
+						buffer += text;
+						
+						// Split by newlines and send complete lines
+						const lines = buffer.split('\n');
+						buffer = lines.pop() || ''; // Keep incomplete line in buffer
+						
+						for (const line of lines) {
+							if (line.trim()) {
+								sendEvent(line, 'log');
+							}
 						}
+						callback();
+					},
+					final(callback) {
+						// Send any remaining buffer content
+						if (buffer.trim()) {
+							sendEvent(buffer, 'log');
+						}
+						sendEvent('Log stream ended', 'end');
+						controller.close();
+						callback();
 					}
-				});
-
-				logStream.on('end', () => {
-					// Send any remaining buffer content
-					if (buffer.trim()) {
-						sendEvent(buffer, 'log');
-					}
-					sendEvent('Log stream ended', 'end');
-					controller.close();
 				});
 
 				logStream.on('error', (err) => {
@@ -91,7 +104,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 				if (!follow) {
 					// Give some time for the stream to complete
 					await new Promise(resolve => setTimeout(resolve, 1000));
-					logStream.push(null); // Signal end of stream
+					logStream.end(); // Signal end of stream
 				}
 			} catch (error) {
 				const message = error instanceof Error ? error.message : 'Unknown error';
@@ -115,4 +128,3 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		}
 	});
 };
-

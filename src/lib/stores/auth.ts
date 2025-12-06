@@ -28,7 +28,7 @@ const createAuthStore = () => {
 			}
 			set(null);
 		},
-		// Get current token (from cluster or fallback to stored)
+		// Get current token from the current custom cluster
 		getCurrentToken: (): string | null => {
 			const state = get(clusterStore);
 			if (state.currentCustomClusterId) {
@@ -37,8 +37,18 @@ const createAuthStore = () => {
 					return cluster.token;
 				}
 			}
-			// Fallback to stored token for backward compatibility
-			return get({ subscribe }) || null;
+			return null;
+		},
+		// Get current server URL from the current custom cluster
+		getCurrentServer: (): string | null => {
+			const state = get(clusterStore);
+			if (state.currentCustomClusterId) {
+				const cluster = state.customClusters.find(c => c.id === state.currentCustomClusterId);
+				if (cluster) {
+					return cluster.server;
+				}
+			}
+			return null;
 		}
 	};
 };

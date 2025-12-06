@@ -88,103 +88,52 @@ function createClusterStore() {
 	return {
 		subscribe,
 		
-		// Fetch available contexts from the API
+		// Fetch available contexts from the API (deprecated - returns empty for backward compatibility)
 		async fetchContexts() {
-			update(state => ({ ...state, loading: true, error: null }));
-			
-			try {
-				const response = await fetch('/api/clusters');
-				if (!response.ok) {
-					throw new Error(`Failed to fetch clusters: ${response.statusText}`);
-				}
-				
-				const data = await response.json();
-				update(state => ({
-					...state,
-					contexts: data.contexts,
-					currentContext: data.currentContext,
-					loading: false
-				}));
-				
-				return data;
-			} catch (error) {
-				const message = error instanceof Error ? error.message : 'Unknown error';
-				update(state => ({ ...state, loading: false, error: message }));
-				throw error;
-			}
+			// No longer uses kubeconfig - all clusters are managed client-side
+			update(state => ({
+				...state,
+				contexts: [],
+				currentContext: '',
+				loading: false
+			}));
+			return { contexts: [], currentContext: '', totalContexts: 0 };
 		},
 		
-		// Switch to a different context (kubeconfig or custom cluster)
-		async switchContext(contextNameOrId: string) {
+		// Switch to a different cluster (custom clusters only now)
+		async switchContext(clusterId: string) {
 			update(state => ({ ...state, loading: true, error: null }));
 			
 			try {
 				// Get current state to check for custom cluster
 				const currentState = get({ subscribe });
 				
-				// Check if it's a custom cluster
-				const customCluster = currentState.customClusters.find(c => c.id === contextNameOrId);
-				if (customCluster) {
-					// Switch to custom cluster
-					persistCurrentClusterId(customCluster.id);
-					
-					update(state => ({
-						...state,
-						currentCustomClusterId: customCluster.id,
-						currentContext: '',
-						customClusters: state.customClusters.map(c => ({
-							...c,
-							isCurrent: c.id === customCluster.id
-						})),
-						contexts: state.contexts.map(ctx => ({
-							...ctx,
-							isCurrent: false
-						})),
-						loading: false
-					}));
-					
-					// Reload the page to refresh all data with new cluster
-					if (browser) {
-						window.location.reload();
-					}
-					return { success: true, currentContext: customCluster.id };
+				// Find the custom cluster
+				const customCluster = currentState.customClusters.find(c => c.id === clusterId);
+				if (!customCluster) {
+					throw new Error('Cluster not found');
 				}
 				
-				// Otherwise, it's a kubeconfig context
-				const response = await fetch('/api/clusters/switch', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ context: contextNameOrId })
-				});
+				// Switch to custom cluster
+				persistCurrentClusterId(customCluster.id);
 				
-				if (!response.ok) {
-					throw new Error(`Failed to switch context: ${response.statusText}`);
-				}
-				
-				const data = await response.json();
-				
-				persistCurrentClusterId(null);
 				update(state => ({
 					...state,
-					currentContext: contextNameOrId,
-					currentCustomClusterId: null,
-					contexts: state.contexts.map(ctx => ({
-						...ctx,
-						isCurrent: ctx.name === contextNameOrId
-					})),
+					currentCustomClusterId: customCluster.id,
+					currentContext: '',
 					customClusters: state.customClusters.map(c => ({
 						...c,
-						isCurrent: false
+						isCurrent: c.id === customCluster.id
 					})),
+					contexts: [],
 					loading: false
 				}));
 				
-				// Reload the page to refresh all data with new context
+				// Reload the page to refresh all data with new cluster
 				if (browser) {
 					window.location.reload();
 				}
-				
-				return data;
+				return { success: true, currentContext: customCluster.id };
 			} catch (error) {
 				const message = error instanceof Error ? error.message : 'Unknown error';
 				update(state => ({ ...state, loading: false, error: message }));

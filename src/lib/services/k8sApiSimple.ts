@@ -11,27 +11,36 @@ export class K8sApiServiceSimple {
 		return this.kc;
 	}
 
-	constructor(token?: string) {
-		this.kc = new k8s.KubeConfig();
-		this.kc.loadFromDefault();
-
-		if (token) {
-			const user = this.kc.getCurrentUser();
-			if (user) {
-				// Clear existing authentication fields
-				delete user.authProvider;
-				delete user.exec;
-				delete user.clientCertificate;
-				delete user.clientKey;
-				delete user.password;
-				delete user.username;
-				
-				// Set the token for authentication
-				user.token = token;
-			}
+	constructor(server: string, token: string) {
+		if (!server || !token) {
+			throw new Error('Server URL and token are required');
 		}
 
-		this.customResourceService = new CustomResourceService();
+		// Remove trailing slash from server URL
+		const cleanServer = server.replace(/\/+$/, '');
+
+		this.kc = new k8s.KubeConfig();
+		
+		// Use loadFromOptions instead of loadFromDefault - no kubeconfig dependency
+		this.kc.loadFromOptions({
+			clusters: [{
+				name: 'current-cluster',
+				server: cleanServer,
+				skipTLSVerify: true
+			}],
+			users: [{
+				name: 'current-user',
+				token: token
+			}],
+			contexts: [{
+				name: 'current-context',
+				cluster: 'current-cluster',
+				user: 'current-user'
+			}],
+			currentContext: 'current-context'
+		});
+
+		this.customResourceService = new CustomResourceService(cleanServer, token);
 	}
 
 	async listResources(resourceType: string, filter: ResourceFilter = {}): Promise<K8sListResponse> {
@@ -433,7 +442,7 @@ export class K8sApiServiceSimple {
 			const k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
 			const response = await k8sApi.listNamespace({});
 			// Handle both response structures (with and without .body wrapper)
-			const items = response.body?.items || (response as any).items || [];
+			const items = (response as any).body?.items || (response as any).items || [];
 			return items.map((ns: any) => ns.metadata?.name || '').filter((name: string) => name);
 		} catch (error) {
 			console.error('Error listing namespaces:', error);

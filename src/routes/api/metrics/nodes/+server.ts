@@ -2,45 +2,20 @@ import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { MetricsService } from '$lib/services/metricsService';
 import { K8sApiServiceSimple } from '$lib/services/k8sApiSimple';
+import { getK8sCredentials, unauthorizedResponse } from '$lib/server/k8sAuth';
 
 export const GET: RequestHandler = async ({ request }) => {
+	const credentials = getK8sCredentials(request);
+	if (!credentials) {
+		return unauthorizedResponse();
+	}
+
 	try {
 		console.log('--- Metrics API Request Received ---');
-		const authHeader = request.headers.get('Authorization');
-		const token = authHeader?.split(' ')[1];
 
-		if (authHeader) {
-			console.log('Authorization header found.');
-			if (token) {
-				console.log('Token successfully extracted.');
-			} else {
-				console.error('Authorization header found, but token could not be extracted. Header format might be incorrect.');
-			}
-		} else {
-			console.warn('No Authorization header found in the request.');
-		}
-
-		// Initialize services with the token for this request
-		const k8sApi = new K8sApiServiceSimple(token);
+		// Initialize services with credentials
+		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
 		const metricsService = new MetricsService(k8sApi.kubeConfig);
-
-		// Log KubeConfig state for debugging
-		try {
-			const currentUser = k8sApi.kubeConfig.getCurrentUser();
-			if (currentUser) {
-				console.log('Current KubeConfig User:', {
-					name: currentUser.name,
-					token: currentUser.token ? `...${currentUser.token.slice(-4)}` : 'not set',
-					authProvider: currentUser.authProvider ? 'set' : 'not set',
-					exec: currentUser.exec ? 'set' : 'not set'
-				});
-			} else {
-				console.error('Could not find current user in KubeConfig.');
-			}
-		} catch (e) {
-			console.error('Error inspecting KubeConfig:', e);
-		}
-
 
 		// Fetch and process node metrics
 		const nodeMetrics = await metricsService.processNodeMetrics();

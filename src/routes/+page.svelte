@@ -12,6 +12,8 @@
 	import { browser } from '$app/environment';
 	import { dashboardConfig } from '$lib/config/dashboardConfig';
 	import { resourceCreator } from '$lib/stores/resourceCreator';
+	import { clusterStore } from '$lib/stores/cluster';
+	import { get } from 'svelte/store';
 	
 	// Lazy load components to avoid SSR issues with shiki/js-yaml
 	let ResourceCreator: any = $state(null);
@@ -24,13 +26,68 @@
 			resources: K8sResource[];
 			namespace: string;
 			error?: string;
-			metricsEnabled: boolean;
-			metricsCharts: MetricChartConfig[];
+			metricsEnabled?: boolean;
+			metricsCharts?: MetricChartConfig[];
+			loadClientSide?: boolean;
 		};
 	}
 
 	let { data }: Props = $props();
 	let initialized = $state(false);
+	
+	// Client-side loaded resources
+	let clientResources = $state<K8sResource[]>([]);
+	let clientError = $state<string | null>(null);
+	let isLoading = $state(false);
+	
+	// Use client resources if loaded, otherwise fall back to server data
+	let resources = $derived(clientResources.length > 0 ? clientResources : data.resources);
+	let error = $derived(clientError || data.error);
+	
+	// Load resources client-side
+	async function loadResources() {
+		if (!browser) return;
+		
+		const clusterState = get(clusterStore);
+		if (!clusterState.currentCustomClusterId) {
+			clientError = 'No cluster selected. Please add a cluster first.';
+			return;
+		}
+		
+		if (!data.resourceType || data.resourceType === 'overview') return;
+		
+		isLoading = true;
+		clientError = null;
+		
+		try {
+			const params = new URLSearchParams();
+			params.set('type', data.resourceType);
+			params.set('namespace', data.namespace);
+			
+			const response = await apiClient(`/api/resources/list?${params.toString()}`);
+			
+			if (!response.ok) {
+				const result = await response.json();
+				throw new Error(result.error || result.message || 'Failed to load resources');
+			}
+			
+			const result = await response.json();
+			clientResources = result.items || [];
+		} catch (err) {
+			console.error('Failed to load resources:', err);
+			clientError = err instanceof Error ? err.message : 'Failed to load resources';
+			clientResources = [];
+		} finally {
+			isLoading = false;
+		}
+	}
+	
+	// Load resources when resource type or namespace changes
+	$effect(() => {
+		if (browser && initialized && data.resourceType && data.resourceType !== 'overview') {
+			loadResources();
+		}
+	});
 	
 	// Pod logs state
 	let showLogs = $state(false);
@@ -141,7 +198,7 @@
 	async function handleDelete(resource: K8sResource) {
 		if (confirm(`Are you sure you want to delete ${resource.metadata.name}?`)) {
 			try {
-				const response = await fetch('/api/resources', {
+				const response = await apiClient('/api/resources', {
 					method: 'DELETE',
 					headers: {
 						'Content-Type': 'application/json',
@@ -193,7 +250,7 @@
 	}
 
 	function handleRefresh() {
-		goto(window.location.href);
+		loadResources();
 	}
 
 	function handleCreatorSuccess() {
@@ -275,12 +332,12 @@
 		<div class="mt-6">
 			<EventsPanel collapsed={true} />
 		</div>
-	{:else if data.error}
+	{:else if error}
 		<div class="bg-red-50 border border-red-200 rounded-lg p-4">
-			<p class="text-red-800">Error: {data.error}</p>
+			<p class="text-red-800">Error: {error}</p>
 		</div>
 	{:else}
-		{#if data.metricsEnabled && data.metricsCharts.length > 0}
+		{#if data.metricsEnabled && data.metricsCharts && data.metricsCharts.length > 0}
 			<MetricsPanel
 				charts={data.metricsCharts}
 				resourceType={data.resourceType}
@@ -288,19 +345,26 @@
 			/>
 		{/if}
 		
-		<ResourceList
-			resourceType={data.resourceType}
-			resources={data.resources}
-			namespace={data.namespace}
-			onEdit={handleEdit}
-			onDelete={handleDelete}
-			onRefresh={handleRefresh}
-			onLogs={data.resourceType === 'pods' ? handleLogs : undefined}
-			onExec={data.resourceType === 'pods' ? handleExec : undefined}
-			onEvents={handleEvents}
-			hideTable={eventsExpanded}
-			onToggleEvents={() => eventsExpanded = !eventsExpanded}
-		/>
+		{#if isLoading}
+			<div class="flex items-center justify-center p-8">
+				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+				<span class="ml-3 text-gray-600 dark:text-gray-400">Loading resources...</span>
+			</div>
+		{:else}
+				<ResourceList
+				resourceType={data.resourceType}
+				resources={resources}
+				namespace={data.namespace}
+				onEdit={handleEdit}
+				onDelete={handleDelete}
+				onRefresh={handleRefresh}
+				onLogs={data.resourceType === 'pods' ? handleLogs : undefined}
+				onExec={data.resourceType === 'pods' ? handleExec : undefined}
+				onEvents={handleEvents}
+				hideTable={eventsExpanded}
+				onToggleEvents={() => eventsExpanded = !eventsExpanded}
+			/>
+		{/if}
 		
 		<!-- Events Panel below resource list (only visible when events toggle is on) -->
 		{#if eventsExpanded}

@@ -3,6 +3,7 @@
 	import { X, Plus, FileCode, Check, AlertCircle, Loader2, ChevronDown } from 'lucide-svelte';
 	import YamlEditor from './YamlEditor.svelte';
 	import { resourceTemplates, getEmptyTemplate, type ResourceTemplate } from '$lib/config/resourceTemplates';
+	import { apiClient } from '$lib/utils/apiClient';
 
 	interface Props {
 		isOpen: boolean;
@@ -78,7 +79,7 @@
 		success = null;
 
 		try {
-			const response = await fetch('/api/resources', {
+			const response = await apiClient('/api/resources', {
 				method: mode === 'edit' ? 'PUT' : 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ yaml: yamlContent, dryRun: true })
@@ -110,7 +111,7 @@
 		success = null;
 
 		try {
-			const response = await fetch('/api/resources', {
+			const response = await apiClient('/api/resources', {
 				method: mode === 'edit' ? 'PUT' : 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ yaml: yamlContent })

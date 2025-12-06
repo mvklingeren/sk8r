@@ -1,11 +1,33 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import * as k8s from '@kubernetes/client-node';
+import { getK8sCredentials, unauthorizedResponse } from '$lib/server/k8sAuth';
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ request }) => {
+	const credentials = getK8sCredentials(request);
+	if (!credentials) {
+		return unauthorizedResponse();
+	}
+
 	try {
 		const kc = new k8s.KubeConfig();
-		kc.loadFromDefault();
+		kc.loadFromOptions({
+			clusters: [{
+				name: 'current-cluster',
+				server: credentials.server,
+				skipTLSVerify: true
+			}],
+			users: [{
+				name: 'current-user',
+				token: credentials.token
+			}],
+			contexts: [{
+				name: 'current-context',
+				cluster: 'current-cluster',
+				user: 'current-user'
+			}],
+			currentContext: 'current-context'
+		});
 		
 		const appsApi = kc.makeApiClient(k8s.AppsV1Api);
 		

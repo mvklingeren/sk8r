@@ -1,7 +1,23 @@
 import type { RequestHandler } from './$types';
-import { KubeConfig, Watch, CoreV1Api } from '@kubernetes/client-node';
+import { Watch, CoreV1Api } from '@kubernetes/client-node';
+import { getK8sCredentials, createKubeConfig } from '$lib/server/k8sAuth';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, request }) => {
+	const credentials = getK8sCredentials(request);
+	if (!credentials) {
+		return new Response(
+			`event: error\ndata: ${JSON.stringify({ message: 'Missing or invalid Kubernetes credentials' })}\n\n`,
+			{
+				status: 401,
+				headers: {
+					'Content-Type': 'text/event-stream',
+					'Cache-Control': 'no-cache',
+					'Connection': 'keep-alive'
+				}
+			}
+		);
+	}
+
 	const namespace = url.searchParams.get('namespace') || '';
 	const fieldSelector = url.searchParams.get('fieldSelector') || '';
 	const involvedObjectKind = url.searchParams.get('kind') || '';
@@ -17,10 +33,8 @@ export const GET: RequestHandler = async ({ url }) => {
 			: `${kindFilter},${nameFilter}`;
 	}
 
-	// Load kubeconfig
-	const kc = new KubeConfig();
-	kc.loadFromDefault();
-
+	// Load kubeconfig from credentials
+	const kc = createKubeConfig(credentials.server, credentials.token);
 	const watch = new Watch(kc);
 	const coreApi = kc.makeApiClient(CoreV1Api);
 
@@ -150,4 +164,3 @@ function formatEvent(event: any, watchType: string): any {
 		}
 	};
 }
-

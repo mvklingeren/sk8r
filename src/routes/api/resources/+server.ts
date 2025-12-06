@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { KubeConfig, KubernetesObjectApi } from '@kubernetes/client-node';
+import { KubernetesObjectApi } from '@kubernetes/client-node';
 import yaml from 'js-yaml';
+import { getK8sCredentials, unauthorizedResponse, createKubeConfig } from '$lib/server/k8sAuth';
 
 interface K8sManifest {
 	apiVersion: string;
@@ -34,6 +35,11 @@ function validateManifest(manifest: K8sManifest): { valid: boolean; error?: stri
 
 // POST - Create new resource(s)
 export const POST: RequestHandler = async ({ request }) => {
+	const credentials = getK8sCredentials(request);
+	if (!credentials) {
+		return unauthorizedResponse();
+	}
+
 	try {
 		const body = await request.json();
 		const { yaml: yamlContent, dryRun } = body;
@@ -83,8 +89,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		// Create resources
-		const kc = new KubeConfig();
-		kc.loadFromDefault();
+		const kc = createKubeConfig(credentials.server, credentials.token);
 		const client = KubernetesObjectApi.makeApiClient(kc);
 
 		const results: Array<{ kind: string; name: string; namespace?: string; status: string }> = [];
@@ -140,6 +145,11 @@ export const POST: RequestHandler = async ({ request }) => {
 
 // PUT - Update existing resource
 export const PUT: RequestHandler = async ({ request }) => {
+	const credentials = getK8sCredentials(request);
+	if (!credentials) {
+		return unauthorizedResponse();
+	}
+
 	try {
 		const body = await request.json();
 		const { yaml: yamlContent, dryRun } = body;
@@ -190,8 +200,7 @@ export const PUT: RequestHandler = async ({ request }) => {
 		}
 
 		// Update resource
-		const kc = new KubeConfig();
-		kc.loadFromDefault();
+		const kc = createKubeConfig(credentials.server, credentials.token);
 		const client = KubernetesObjectApi.makeApiClient(kc);
 
 		try {
@@ -238,6 +247,11 @@ export const PUT: RequestHandler = async ({ request }) => {
 
 // DELETE - Delete resource
 export const DELETE: RequestHandler = async ({ request }) => {
+	const credentials = getK8sCredentials(request);
+	if (!credentials) {
+		return unauthorizedResponse();
+	}
+
 	try {
 		const body = await request.json();
 		const { kind, apiVersion, name, namespace = 'default' } = body;
@@ -249,8 +263,7 @@ export const DELETE: RequestHandler = async ({ request }) => {
 			);
 		}
 
-		const kc = new KubeConfig();
-		kc.loadFromDefault();
+		const kc = createKubeConfig(credentials.server, credentials.token);
 		const client = KubernetesObjectApi.makeApiClient(kc);
 
 		try {
@@ -279,4 +292,3 @@ export const DELETE: RequestHandler = async ({ request }) => {
 		);
 	}
 };
-

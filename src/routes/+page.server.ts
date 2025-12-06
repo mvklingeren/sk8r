@@ -1,14 +1,11 @@
 import type { PageServerLoad } from './$types';
-import { K8sApiServiceSimple } from '$lib/services/k8sApiSimple';
-import type { K8sResource } from '$lib/types/k8s';
 import { resourceMetricsConfig } from '$lib/config/metricsConfig';
 
+// Data is now loaded client-side since credentials are stored in localStorage
+// This server load just passes through the query params
 export const load: PageServerLoad = async ({ url }) => {
 	const resourceType = url.searchParams.get('resource') || '';
 	const namespace = url.searchParams.get('namespace') || '*';
-	
-	// Debug logging
-	// console.log('PageServerLoad - resourceType:', resourceType, 'namespace:', namespace, 'type:', typeof namespace);
 	
 	if (!resourceType || resourceType === 'overview') {
 		return {
@@ -18,39 +15,16 @@ export const load: PageServerLoad = async ({ url }) => {
 		};
 	}
 
-	try {
-		const k8sApi = new K8sApiServiceSimple();
-		// Ensure namespace is a string
-		const namespaceStr = String(namespace || 'default');
-		const response = await k8sApi.listResources(resourceType, { namespace: namespaceStr });
-		
-		// Debug logging
-		// console.log('Response from k8sApi:', response);
-		
-		// Convert to serializable objects
-		const serializedResources = (response?.items || []).map(item => 
-			JSON.parse(JSON.stringify(item))
-		);
-		
-		// Check if metrics are enabled for this resource type
-		const metricsConfig = resourceMetricsConfig[resourceType];
-		
-		return {
-			resourceType,
-			resources: serializedResources,
-			namespace: namespaceStr,
-			metricsEnabled: metricsConfig?.enabled || false,
-			metricsCharts: metricsConfig?.charts || []
-		};
-	} catch (error) {
-		console.error('Failed to load resources:', error);
-		return {
-			resourceType,
-			resources: [],
-			namespace,
-			error: error instanceof Error ? error.message : 'Failed to load resources',
-			metricsEnabled: false,
-			metricsCharts: []
-		};
-	}
+	// Check if metrics are enabled for this resource type
+	const metricsConfig = resourceMetricsConfig[resourceType];
+	
+	// Return empty resources - they will be loaded client-side
+	return {
+		resourceType,
+		resources: [],
+		namespace: String(namespace || 'default'),
+		metricsEnabled: metricsConfig?.enabled || false,
+		metricsCharts: metricsConfig?.charts || [],
+		loadClientSide: true // Flag to indicate client-side loading is needed
+	};
 };

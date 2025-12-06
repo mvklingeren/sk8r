@@ -1,8 +1,9 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage } from 'http';
 import type { Duplex } from 'stream';
-import { KubeConfig, Exec } from '@kubernetes/client-node';
+import { Exec } from '@kubernetes/client-node';
 import * as stream from 'stream';
+import { createKubeConfig } from './k8sAuth';
 
 // Store active connections for cleanup
 const activeConnections = new Map<string, { ws: WebSocket; cleanup: () => void }>();
@@ -19,12 +20,22 @@ export function createWebSocketServer(): WebSocketServer {
 			return;
 		}
 
+		// Extract credentials from query params (passed from client)
+		const server = url.searchParams.get('server');
+		const token = url.searchParams.get('token');
+
+		if (!server || !token) {
+			ws.send('\x1b[31mError: Missing Kubernetes credentials\x1b[0m\r\n');
+			ws.close(1008, 'Missing credentials');
+			return;
+		}
+
 		const namespace = decodeURIComponent(pathMatch[1]);
 		const podName = decodeURIComponent(pathMatch[2]);
 		const container = url.searchParams.get('container') || undefined;
 		const command = url.searchParams.get('command') || '/bin/sh';
 
-		handleExecConnection(ws, namespace, podName, container, command);
+		handleExecConnection(ws, namespace, podName, container, command, server, token);
 	});
 
 	return wss;
@@ -53,16 +64,16 @@ async function handleExecConnection(
 	ws: WebSocket,
 	namespace: string,
 	podName: string,
-	container?: string,
-	command: string = '/bin/sh'
+	container: string | undefined,
+	command: string,
+	server: string,
+	token: string
 ): Promise<void> {
 	const connectionId = `${namespace}/${podName}/${container || 'default'}/${Date.now()}`;
 
 	console.log(`[WebSocket] New exec connection: ${connectionId}`);
 
-	const kc = new KubeConfig();
-	kc.loadFromDefault();
-
+	const kc = createKubeConfig(server, token);
 	const exec = new Exec(kc);
 
 	// Track K8s connection for cleanup
@@ -227,4 +238,3 @@ export function cleanupAllConnections(): void {
 	}
 	activeConnections.clear();
 }
-

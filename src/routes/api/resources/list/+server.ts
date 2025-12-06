@@ -9,33 +9,33 @@ export const GET: RequestHandler = async ({ url, request }) => {
 		return unauthorizedResponse();
 	}
 
-	const query = url.searchParams.get('q');
 	const resourceType = url.searchParams.get('type');
 	const namespace = url.searchParams.get('namespace') || '*';
 
-	if (!query || !resourceType) {
-		return json({ items: [] });
+	if (!resourceType) {
+		return json({ error: 'Resource type is required' }, { status: 400 });
 	}
 
 	try {
 		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
 		const response = await k8sApi.listResources(resourceType, { namespace });
 		
-		// Filter results by search query (name contains query)
-		const filteredItems = (response?.items || []).filter(item => {
-			const name = item.metadata?.name?.toLowerCase() || '';
-			const searchQuery = query.toLowerCase();
-			return name.includes(searchQuery);
-		});
-
-		// Convert to serializable objects and limit results
-		const serializedItems = filteredItems.slice(0, 20).map(item => 
+		// Convert to serializable objects
+		const serializedItems = (response?.items || []).map(item => 
 			JSON.parse(JSON.stringify(item))
 		);
 
-		return json({ items: serializedItems });
+		return json({
+			items: serializedItems,
+			apiVersion: response.apiVersion,
+			kind: response.kind
+		});
 	} catch (error) {
-		console.error(`Search error for ${resourceType}:`, error);
-		return json({ items: [] });
+		console.error(`Failed to list ${resourceType}:`, error);
+		return json(
+			{ error: error instanceof Error ? error.message : 'Failed to list resources' },
+			{ status: 500 }
+		);
 	}
 };
+

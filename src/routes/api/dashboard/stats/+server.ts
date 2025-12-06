@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { K8sApiServiceSimple } from '$lib/services/k8sApiSimple';
+import { getK8sCredentials, unauthorizedResponse } from '$lib/server/k8sAuth';
 
 export interface DashboardStats {
 	nodes: { total: number; ready: number };
@@ -11,9 +12,14 @@ export interface DashboardStats {
 	pvcs: { total: number; bound: number };
 }
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ request }) => {
+	const credentials = getK8sCredentials(request);
+	if (!credentials) {
+		return unauthorizedResponse();
+	}
+
 	try {
-		const k8sApi = new K8sApiServiceSimple();
+		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
 		
 		// Fetch all resources in parallel
 		const [nodes, pods, deployments, namespaces, services, pvcs] = await Promise.all([
@@ -66,4 +72,3 @@ export const GET: RequestHandler = async () => {
 		);
 	}
 };
-

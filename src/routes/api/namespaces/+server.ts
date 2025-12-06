@@ -1,10 +1,16 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { K8sApiServiceSimple } from '$lib/services/k8sApiSimple';
+import { getK8sCredentials, unauthorizedResponse } from '$lib/server/k8sAuth';
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ request }) => {
+	const credentials = getK8sCredentials(request);
+	if (!credentials) {
+		return unauthorizedResponse();
+	}
+
 	try {
-		const k8sApi = new K8sApiServiceSimple();
+		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
 		const namespaces = await k8sApi.listNamespaces();
 		
 		// Sort namespaces alphabetically, but keep 'default' and 'kube-system' at top
@@ -41,4 +47,3 @@ export const GET: RequestHandler = async () => {
 		);
 	}
 };
-

@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { apiClient } from '$lib/utils/apiClient';
 
 export interface NamespaceState {
 	namespaces: string[];
@@ -21,7 +22,7 @@ function createNamespaceStore() {
 			update(state => ({ ...state, loading: true, error: null }));
 			
 			try {
-				const response = await fetch('/api/namespaces');
+				const response = await apiClient('/api/namespaces');
 				if (!response.ok) {
 					throw new Error(`Failed to fetch namespaces: ${response.statusText}`);
 				}

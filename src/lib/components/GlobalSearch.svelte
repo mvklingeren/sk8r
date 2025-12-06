@@ -3,6 +3,7 @@
 	import { Search, Command, ArrowRight } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { navigation } from '$lib/stores/navigation';
+	import { apiClient } from '$lib/utils/apiClient';
 	
 	interface SearchResult {
 		name: string;
@@ -67,7 +68,7 @@
 			// Search across all resource types
 			const searchPromises = searchableResources.map(async (resourceType) => {
 				try {
-					const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&type=${resourceType}&namespace=*`);
+					const response = await apiClient(`/api/search?q=${encodeURIComponent(searchQuery)}&type=${resourceType}&namespace=*`);
 					if (response.ok) {
 						const data = await response.json();
 						return data.items.map((item: any) => ({

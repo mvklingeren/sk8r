@@ -23,8 +23,9 @@ export class MetricsService {
 			);
 			
 			// Transform the response to our NodeMetrics type
-			if (response.body && response.body.items) {
-				return response.body.items.map((item: any) => ({
+			const responseAny = response as any;
+			if (responseAny.body && responseAny.body.items) {
+				return responseAny.body.items.map((item: any) => ({
 					metadata: {
 						name: item.metadata.name,
 						selfLink: item.metadata.selfLink || '',

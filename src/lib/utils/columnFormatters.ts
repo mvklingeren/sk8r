@@ -195,7 +195,7 @@ export const columnFormatters = {
 
 	// Event specific formatters
 	eventObject(resource: K8sResource): string {
-		const involvedObject = resource.involvedObject;
+		const involvedObject = (resource as any).involvedObject;
 		if (!involvedObject) return '';
 		const kind = involvedObject.kind || '';
 		const name = involvedObject.name || '';

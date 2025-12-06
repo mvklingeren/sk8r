@@ -4,7 +4,6 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import GlobalSearch from '$lib/components/GlobalSearch.svelte';
 	import { onMount } from 'svelte';
-	import { authToken } from '$lib/stores/auth';
 	import { clusterStore } from '$lib/stores/cluster';
 	import { darkMode } from '$lib/stores/darkMode';
 	import { get } from 'svelte/store';
@@ -32,26 +31,14 @@
 		document.addEventListener('keydown', handleKeydown);
 
 		// Check if any clusters exist, if not prompt for first cluster
+		// All clusters are now stored client-side in localStorage (no kubeconfig dependency)
 		if (browser) {
 			// Wait a bit for clusterStore to initialize from localStorage
 			setTimeout(async () => {
 				const clusterState = get(clusterStore);
-				const hasKubeconfigContexts = clusterState.contexts.length > 0;
 				const hasCustomClusters = clusterState.customClusters.length > 0;
 				
-				if (!hasKubeconfigContexts && !hasCustomClusters) {
-					// Fetch kubeconfig contexts first
-					try {
-						await clusterStore.fetchContexts();
-						const updatedState = get(clusterStore);
-						if (updatedState.contexts.length > 0) {
-							// Found kubeconfig contexts, no need to prompt
-							return;
-						}
-					} catch (err) {
-						console.warn('Failed to fetch kubeconfig contexts:', err);
-					}
-					
+				if (!hasCustomClusters) {
 					// No clusters found, prompt for first cluster
 					const serverInput = prompt('Please enter your Kubernetes server address:\n(hostname/IP or full URL like https://kubernetes.example.com:6443)');
 					if (serverInput) {
@@ -67,8 +54,14 @@
 								} else if (normalizedServer.startsWith('http://')) {
 									normalizedServer = normalizedServer.replace('http://', 'https://');
 								}
+								// Remove trailing slash
+								normalizedServer = normalizedServer.replace(/\/+$/, '');
 								
-								await clusterStore.addCluster(normalizedServer, token);
+								const newCluster = await clusterStore.addCluster(normalizedServer, token);
+								// Auto-switch to the new cluster
+								clusterStore.switchToCustomCluster(newCluster.id);
+								// Reload to apply the new cluster
+								window.location.reload();
 							} catch (err) {
 								console.error('Failed to add cluster:', err);
 								alert(`Failed to add cluster: ${err instanceof Error ? err.message : 'Unknown error'}`);

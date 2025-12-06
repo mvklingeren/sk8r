@@ -1,29 +1,17 @@
 import type { PageServerLoad } from './$types';
-import { K8sApiServiceSimple } from '$lib/services/k8sApiSimple';
-import type { K8sResource } from '$lib/types/k8s';
-import { error } from '@sveltejs/kit';
 
+// Data is now loaded client-side since credentials are stored in localStorage
+// This server load just passes through the params
 export const load: PageServerLoad = async ({ params, url }) => {
 	const { resourceType, name } = params;
 	const namespace = url.searchParams.get('namespace') || 'default';
 
-	try {
-		const k8sApi = new K8sApiServiceSimple();
-		const resource = await k8sApi.getResource(resourceType, name, namespace);
-
-		// Convert to serializable object
-		const serializedResource = JSON.parse(JSON.stringify(resource));
-
-		return {
-			resource: serializedResource,
-			resourceType,
-			name,
-			namespace
-		};
-	} catch (err) {
-		console.error(`Failed to load resource ${resourceType}/${name}:`, err);
-		throw error(404, {
-			message: `Resource ${resourceType}/${name} not found in namespace ${namespace}`
-		});
-	}
+	// Return empty resource - it will be loaded client-side
+	return {
+		resource: null,
+		resourceType,
+		name,
+		namespace,
+		loadClientSide: true // Flag to indicate client-side loading is needed
+	};
 };
