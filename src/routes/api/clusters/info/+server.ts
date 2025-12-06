@@ -1,44 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import https from 'https';
-
-// Helper function to make HTTPS request with self-signed cert support
-function httpsRequest(url: string, token: string): Promise<{ status: number; data: string }> {
-	return new Promise((resolve, reject) => {
-		const parsedUrl = new URL(url);
-		
-		const options: https.RequestOptions = {
-			hostname: parsedUrl.hostname,
-			port: parsedUrl.port || 443,
-			path: parsedUrl.pathname + parsedUrl.search,
-			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${token}`,
-				'Accept': 'application/json'
-			},
-			rejectUnauthorized: false // Allow self-signed certificates
-		};
-		
-		const req = https.request(options, (res) => {
-			let data = '';
-			res.on('data', (chunk) => { data += chunk; });
-			res.on('end', () => {
-				resolve({ status: res.statusCode || 500, data });
-			});
-		});
-		
-		req.on('error', (error) => {
-			reject(error);
-		});
-		
-		req.setTimeout(10000, () => {
-			req.destroy();
-			reject(new Error('Request timeout'));
-		});
-		
-		req.end();
-	});
-}
+import { KubeConfig, CoreV1Api } from '@kubernetes/client-node';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -53,7 +15,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		
 		// Trim whitespace from token (common when pasting)
 		const trimmedToken = token.trim();
-		const trimmedServer = server.trim();
+		// Remove trailing slash from server URL (important!)
+		const trimmedServer = server.trim().replace(/\/+$/, '');
 		
 		// Validate server URL format
 		let serverUrl: URL;
@@ -66,46 +29,37 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 		
-		// Use direct HTTPS request to test connectivity (same as curl -k command)
-		// Remove trailing slash from server URL if present
-		const cleanServer = trimmedServer.replace(/\/+$/, '');
-		const apiUrl = `${cleanServer}/api/v1/namespaces?limit=1`;
+		// Create a temporary KubeConfig with the provided server and token
+		const kc = new KubeConfig();
 		
-		console.log('Testing cluster connectivity:');
-		console.log('  Original server:', server);
-		console.log('  Trimmed server:', trimmedServer);
-		console.log('  Clean server:', cleanServer);
-		console.log('  Full API URL:', apiUrl);
+		// Create a minimal kubeconfig structure
+		// Note: skipTLSVerify is set to true to handle self-signed certificates
+		kc.loadFromOptions({
+			clusters: [{
+				name: 'temp-cluster',
+				server: trimmedServer,
+				skipTLSVerify: true
+			}],
+			users: [{
+				name: 'temp-user',
+				token: trimmedToken
+			}],
+			contexts: [{
+				name: 'temp-context',
+				cluster: 'temp-cluster',
+				user: 'temp-user'
+			}],
+			currentContext: 'temp-context'
+		});
+		
+		// Try to connect to cluster and verify credentials
+		const coreApi = kc.makeApiClient(CoreV1Api);
+		
+		console.log('Testing cluster connectivity:', trimmedServer);
 		
 		try {
-			const response = await httpsRequest(apiUrl, trimmedToken);
-			
-			console.log('Cluster response status:', response.status);
-			
-			if (response.status >= 400) {
-				let errorMessage = `HTTP ${response.status}`;
-				
-				try {
-					const errorJson = JSON.parse(response.data);
-					if (errorJson.message) {
-						errorMessage = errorJson.message;
-					} else if (errorJson.reason) {
-						errorMessage = errorJson.reason;
-					}
-				} catch {
-					if (response.data) {
-						errorMessage = response.data.substring(0, 200);
-					}
-				}
-				
-				return json(
-					{ 
-						error: 'Failed to connect to cluster',
-						message: errorMessage
-					},
-					{ status: response.status }
-				);
-			}
+			// Use listNamespace as the connectivity test
+			await coreApi.listNamespace({ limit: 1 });
 			
 			// Connection successful - extract cluster name from server URL
 			const clusterName = serverUrl.hostname || serverUrl.host;
@@ -117,29 +71,32 @@ export const POST: RequestHandler = async ({ request }) => {
 				version: 'unknown',
 				platform: 'unknown'
 			});
-		} catch (requestError: any) {
-			console.error('Failed to connect to cluster:', requestError);
+		} catch (apiError: any) {
+			console.error('Failed to connect to cluster:', apiError);
 			
-			// Handle network errors
-			let errorMessage = 'Failed to connect to cluster';
-			if (requestError.code === 'ECONNREFUSED') {
-				errorMessage = 'Connection refused - check server URL and port';
-			} else if (requestError.code === 'ENOTFOUND') {
-				errorMessage = 'Server not found - check hostname';
-			} else if (requestError.code === 'ETIMEDOUT' || requestError.message === 'Request timeout') {
-				errorMessage = 'Connection timeout - server not reachable';
-			} else if (requestError.code === 'ECONNRESET') {
-				errorMessage = 'Connection reset by server';
-			} else if (requestError.message) {
-				errorMessage = requestError.message;
+			// Extract detailed error message from Kubernetes API response
+			let errorMessage = 'Invalid token or server URL';
+			if (apiError.body) {
+				if (typeof apiError.body === 'string') {
+					errorMessage = apiError.body;
+				} else if (apiError.body.message) {
+					errorMessage = apiError.body.message;
+				} else if (apiError.body.reason) {
+					errorMessage = apiError.body.reason;
+				}
+			} else if (apiError.message) {
+				errorMessage = apiError.message;
 			}
+			
+			// Determine the appropriate status code
+			const statusCode = apiError.statusCode || apiError.response?.statusCode || 401;
 			
 			return json(
 				{ 
 					error: 'Failed to connect to cluster',
 					message: errorMessage
 				},
-				{ status: 500 }
+				{ status: statusCode }
 			);
 		}
 	} catch (error) {
