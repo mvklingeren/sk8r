@@ -27,7 +27,7 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 	const previous = url.searchParams.get('previous') === 'true';
 
 	// Load kubeconfig from credentials
-	const kc = createKubeConfig(credentials.server, credentials.token);
+	const kc = createKubeConfig(credentials.server, credentials.token, credentials.skipTLSVerify);
 	const log = new Log(kc);
 
 	// Create a readable stream for SSE

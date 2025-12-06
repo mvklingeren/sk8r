@@ -4,7 +4,7 @@ import { KubeConfig, CoreV1Api } from '@kubernetes/client-node';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const { server, token } = await request.json();
+		const { server, token, skipTLSVerify = true } = await request.json();
 		
 		if (!server || !token) {
 			return json(
@@ -33,12 +33,11 @@ export const POST: RequestHandler = async ({ request }) => {
 		const kc = new KubeConfig();
 		
 		// Create a minimal kubeconfig structure
-		// Note: skipTLSVerify is set to true to handle self-signed certificates
 		kc.loadFromOptions({
 			clusters: [{
 				name: 'temp-cluster',
 				server: trimmedServer,
-				skipTLSVerify: true
+				skipTLSVerify: skipTLSVerify
 			}],
 			users: [{
 				name: 'temp-user',

@@ -3,9 +3,10 @@ import { authToken } from '$lib/stores/auth';
 type Fetch = typeof fetch;
 
 export const apiClient: Fetch = async (input, init) => {
-	// Get token and server from cluster-aware auth store
+	// Get token, server, and skipTLSVerify from cluster-aware auth store
 	const token = authToken.getCurrentToken();
 	const server = authToken.getCurrentServer();
+	const skipTLSVerify = authToken.getSkipTLSVerify();
 
 	const headers = new Headers(init?.headers);
 	if (token) {
@@ -14,6 +15,7 @@ export const apiClient: Fetch = async (input, init) => {
 	if (server) {
 		headers.set('X-K8s-Server', server);
 	}
+	headers.set('X-K8s-Skip-TLS', String(skipTLSVerify));
 
 	const newInit: RequestInit = {
 		...init,

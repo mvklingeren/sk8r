@@ -49,6 +49,17 @@ const createAuthStore = () => {
 				}
 			}
 			return null;
+		},
+		// Get skipTLSVerify setting from the current custom cluster
+		getSkipTLSVerify: (): boolean => {
+			const state = get(clusterStore);
+			if (state.currentCustomClusterId) {
+				const cluster = state.customClusters.find(c => c.id === state.currentCustomClusterId);
+				if (cluster) {
+					return cluster.skipTLSVerify ?? true;
+				}
+			}
+			return true; // Default to true for backward compatibility
 		}
 	};
 };

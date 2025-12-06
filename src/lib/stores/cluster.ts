@@ -15,6 +15,7 @@ export interface CustomCluster {
 	server: string;
 	token: string;
 	name: string;
+	skipTLSVerify: boolean;
 	isCurrent?: boolean;
 }
 
@@ -144,7 +145,7 @@ function createClusterStore() {
 		setError: (error: string | null) => update(state => ({ ...state, error })),
 		
 		// Add a new custom cluster
-		async addCluster(server: string, token: string): Promise<CustomCluster> {
+		async addCluster(server: string, token: string, skipTLSVerify: boolean = true): Promise<CustomCluster> {
 			update(state => ({ ...state, loading: true, error: null }));
 			
 			try {
@@ -152,7 +153,7 @@ function createClusterStore() {
 				const response = await fetch('/api/clusters/info', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ server, token })
+					body: JSON.stringify({ server, token, skipTLSVerify })
 				});
 				
 				if (!response.ok) {
@@ -177,6 +178,7 @@ function createClusterStore() {
 					server,
 					token,
 					name: clusterInfo.name || new URL(server).hostname,
+					skipTLSVerify,
 					isCurrent: false
 				};
 				
@@ -199,7 +201,7 @@ function createClusterStore() {
 		},
 		
 		// Update an existing custom cluster
-		async updateCluster(id: string, server: string, token: string): Promise<CustomCluster> {
+		async updateCluster(id: string, server: string, token: string, skipTLSVerify: boolean = true): Promise<CustomCluster> {
 			update(state => ({ ...state, loading: true, error: null }));
 			
 			try {
@@ -207,7 +209,7 @@ function createClusterStore() {
 				const response = await fetch('/api/clusters/info', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ server, token })
+					body: JSON.stringify({ server, token, skipTLSVerify })
 				});
 				
 				if (!response.ok) {
@@ -232,7 +234,7 @@ function createClusterStore() {
 				update(state => {
 					const updatedClusters = state.customClusters.map(cluster => {
 						if (cluster.id === id) {
-							updatedCluster = { ...cluster, server, token, name: clusterInfo.name || new URL(server).hostname };
+							updatedCluster = { ...cluster, server, token, skipTLSVerify, name: clusterInfo.name || new URL(server).hostname };
 							return updatedCluster;
 						}
 						return cluster;

@@ -34,7 +34,7 @@ export const GET: RequestHandler = async ({ url, request }) => {
 	}
 
 	// Load kubeconfig from credentials
-	const kc = createKubeConfig(credentials.server, credentials.token);
+	const kc = createKubeConfig(credentials.server, credentials.token, credentials.skipTLSVerify);
 	const watch = new Watch(kc);
 	const coreApi = kc.makeApiClient(CoreV1Api);
 

@@ -23,6 +23,7 @@ export function createWebSocketServer(): WebSocketServer {
 		// Extract credentials from query params (passed from client)
 		const server = url.searchParams.get('server');
 		const token = url.searchParams.get('token');
+		const skipTLSVerify = url.searchParams.get('skipTLSVerify') !== 'false';
 
 		if (!server || !token) {
 			ws.send('\x1b[31mError: Missing Kubernetes credentials\x1b[0m\r\n');
@@ -35,7 +36,7 @@ export function createWebSocketServer(): WebSocketServer {
 		const container = url.searchParams.get('container') || undefined;
 		const command = url.searchParams.get('command') || '/bin/sh';
 
-		handleExecConnection(ws, namespace, podName, container, command, server, token);
+		handleExecConnection(ws, namespace, podName, container, command, server, token, skipTLSVerify);
 	});
 
 	return wss;
@@ -67,13 +68,14 @@ async function handleExecConnection(
 	container: string | undefined,
 	command: string,
 	server: string,
-	token: string
+	token: string,
+	skipTLSVerify: boolean = true
 ): Promise<void> {
 	const connectionId = `${namespace}/${podName}/${container || 'default'}/${Date.now()}`;
 
 	console.log(`[WebSocket] New exec connection: ${connectionId}`);
 
-	const kc = createKubeConfig(server, token);
+	const kc = createKubeConfig(server, token, skipTLSVerify);
 	const exec = new Exec(kc);
 
 	// Track K8s connection for cleanup

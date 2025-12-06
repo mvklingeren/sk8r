@@ -89,7 +89,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		// Create resources
-		const kc = createKubeConfig(credentials.server, credentials.token);
+		const kc = createKubeConfig(credentials.server, credentials.token, credentials.skipTLSVerify);
 		const client = KubernetesObjectApi.makeApiClient(kc);
 
 		const results: Array<{ kind: string; name: string; namespace?: string; status: string }> = [];
@@ -200,7 +200,7 @@ export const PUT: RequestHandler = async ({ request }) => {
 		}
 
 		// Update resource
-		const kc = createKubeConfig(credentials.server, credentials.token);
+		const kc = createKubeConfig(credentials.server, credentials.token, credentials.skipTLSVerify);
 		const client = KubernetesObjectApi.makeApiClient(kc);
 
 		try {
@@ -263,7 +263,7 @@ export const DELETE: RequestHandler = async ({ request }) => {
 			);
 		}
 
-		const kc = createKubeConfig(credentials.server, credentials.token);
+		const kc = createKubeConfig(credentials.server, credentials.token, credentials.skipTLSVerify);
 		const client = KubernetesObjectApi.makeApiClient(kc);
 
 		try {

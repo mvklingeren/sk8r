@@ -107,8 +107,10 @@
 		// Include credentials for WebSocket connection
 		const server = authToken.getCurrentServer();
 		const token = authToken.getCurrentToken();
+		const skipTLSVerify = authToken.getSkipTLSVerify();
 		if (server) params.set('server', server);
 		if (token) params.set('token', token);
+		params.set('skipTLSVerify', String(skipTLSVerify));
 
 		const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 		return `${protocol}//${window.location.host}/api/pods/${namespace}/${podName}/exec?${params.toString()}`;
