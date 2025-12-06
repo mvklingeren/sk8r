@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked, Sun, Moon, Server, RefreshCw, AlertCircle, Plus, Folder } from 'lucide-svelte';
+	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked, Sun, Moon, Server, RefreshCw, AlertCircle, Plus, Folder, Edit2, X } from 'lucide-svelte';
 	import { navigationConfig } from '$lib/config/navigationConfig';
-	import type { NavigationSection } from '$lib/types/navigationConfig';
 	import { getIcon } from '$lib/utils/iconMapping';
 	import { navigation } from '$lib/stores/navigation';
 	import { dataSource } from '$lib/stores/dataSource';
 	import { learningMode } from '$lib/stores/learningMode';
 	import { darkMode } from '$lib/stores/darkMode';
-	import { clusterStore, type ClusterContext } from '$lib/stores/cluster';
+	import { clusterStore, type ClusterContext, type CustomCluster } from '$lib/stores/cluster';
 	import { namespaceStore } from '$lib/stores/namespaces';
 	import { resourceCreator } from '$lib/stores/resourceCreator';
+	import { authToken } from '$lib/stores/auth';
 
 	// Design patterns configuration
 	const designPatterns = [
@@ -24,6 +24,12 @@
 
 	let patternsExpanded = $state(false);
 	let clusterSwitching = $state(false);
+	let showClusterModal = $state(false);
+	let editingCluster: CustomCluster | null = $state(null);
+	let clusterServer = $state('');
+	let clusterToken = $state('');
+	let clusterModalError = $state<string | null>(null);
+	let clusterModalLoading = $state(false);
 
 	// Create reactive state for expanded sections - properly initialize each section
 	let sectionStates = $state(
@@ -62,16 +68,22 @@
 
 	async function handleClusterChange(event: Event) {
 		const select = event.target as HTMLSelectElement;
-		const newContext = select.value;
+		const newContextOrId = select.value;
 		
-		if (newContext && newContext !== $clusterStore.currentContext) {
+		if (newContextOrId && newContextOrId !== getCurrentClusterId()) {
 			clusterSwitching = true;
 			try {
-				await clusterStore.switchContext(newContext);
+				// Check if it's a custom cluster and update authToken
+				const customCluster = $clusterStore.customClusters.find(c => c.id === newContextOrId);
+				if (customCluster) {
+					authToken.setToken(customCluster.token);
+				}
+				
+				await clusterStore.switchContext(newContextOrId);
 			} catch (err) {
 				console.error('Failed to switch cluster:', err);
-				// Reset the select to the current context
-				select.value = $clusterStore.currentContext;
+				// Reset the select to the current cluster
+				select.value = getCurrentClusterId();
 			} finally {
 				clusterSwitching = false;
 			}
@@ -84,6 +96,163 @@
 
 	async function refreshNamespaces() {
 		await namespaceStore.fetchNamespaces();
+	}
+
+	function openAddClusterModal() {
+		editingCluster = null;
+		clusterServer = '';
+		clusterToken = '';
+		clusterModalError = null;
+		showClusterModal = true;
+	}
+
+	function openEditClusterModal(cluster: CustomCluster) {
+		editingCluster = cluster;
+		clusterServer = cluster.server;
+		clusterToken = cluster.token;
+		clusterModalError = null;
+		showClusterModal = true;
+	}
+
+	function closeClusterModal() {
+		showClusterModal = false;
+		editingCluster = null;
+		clusterServer = '';
+		clusterToken = '';
+		clusterModalError = null;
+	}
+
+	/**
+	 * Normalize server input to full URL format
+	 * Accepts:
+	 * - Full URL: https://kubernetes.example.com:6443
+	 * - Hostname/IP: kubernetes.example.com or 192.168.1.100
+	 * Returns normalized URL with https:// and default port 6443 if needed
+	 */
+	function normalizeServerUrl(input: string): string {
+		if (!input || !input.trim()) {
+			throw new Error('Server address is required');
+		}
+
+		const trimmed = input.trim();
+
+		// If it already looks like a full URL, validate and return
+		if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+			try {
+				const url = new URL(trimmed);
+				// Ensure HTTPS
+				if (url.protocol !== 'https:') {
+					throw new Error('Only HTTPS is supported for Kubernetes API server');
+				}
+				// Return without trailing slash (url.toString() adds one)
+				return url.toString().replace(/\/+$/, '');
+			} catch (e) {
+				throw new Error(`Invalid URL format: ${e instanceof Error ? e.message : 'Unknown error'}`);
+			}
+		}
+
+		// If it's just hostname/IP, add https:// and default port
+		// Remove any trailing slashes
+		const cleanHost = trimmed.replace(/\/+$/, '');
+		
+		// Check if it contains a port already
+		const hasPort = /:\d+$/.test(cleanHost);
+		
+		if (hasPort) {
+			// Extract hostname and port
+			const lastColonIndex = cleanHost.lastIndexOf(':');
+			const host = cleanHost.substring(0, lastColonIndex);
+			const port = cleanHost.substring(lastColonIndex + 1);
+			
+			// Basic validation - just check it's not empty
+			if (!host || !port || isNaN(parseInt(port))) {
+				throw new Error('Invalid hostname/IP and port format');
+			}
+			
+			return `https://${host}:${port}`;
+		} else {
+			// Basic validation - check it's not empty and doesn't contain invalid characters
+			if (!cleanHost || /[<>"']/.test(cleanHost)) {
+				throw new Error('Invalid hostname or IP address format');
+			}
+			// Add default port 6443
+			return `https://${cleanHost}:6443`;
+		}
+	}
+
+	async function saveCluster() {
+		if (!clusterServer || !clusterToken) {
+			clusterModalError = 'Server address and token are required';
+			return;
+		}
+
+		// Normalize server URL
+		let normalizedServer: string;
+		try {
+			normalizedServer = normalizeServerUrl(clusterServer);
+		} catch (err) {
+			clusterModalError = err instanceof Error ? err.message : 'Invalid server address format';
+			return;
+		}
+
+		clusterModalLoading = true;
+		clusterModalError = null;
+
+		try {
+			if (editingCluster) {
+				await clusterStore.updateCluster(editingCluster.id, normalizedServer, clusterToken);
+			} else {
+				await clusterStore.addCluster(normalizedServer, clusterToken);
+			}
+			closeClusterModal();
+		} catch (err: any) {
+			// Extract detailed error message from API response
+			if (err.response) {
+				const data = await err.response.json().catch(() => ({}));
+				clusterModalError = data.message || data.error || err.message || 'Failed to save cluster';
+			} else if (err instanceof Error) {
+				clusterModalError = err.message;
+			} else {
+				clusterModalError = 'Failed to save cluster';
+			}
+		} finally {
+			clusterModalLoading = false;
+		}
+	}
+
+	function getCurrentClusterId(): string {
+		if ($clusterStore.currentCustomClusterId) {
+			return $clusterStore.currentCustomClusterId;
+		}
+		return $clusterStore.currentContext || '';
+	}
+
+	function getAllClusters(): Array<{ id: string; name: string; server: string; isCustom: boolean; isCurrent: boolean }> {
+		const clusters: Array<{ id: string; name: string; server: string; isCustom: boolean; isCurrent: boolean }> = [];
+		
+		// Add kubeconfig contexts
+		$clusterStore.contexts.forEach(ctx => {
+			clusters.push({
+				id: ctx.name,
+				name: ctx.name,
+				server: ctx.server || 'unknown',
+				isCustom: false,
+				isCurrent: ctx.isCurrent
+			});
+		});
+		
+		// Add custom clusters
+		$clusterStore.customClusters.forEach(cluster => {
+			clusters.push({
+				id: cluster.id,
+				name: cluster.name,
+				server: new URL(cluster.server).hostname,
+				isCustom: true,
+				isCurrent: cluster.id === $clusterStore.currentCustomClusterId
+			});
+		});
+		
+		return clusters;
 	}
 </script>
 
@@ -200,14 +369,23 @@
 					<Server size={12} class="text-cyan-400" />
 					Cluster:
 				</label>
-				<button
-					onclick={refreshClusters}
-					class="p-1 hover:bg-gray-700 rounded transition-colors"
-					title="Refresh cluster list"
-					disabled={$clusterStore.loading}
-				>
-					<RefreshCw size={12} class="text-gray-500 hover:text-gray-300 {$clusterStore.loading ? 'animate-spin' : ''}" />
-				</button>
+				<div class="flex items-center gap-1">
+					<button
+						onclick={refreshClusters}
+						class="p-1 hover:bg-gray-700 rounded transition-colors"
+						title="Refresh cluster list"
+						disabled={$clusterStore.loading}
+					>
+						<RefreshCw size={12} class="text-gray-500 hover:text-gray-300 {$clusterStore.loading ? 'animate-spin' : ''}" />
+					</button>
+					<button
+						onclick={openAddClusterModal}
+						class="p-1 hover:bg-gray-700 rounded transition-colors"
+						title="Add cluster"
+					>
+						<Plus size={12} class="text-gray-500 hover:text-gray-300" />
+					</button>
+				</div>
 			</div>
 			
 			{#if $clusterStore.error}
@@ -217,35 +395,60 @@
 				</div>
 			{/if}
 			
-			{#if $clusterStore.contexts.length > 0}
-				<select 
-					id="cluster-select"
-					value={$clusterStore.currentContext}
-					onchange={handleClusterChange}
-					disabled={clusterSwitching || $clusterStore.loading}
-					class="w-full text-xs bg-gray-800 text-gray-300 border border-gray-600 rounded px-2 py-1.5 focus:outline-none focus:border-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
-				>
-					{#each $clusterStore.contexts as ctx (ctx.name)}
-						<option value={ctx.name}>
-							{ctx.name} ({ctx.server})
-						</option>
-					{/each}
-				</select>
-				{#if clusterSwitching}
-					<div class="text-xs text-cyan-400 mt-1 flex items-center gap-1">
-						<RefreshCw size={10} class="animate-spin" />
-						Switching cluster...
-					</div>
-				{/if}
+			{#if getAllClusters().length > 0}
+				{@const allClusters = getAllClusters()}
+				<div class="space-y-1">
+					<select 
+						id="cluster-select"
+						value={getCurrentClusterId()}
+						onchange={handleClusterChange}
+						disabled={clusterSwitching || $clusterStore.loading}
+						class="w-full text-xs bg-gray-800 text-gray-300 border border-gray-600 rounded px-2 py-1.5 focus:outline-none focus:border-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						{#each allClusters as cluster (cluster.id)}
+							<option value={cluster.id}>
+								{cluster.name} ({cluster.server}){cluster.isCustom ? ' [Custom]' : ''}
+							</option>
+						{/each}
+					</select>
+					{#if clusterSwitching}
+						<div class="text-xs text-cyan-400 flex items-center gap-1">
+							<RefreshCw size={10} class="animate-spin" />
+							Switching cluster...
+						</div>
+					{/if}
+					<!-- Edit buttons for custom clusters -->
+					{#if $clusterStore.customClusters.length > 0}
+						<div class="flex flex-wrap gap-1 mt-1">
+							{#each $clusterStore.customClusters as customCluster (customCluster.id)}
+								<button
+									onclick={() => openEditClusterModal(customCluster)}
+									class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded flex items-center gap-1 transition-colors"
+									title="Edit {customCluster.name}"
+								>
+									<Edit2 size={10} />
+									<span class="truncate max-w-[80px]">{customCluster.name}</span>
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
 			{:else if $clusterStore.loading}
 				<div class="text-xs text-gray-500 flex items-center gap-1.5 py-1">
 					<RefreshCw size={12} class="animate-spin" />
 					Loading clusters...
 				</div>
 			{:else}
-				<div class="text-xs text-gray-500 py-1">
+				<div class="text-xs text-gray-500 py-1 mb-1">
 					No clusters found
 				</div>
+				<button
+					onclick={openAddClusterModal}
+					class="w-full text-xs px-2 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded transition-colors flex items-center justify-center gap-1"
+				>
+					<Plus size={12} />
+					Add Cluster
+				</button>
 			{/if}
 		</div>
 		
@@ -363,6 +566,100 @@
 		</div>
 	</div>
 </aside>
+
+<!-- Cluster Management Modal -->
+{#if showClusterModal}
+	<div 
+		class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" 
+		role="dialog" 
+		aria-modal="true" 
+		tabindex="-1"
+		onclick={(e) => e.target === e.currentTarget && closeClusterModal()}
+		onkeydown={(e) => e.key === 'Escape' && closeClusterModal()}
+	>
+		<div 
+			class="bg-gray-800 text-gray-100 rounded-lg shadow-xl p-6 w-full max-w-md mx-4 border border-gray-600"
+		>
+			<div class="flex items-center justify-between mb-4">
+				<h2 class="text-lg font-semibold">
+					{editingCluster ? 'Edit Cluster' : 'Add Cluster'}
+				</h2>
+				<button
+					onclick={closeClusterModal}
+					class="p-1 hover:bg-gray-700 rounded transition-colors"
+					title="Close"
+				>
+					<X size={18} />
+				</button>
+			</div>
+			
+			{#if clusterModalError}
+				<div class="mb-4 p-2 bg-red-900/30 border border-red-700 rounded text-xs text-red-300 flex items-center gap-2">
+					<AlertCircle size={14} />
+					<span>{clusterModalError}</span>
+				</div>
+			{/if}
+			
+			<form onsubmit={(e) => { e.preventDefault(); saveCluster(); }} class="space-y-4">
+				<div>
+					<label for="cluster-server" class="block text-xs text-gray-400 mb-1">
+						Server Address:
+					</label>
+					<input
+						id="cluster-server"
+						type="text"
+						bind:value={clusterServer}
+						placeholder="kubernetes.example.com or https://kubernetes.example.com:6443"
+						disabled={clusterModalLoading}
+						class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm text-gray-100 focus:outline-none focus:border-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+						required
+					/>
+					<p class="text-xs text-gray-500 mt-1">
+						Enter hostname/IP (defaults to port 6443) or paste full URL from kubeconfig
+					</p>
+				</div>
+				
+				<div>
+					<label for="cluster-token" class="block text-xs text-gray-400 mb-1">
+						Bearer Token:
+					</label>
+					<input
+						id="cluster-token"
+						type="password"
+						bind:value={clusterToken}
+						placeholder="Enter your Kubernetes bearer token"
+						disabled={clusterModalLoading}
+						class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm text-gray-100 focus:outline-none focus:border-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+						required
+					/>
+				</div>
+				
+				<div class="flex items-center gap-2 pt-2">
+					<button
+						type="submit"
+						disabled={clusterModalLoading}
+						class="flex-1 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+					>
+						{#if clusterModalLoading}
+							<RefreshCw size={14} class="animate-spin" />
+							<span>Saving...</span>
+						{:else}
+							<span>{editingCluster ? 'Update' : 'Add'} Cluster</span>
+						{/if}
+					</button>
+					<button
+						type="button"
+						onclick={closeClusterModal}
+						disabled={clusterModalLoading}
+						class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						Cancel
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
 
 <style>
 	aside {

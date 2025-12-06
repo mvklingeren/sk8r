@@ -5,6 +5,7 @@
 	import GlobalSearch from '$lib/components/GlobalSearch.svelte';
 	import { onMount } from 'svelte';
 	import { authToken } from '$lib/stores/auth';
+	import { clusterStore } from '$lib/stores/cluster';
 	import { darkMode } from '$lib/stores/darkMode';
 	import { get } from 'svelte/store';
 	import { browser } from '$app/environment';
@@ -30,15 +31,52 @@
 
 		document.addEventListener('keydown', handleKeydown);
 
-		// Prompt for token if not set, once on mount
+		// Check if any clusters exist, if not prompt for first cluster
 		if (browser) {
-			const tokenValue = get(authToken);
-			if (!tokenValue) {
-				const userToken = prompt('Please enter your Kubernetes bearer token:');
-				if (userToken) {
-					authToken.setToken(userToken);
+			// Wait a bit for clusterStore to initialize from localStorage
+			setTimeout(async () => {
+				const clusterState = get(clusterStore);
+				const hasKubeconfigContexts = clusterState.contexts.length > 0;
+				const hasCustomClusters = clusterState.customClusters.length > 0;
+				
+				if (!hasKubeconfigContexts && !hasCustomClusters) {
+					// Fetch kubeconfig contexts first
+					try {
+						await clusterStore.fetchContexts();
+						const updatedState = get(clusterStore);
+						if (updatedState.contexts.length > 0) {
+							// Found kubeconfig contexts, no need to prompt
+							return;
+						}
+					} catch (err) {
+						console.warn('Failed to fetch kubeconfig contexts:', err);
+					}
+					
+					// No clusters found, prompt for first cluster
+					const serverInput = prompt('Please enter your Kubernetes server address:\n(hostname/IP or full URL like https://kubernetes.example.com:6443)');
+					if (serverInput) {
+						const token = prompt('Please enter your Kubernetes bearer token:');
+						if (token) {
+							try {
+								// Normalize server URL (add https:// and :6443 if needed)
+								let normalizedServer = serverInput.trim();
+								if (!normalizedServer.startsWith('http://') && !normalizedServer.startsWith('https://')) {
+									// Add https:// and default port
+									const hasPort = /:\d+$/.test(normalizedServer);
+									normalizedServer = hasPort ? `https://${normalizedServer}` : `https://${normalizedServer}:6443`;
+								} else if (normalizedServer.startsWith('http://')) {
+									normalizedServer = normalizedServer.replace('http://', 'https://');
+								}
+								
+								await clusterStore.addCluster(normalizedServer, token);
+							} catch (err) {
+								console.error('Failed to add cluster:', err);
+								alert(`Failed to add cluster: ${err instanceof Error ? err.message : 'Unknown error'}`);
+							}
+						}
+					}
 				}
-			}
+			}, 100);
 		}
 		
 		return () => {

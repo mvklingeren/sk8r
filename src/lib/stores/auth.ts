@@ -1,5 +1,6 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
+import { clusterStore } from './cluster';
 
 // Create a writable store with an initial value of null
 const createAuthStore = () => {
@@ -26,6 +27,18 @@ const createAuthStore = () => {
 				localStorage.removeItem('k8s-token');
 			}
 			set(null);
+		},
+		// Get current token (from cluster or fallback to stored)
+		getCurrentToken: (): string | null => {
+			const state = get(clusterStore);
+			if (state.currentCustomClusterId) {
+				const cluster = state.customClusters.find(c => c.id === state.currentCustomClusterId);
+				if (cluster) {
+					return cluster.token;
+				}
+			}
+			// Fallback to stored token for backward compatibility
+			return get({ subscribe }) || null;
 		}
 	};
 };
