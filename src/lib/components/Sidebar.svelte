@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked, Sun, Moon, Server, RefreshCw, AlertCircle, Plus, Folder, Edit2, X } from 'lucide-svelte';
+	import { ChevronRight, ChevronDown, Box, Database, Activity, GraduationCap, BookMarked, Sun, Moon, Server, RefreshCw, AlertCircle, Plus, Folder, Edit2, X, Trash2 } from 'lucide-svelte';
 	import { navigationConfig } from '$lib/config/navigationConfig';
 	import { getIcon } from '$lib/utils/iconMapping';
 	import { navigation } from '$lib/stores/navigation';
@@ -124,6 +124,22 @@
 		clusterToken = '';
 		clusterSkipTLS = true;
 		clusterModalError = null;
+	}
+
+	function deleteCluster(cluster: CustomCluster) {
+		const isCurrentCluster = $clusterStore.currentCustomClusterId === cluster.id;
+		const message = isCurrentCluster 
+			? `Are you sure you want to delete "${cluster.name}"? This is your current cluster and will require selecting another cluster.`
+			: `Are you sure you want to delete "${cluster.name}"?`;
+		
+		if (confirm(message)) {
+			clusterStore.removeCluster(cluster.id);
+			
+			// If we deleted the current cluster and there are other clusters, reload to reset state
+			if (isCurrentCluster) {
+				window.location.reload();
+			}
+		}
 	}
 
 	/**
@@ -421,18 +437,27 @@
 							Switching cluster...
 						</div>
 					{/if}
-					<!-- Edit buttons for custom clusters -->
+					<!-- Edit/Delete buttons for custom clusters -->
 					{#if $clusterStore.customClusters.length > 0}
 						<div class="flex flex-wrap gap-1 mt-1">
 							{#each $clusterStore.customClusters as customCluster (customCluster.id)}
-								<button
-									onclick={() => openEditClusterModal(customCluster)}
-									class="text-xs px-2 py-0.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded flex items-center gap-1 transition-colors"
-									title="Edit {customCluster.name}"
-								>
-									<Edit2 size={10} />
-									<span class="truncate max-w-[80px]">{customCluster.name}</span>
-								</button>
+								<div class="flex items-center bg-gray-800 border border-gray-600 rounded overflow-hidden">
+									<button
+										onclick={() => openEditClusterModal(customCluster)}
+										class="text-xs px-2 py-0.5 hover:bg-gray-700 flex items-center gap-1 transition-colors"
+										title="Edit {customCluster.name}"
+									>
+										<Edit2 size={10} />
+										<span class="truncate max-w-[80px]">{customCluster.name}</span>
+									</button>
+									<button
+										onclick={() => deleteCluster(customCluster)}
+										class="text-xs px-1.5 py-0.5 hover:bg-red-900/50 text-gray-400 hover:text-red-400 border-l border-gray-600 transition-colors"
+										title="Delete {customCluster.name}"
+									>
+										<Trash2 size={10} />
+									</button>
+								</div>
 							{/each}
 						</div>
 					{/if}
