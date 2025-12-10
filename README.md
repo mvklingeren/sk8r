@@ -16,16 +16,16 @@ sk8r is a modern, open-source dashboard for your Kubernetes cluster. It provides
 Deploy sk8r to your Kubernetes cluster with a single command:
 
 ```sh
-kubectl apply -f https://raw.githubusercontent.com/mvkdev/sk8r/main/k8s/rbac.yaml \
-              -f https://raw.githubusercontent.com/mvkdev/sk8r/main/k8s/nodes-rbac.yaml \
-              -f https://raw.githubusercontent.com/mvkdev/sk8r/main/k8s/deployment.yaml \
-              -f https://raw.githubusercontent.com/mvkdev/sk8r/main/k8s/service.yaml
+kubectl apply -f https://raw.githubusercontent.com/mvklingeren/sk8r/main/k8s/rbac.yaml \
+              -f https://raw.githubusercontent.com/mvklingeren/sk8r/main/k8s/nodes-rbac.yaml \
+              -f https://raw.githubusercontent.com/mvklingeren/sk8r/main/k8s/deployment.yaml \
+              -f https://raw.githubusercontent.com/mvklingeren/sk8r/main/k8s/service.yaml
 ```
 
 Or clone the repository and apply all manifests:
 
 ```sh
-git clone https://github.com/mvkdev/sk8r.git
+git clone https://github.com/mvklingeren/sk8r.git
 cd sk8r
 kubectl apply -f k8s/
 ```
