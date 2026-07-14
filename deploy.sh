@@ -19,9 +19,9 @@ echo "--- Building and pushing multi-platform Docker image to $DOCKERHUB_USERNAM
 docker buildx build --platform linux/amd64,linux/arm64 -t "$DOCKERHUB_USERNAME/$IMAGE_NAME:$TAG" --push .
 echo "Image push complete."
 
-# 2. Apply all Kubernetes manifests from the k8s directory
+# 2. Apply the app's Kubernetes manifests (NOT stress-test.yaml — that's a manual load-test tool)
 echo "--- Applying Kubernetes manifests ---"
-kubectl apply -f k8s/
+kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/rbac.yaml -f k8s/nodes-rbac.yaml
 
 # 3. Wait for image propagation to Docker Hub CDN
 echo "--- Waiting for image propagation (10 seconds) ---"

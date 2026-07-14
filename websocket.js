@@ -1,8 +1,20 @@
 // Standalone WebSocket server for pod exec functionality
 import { WebSocketServer, WebSocket } from 'ws';
-import { Exec } from '@kubernetes/client-node';
+import { Exec, KubeConfig } from '@kubernetes/client-node';
 import * as stream from 'stream';
-import { createKubeConfig } from './src/lib/server/k8sAuth.js';
+
+// Inlined from src/lib/server/k8sAuth.ts: that file is TypeScript and not in the
+// runtime image — this standalone entry runs under plain node, so it can't import it.
+function createKubeConfig(server, token, skipTLSVerify = true) {
+	const kc = new KubeConfig();
+	kc.loadFromOptions({
+		clusters: [{ name: 'current-cluster', server: server.replace(/\/+$/, ''), skipTLSVerify }],
+		users: [{ name: 'current-user', token }],
+		contexts: [{ name: 'current-context', cluster: 'current-cluster', user: 'current-user' }],
+		currentContext: 'current-context'
+	});
+	return kc;
+}
 
 // Store active connections for cleanup
 const activeConnections = new Map();
