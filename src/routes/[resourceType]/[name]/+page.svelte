@@ -347,7 +347,9 @@
 								{#each Object.entries(resource.metadata.annotations) as [key, value] (key)}
 									<div class="text-xs">
 										<div class="font-medium text-gray-600 dark:text-neutral-300">{key}</div>
-										<div class="font-mono break-all text-gray-500 dark:text-neutral-400">{value}</div>
+										<div class="font-mono break-all text-gray-500 dark:text-neutral-400">
+											{value}
+										</div>
 									</div>
 								{/each}
 							</div>

@@ -58,7 +58,10 @@
 	<!-- Header -->
 	<header class="sticky top-0 z-10 border-b border-neutral-800 bg-neutral-900/95 backdrop-blur">
 		<div class="mx-auto flex max-w-4xl items-center gap-4 px-6 py-4">
-			<a href="/" class="flex items-center gap-2 text-neutral-400 transition-colors hover:text-white">
+			<a
+				href="/"
+				class="flex items-center gap-2 text-neutral-400 transition-colors hover:text-white"
+			>
 				<ArrowLeft size={20} />
 				<span class="text-sm">Back to Dashboard</span>
 			</a>

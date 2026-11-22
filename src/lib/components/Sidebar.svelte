@@ -90,8 +90,12 @@
 
 		<!-- Search hint -->
 		<div class="mt-3 flex items-center gap-2 text-xs text-neutral-500">
-			<kbd class="rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-neutral-400">Ctrl</kbd>
-			<kbd class="rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-neutral-400">K</kbd>
+			<kbd class="rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-neutral-400"
+				>Ctrl</kbd
+			>
+			<kbd class="rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-neutral-400"
+				>K</kbd
+			>
 			<span>to search</span>
 		</div>
 	</div>

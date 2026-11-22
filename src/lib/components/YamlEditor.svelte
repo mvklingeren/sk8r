@@ -161,7 +161,9 @@
 	style="height: {height}"
 >
 	<!-- Toolbar -->
-	<div class="flex items-center justify-between border-b border-neutral-700 bg-neutral-800 px-3 py-2">
+	<div
+		class="flex items-center justify-between border-b border-neutral-700 bg-neutral-800 px-3 py-2"
+	>
 		<div class="flex items-center gap-2">
 			<span class="font-mono text-xs text-neutral-400">YAML</span>
 			{#if error}

@@ -1,41 +1,77 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { env } from '$env/dynamic/private';
 import { PrometheusService } from '$lib/services/prometheusService';
+import { dashboardConfig } from '$lib/config/dashboardConfig';
+import { resourceMetricsConfig } from '$lib/config/metricsConfig';
+
+// Only proxy the PromQL the UI itself sends; otherwise any caller could run arbitrary
+// (or arbitrarily expensive) queries against an otherwise cluster-internal Prometheus.
+const allowedQueries = new Set(
+	[
+		...dashboardConfig.cards.flatMap((card) => [card.query, card.statusQuery]),
+		...[
+			...dashboardConfig.charts,
+			...Object.values(resourceMetricsConfig).flatMap((r) => r.charts)
+		].flatMap((chart) => [chart.query, ...(chart.queries ?? []).map((q) => q.query)])
+	].filter((q): q is string => !!q)
+);
+
+/** A positive integer, `fallback` when the param is absent, NaN when it is invalid. */
+function positiveInt(params: URLSearchParams, name: string, fallback?: number) {
+	const value = params.get(name);
+	if (value === null) return fallback;
+	return /^\d+$/.test(value) && Number(value) > 0 ? Number(value) : NaN;
+}
+
+const badRequest = (error: string) => json({ error }, { status: 400 });
 
 export const GET: RequestHandler = async ({ url }) => {
-	const query = url.searchParams.get('q');
-	const type = url.searchParams.get('type') || 'instant'; // 'instant' or 'range'
-	const rangeMinutes = parseInt(url.searchParams.get('range') || '5', 10);
-	const step = parseInt(url.searchParams.get('step') || '15', 10);
+	const params = url.searchParams;
+	const query = params.get('q');
+	const type = params.get('type') ?? 'instant'; // 'instant' or 'range'
 
-	// Support for custom date range with start/end timestamps (Unix seconds)
-	const startParam = url.searchParams.get('start');
-	const endParam = url.searchParams.get('end');
-	const start = startParam ? parseInt(startParam, 10) : undefined;
-	const end = endParam ? parseInt(endParam, 10) : undefined;
+	if (!query) return badRequest('Query parameter "q" is required.');
+	if (!allowedQueries.has(query)) {
+		return json({ error: 'Query is not one of the dashboard queries.' }, { status: 403 });
+	}
+	if (type !== 'instant' && type !== 'range') return badRequest('"type" must be instant or range.');
 
-	if (!query) {
-		return json({ error: 'Query parameter "q" is required.' }, { status: 400 });
+	// Range options: absolute start/end (Unix seconds) or the last `range` minutes
+	const step = positiveInt(params, 'step', 15);
+	const rangeMinutes = positiveInt(params, 'range', 5);
+	const start = positiveInt(params, 'start');
+	const end = positiveInt(params, 'end');
+	if (type === 'range') {
+		if (Number.isNaN(step) || Number.isNaN(rangeMinutes)) {
+			return badRequest('"step" and "range" must be positive integers.');
+		}
+		if ((start === undefined) !== (end === undefined)) {
+			return badRequest('"start" and "end" must be given together.');
+		}
+		if (start !== undefined && end !== undefined && !(start < end)) {
+			return badRequest('"start" and "end" must be Unix seconds with start < end.');
+		}
+	}
+
+	if (!env.PROMETHEUS_URL) {
+		return json({ error: 'Prometheus is not configured (PROMETHEUS_URL).' }, { status: 503 });
 	}
 
 	try {
 		const prometheusService = new PrometheusService();
-
-		if (type === 'range') {
-			// Use range query for charts (returns multiple data points)
-			// If start/end are provided, use absolute timestamps; otherwise use rangeMinutes
-			const options =
-				start !== undefined && end !== undefined ? { start, end, step } : { rangeMinutes, step };
-			const result = await prometheusService.queryRange(query, options);
-			return json(result);
-		} else {
-			// Use instant query for current values (returns single data point)
-			const result = await prometheusService.query(query);
-			return json(result);
-		}
+		const result =
+			type === 'range'
+				? await prometheusService.queryRange(
+						query,
+						start !== undefined ? { start, end, step } : { rangeMinutes, step }
+					)
+				: await prometheusService.query(query);
+		return json(result);
 	} catch (error) {
-		console.error(`Failed to execute Prometheus query: ${query}`, error);
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-		return json({ error: `Failed to execute Prometheus query: ${errorMessage}` }, { status: 500 });
+		// One line per failure: the dashboard polls ~24 queries every 10s, so stack traces flood the log
+		console.error(`Failed to execute Prometheus query: ${query}: ${errorMessage}`);
+		return json({ error: `Failed to execute Prometheus query: ${errorMessage}` }, { status: 502 });
 	}
 };
