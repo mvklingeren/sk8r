@@ -1,0 +1,311 @@
+# Fake workloads for the sk8r demo cluster (see AGENTS.md). Nothing here is real.
+apiVersion: v1
+kind: Namespace
+metadata: { name: shop, labels: { team: storefront } }
+---
+apiVersion: v1
+kind: Namespace
+metadata: { name: payments, labels: { team: payments } }
+---
+apiVersion: v1
+kind: Namespace
+metadata: { name: data, labels: { team: platform } }
+---
+apiVersion: v1
+kind: Namespace
+metadata: { name: sk8r }
+---
+# ---------- shop ----------
+apiVersion: v1
+kind: ConfigMap
+metadata: { name: storefront-config, namespace: shop }
+data:
+  FEATURE_NEW_CHECKOUT: 'true'
+  CATALOG_URL: http://catalog-api.shop
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: storefront, namespace: shop, labels: { app: storefront, tier: frontend } }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: storefront } }
+  template:
+    metadata: { labels: { app: storefront, tier: frontend } }
+    spec:
+      containers:
+        - name: web
+          image: nginxinc/nginx-unprivileged:1.28-alpine
+          ports: [{ containerPort: 8080 }]
+          envFrom: [{ configMapRef: { name: storefront-config } }]
+          resources: { requests: { cpu: 50m, memory: 32Mi }, limits: { memory: 64Mi } }
+          readinessProbe: { httpGet: { path: /, port: 8080 } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: storefront, namespace: shop }
+spec:
+  selector: { app: storefront }
+  ports: [{ name: http, port: 80, targetPort: 8080 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: catalog-api, namespace: shop, labels: { app: catalog-api, tier: backend } }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: catalog-api } }
+  template:
+    metadata: { labels: { app: catalog-api, tier: backend } }
+    spec:
+      containers:
+        - name: api
+          image: caddy:2.10.2
+          command: [caddy, respond, --listen, ':8080', '{"items":42}']
+          ports: [{ containerPort: 8080 }]
+          resources: { requests: { cpu: 25m, memory: 32Mi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: catalog-api, namespace: shop }
+spec:
+  selector: { app: catalog-api }
+  ports: [{ name: http, port: 80, targetPort: 8080 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: cart-api, namespace: shop, labels: { app: cart-api, tier: backend } }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: cart-api } }
+  template:
+    metadata: { labels: { app: cart-api, tier: backend } }
+    spec:
+      containers:
+        - name: api
+          image: caddy:2.10.2
+          command: [caddy, respond, --listen, ':8080', '{"cart":[]}']
+          ports: [{ containerPort: 8080 }]
+          resources: { requests: { cpu: 25m, memory: 32Mi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: cart-api, namespace: shop }
+spec:
+  selector: { app: cart-api }
+  ports: [{ name: http, port: 80, targetPort: 8080 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  { name: recommendations, namespace: shop, labels: { app: recommendations, tier: backend } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: recommendations } }
+  template:
+    metadata: { labels: { app: recommendations, tier: backend } }
+    spec:
+      containers:
+        - name: worker
+          image: postgres:17-alpine
+          command:
+            [
+              sh,
+              -c,
+              'echo "connecting to model-server:9000"; sleep 20; echo "error: model-server unreachable" >&2; exit 1'
+            ]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: traffic-generator, namespace: shop, labels: { app: traffic-generator } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: traffic-generator } }
+  template:
+    # tier=frontend so the backend-from-frontend NetworkPolicy lets it through
+    metadata: { labels: { app: traffic-generator, tier: frontend } }
+    spec:
+      containers:
+        - name: load
+          image: postgres:17-alpine
+          command:
+            - sh
+            - -c
+            - |
+              while true; do
+                for p in storefront/ catalog-api/products cart-api/cart; do
+                  svc=${p%%/*}; path=/${p#*/}
+                  if wget -q -O /dev/null http://$svc.shop$path; then code=200; else code=503; fi
+                  echo "level=info method=GET url=http://$svc.shop$path status=$code duration=$((RANDOM % 45 + 3))ms"
+                done
+                sleep 0.5
+              done
+---
+# Bursty CPU so the CPU charts have some shape
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: image-resizer, namespace: shop, labels: { app: image-resizer, tier: backend } }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: image-resizer } }
+  template:
+    metadata: { labels: { app: image-resizer, tier: backend } }
+    spec:
+      containers:
+        - name: worker
+          image: postgres:17-alpine
+          command:
+            [
+              sh,
+              -c,
+              'while :; do echo "resizing batch $RANDOM"; timeout $((20 + RANDOM % 40)) sh -c "while :; do :; done"; sleep $((10 + RANDOM % 30)); done'
+            ]
+          resources:
+            { requests: { cpu: 100m, memory: 16Mi }, limits: { cpu: '1500m', memory: 64Mi } }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: storefront, namespace: shop }
+spec:
+  rules:
+    - host: shop.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: storefront, port: { number: 80 } } }
+          - path: /api/cart
+            pathType: Prefix
+            backend: { service: { name: cart-api, port: { number: 80 } } }
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata: { name: rate-limit, namespace: shop }
+spec:
+  rateLimit: { average: 100, burst: 50 }
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata: { name: catalog, namespace: shop }
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`shop.example.com`) && PathPrefix(`/api/catalog`)
+      kind: Rule
+      middlewares: [{ name: rate-limit }]
+      services: [{ name: catalog-api, port: 80 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: backend-from-frontend, namespace: shop }
+spec:
+  podSelector: { matchLabels: { tier: backend } }
+  ingress:
+    - from: [{ podSelector: { matchLabels: { tier: frontend } } }]
+---
+# ---------- payments ----------
+apiVersion: v1
+kind: Secret
+metadata: { name: payments-gateway, namespace: payments }
+stringData: { API_KEY: not-a-real-key }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: payments-api, namespace: payments, labels: { app: payments-api } }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: payments-api } }
+  template:
+    metadata: { labels: { app: payments-api } }
+    spec:
+      containers:
+        - name: api
+          image: caddy:2.10.2
+          command: [caddy, respond, --listen, ':8080', '{"status":"ok"}']
+          envFrom: [{ secretRef: { name: payments-gateway } }]
+          ports: [{ containerPort: 8080 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: payments-api, namespace: payments }
+spec:
+  selector: { app: payments-api }
+  ports: [{ name: http, port: 80, targetPort: 8080 }]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: { name: settlement-report, namespace: payments }
+spec:
+  schedule: '*/5 * * * *'
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: report
+              image: postgres:17-alpine
+              command: [sh, -c, 'echo "settled 1,284 transactions"; sleep 5']
+---
+# ---------- data ----------
+apiVersion: v1
+kind: Secret
+metadata: { name: orders-db, namespace: data }
+stringData: { POSTGRES_PASSWORD: demo-only }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: orders-db, namespace: data }
+spec:
+  clusterIP: None
+  selector: { app: orders-db }
+  ports: [{ port: 5432 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: { name: orders-db, namespace: data, labels: { app: orders-db } }
+spec:
+  serviceName: orders-db
+  replicas: 1
+  selector: { matchLabels: { app: orders-db } }
+  template:
+    metadata: { labels: { app: orders-db } }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17-alpine
+          envFrom: [{ secretRef: { name: orders-db } }]
+          env: [{ name: PGDATA, value: /var/lib/postgresql/data/pgdata }]
+          ports: [{ containerPort: 5432 }]
+          volumeMounts: [{ name: data, mountPath: /var/lib/postgresql/data }]
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: { requests: { storage: 1Gi } }
+---
+apiVersion: batch/v1
+kind: Job
+metadata: { name: orders-db-migrate, namespace: data }
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: postgres:17-alpine
+          command:
+            [
+              sh,
+              -c,
+              'for v in 001 002 003 004; do echo "applying migration $v"; sleep 1; done; echo done'
+            ]
+---
+# ---------- sk8r access for the demo (cluster-admin: demo cluster only) ----------
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: sk8r-demo, namespace: sk8r }
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata: { name: sk8r-demo }
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: cluster-admin }
+subjects: [{ kind: ServiceAccount, name: sk8r-demo, namespace: sk8r }]
