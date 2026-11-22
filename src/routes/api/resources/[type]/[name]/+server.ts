@@ -38,7 +38,7 @@ export const DELETE: RequestHandler = async ({ params, request }) => {
 	try {
 		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
 		await k8sApi.deleteResource(type, name, namespace);
-		
+
 		return json({ success: true });
 	} catch (error) {
 		console.error('Failed to delete resource:', error);

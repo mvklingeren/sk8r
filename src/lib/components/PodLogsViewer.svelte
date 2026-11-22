@@ -37,13 +37,13 @@
 		params.set('follow', String(follow));
 		if (tailLines > 0) params.set('tailLines', String(tailLines));
 		params.set('timestamps', String(timestamps));
-		
+
 		return `/api/pods/${namespace}/${podName}/logs?${params.toString()}`;
 	}
 
 	function connect() {
 		disconnect();
-		
+
 		isLoading = true;
 		error = null;
 		logs = [];
@@ -51,7 +51,7 @@
 		const url = buildLogUrl();
 		eventSource = new EventSource(url);
 
-		eventSource.addEventListener('connected', (e) => {
+		eventSource.addEventListener('connected', () => {
 			isConnected = true;
 			isLoading = false;
 		});
@@ -60,7 +60,7 @@
 			try {
 				const logLine = JSON.parse(e.data);
 				logs = [...logs, logLine];
-				
+
 				if (autoScroll && logContainer) {
 					requestAnimationFrame(() => {
 						logContainer.scrollTop = logContainer.scrollHeight;
@@ -127,14 +127,6 @@
 		URL.revokeObjectURL(url);
 	}
 
-	function toggleFollow() {
-		follow = !follow;
-		if (follow && isConnected) {
-			// Reconnect with follow enabled
-			connect();
-		}
-	}
-
 	function toggleAutoScroll() {
 		autoScroll = !autoScroll;
 		if (autoScroll && logContainer) {
@@ -170,8 +162,8 @@
 </script>
 
 <!-- Backdrop -->
-<div 
-	class="fixed inset-0 bg-black/50 z-40"
+<div
+	class="fixed inset-0 z-40 bg-black/50"
 	onclick={onClose}
 	role="button"
 	tabindex="-1"
@@ -179,27 +171,32 @@
 ></div>
 
 <!-- Modal -->
-<div class="fixed inset-4 md:inset-8 lg:inset-12 bg-gray-900 rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
+<div
+	class="fixed inset-4 z-50 flex flex-col overflow-hidden rounded-xl bg-gray-900 shadow-2xl md:inset-8 lg:inset-12"
+>
 	<!-- Header -->
-	<div class="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700">
+	<div class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3">
 		<div class="flex items-center gap-4">
-			<h2 class="text-lg font-semibold text-white flex items-center gap-2">
-				<span class="w-2 h-2 rounded-full {isConnected ? 'bg-green-400' : 'bg-gray-500'}"></span>
+			<h2 class="flex items-center gap-2 text-lg font-semibold text-white">
+				<span class="h-2 w-2 rounded-full {isConnected ? 'bg-green-400' : 'bg-gray-500'}"></span>
 				Pod Logs: {podName}
 			</h2>
-			
+
 			{#if containers.length > 1}
 				<div class="relative">
 					<select
 						value={selectedContainer}
 						onchange={handleContainerChange}
-						class="appearance-none bg-gray-700 text-gray-200 text-sm px-3 py-1.5 pr-8 rounded border border-gray-600 focus:outline-none focus:border-blue-500"
+						class="appearance-none rounded border border-gray-600 bg-gray-700 px-3 py-1.5 pr-8 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
 					>
 						{#each containers as container}
 							<option value={container}>{container}</option>
 						{/each}
 					</select>
-					<ChevronDown size={14} class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+					<ChevronDown
+						size={14}
+						class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-gray-400"
+					/>
 				</div>
 			{:else if selectedContainer}
 				<span class="text-sm text-gray-400">Container: {selectedContainer}</span>
@@ -211,7 +208,7 @@
 			<select
 				value={tailLines}
 				onchange={handleTailLinesChange}
-				class="appearance-none bg-gray-700 text-gray-200 text-sm px-3 py-1.5 rounded border border-gray-600 focus:outline-none focus:border-blue-500"
+				class="appearance-none rounded border border-gray-600 bg-gray-700 px-3 py-1.5 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
 			>
 				{#each tailOptions as option}
 					<option value={option.value}>{option.label}</option>
@@ -220,8 +217,13 @@
 
 			<!-- Timestamps toggle -->
 			<button
-				onclick={() => { timestamps = !timestamps; connect(); }}
-				class="px-3 py-1.5 text-sm rounded border transition-colors {timestamps ? 'bg-blue-600 border-blue-500 text-white' : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'}"
+				onclick={() => {
+					timestamps = !timestamps;
+					connect();
+				}}
+				class="rounded border px-3 py-1.5 text-sm transition-colors {timestamps
+					? 'border-blue-500 bg-blue-600 text-white'
+					: 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600'}"
 				title="Show timestamps"
 			>
 				Time
@@ -230,7 +232,9 @@
 			<!-- Auto-scroll toggle -->
 			<button
 				onclick={toggleAutoScroll}
-				class="p-1.5 rounded border transition-colors {autoScroll ? 'bg-blue-600 border-blue-500 text-white' : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'}"
+				class="rounded border p-1.5 transition-colors {autoScroll
+					? 'border-blue-500 bg-blue-600 text-white'
+					: 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600'}"
 				title={autoScroll ? 'Auto-scroll enabled' : 'Auto-scroll disabled'}
 			>
 				{#if autoScroll}
@@ -243,7 +247,7 @@
 			<!-- Refresh -->
 			<button
 				onclick={refresh}
-				class="p-1.5 rounded bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 transition-colors"
+				class="rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:bg-gray-600"
 				title="Refresh logs"
 				disabled={isLoading}
 			>
@@ -253,7 +257,7 @@
 			<!-- Clear -->
 			<button
 				onclick={clearLogs}
-				class="p-1.5 rounded bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 transition-colors"
+				class="rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:bg-gray-600"
 				title="Clear logs"
 			>
 				<Trash2 size={16} />
@@ -262,7 +266,7 @@
 			<!-- Download -->
 			<button
 				onclick={downloadLogs}
-				class="p-1.5 rounded bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 transition-colors"
+				class="rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:bg-gray-600"
 				title="Download logs"
 				disabled={logs.length === 0}
 			>
@@ -272,7 +276,7 @@
 			<!-- Close -->
 			<button
 				onclick={onClose}
-				class="p-1.5 rounded bg-gray-700 border border-gray-600 text-gray-300 hover:bg-red-600 hover:border-red-500 transition-colors ml-2"
+				class="ml-2 rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:border-red-500 hover:bg-red-600"
 				title="Close (Esc)"
 			>
 				<X size={16} />
@@ -281,35 +285,32 @@
 	</div>
 
 	<!-- Log content -->
-	<div 
-		bind:this={logContainer}
-		class="flex-1 overflow-auto p-4 font-mono text-sm leading-relaxed"
-	>
+	<div bind:this={logContainer} class="flex-1 overflow-auto p-4 font-mono text-sm leading-relaxed">
 		{#if isLoading && logs.length === 0}
-			<div class="flex items-center justify-center h-full text-gray-400">
-				<RefreshCw size={24} class="animate-spin mr-2" />
+			<div class="flex h-full items-center justify-center text-gray-400">
+				<RefreshCw size={24} class="mr-2 animate-spin" />
 				Connecting to pod logs...
 			</div>
 		{:else if error}
-			<div class="flex items-center justify-center h-full text-red-400">
-				<span class="bg-red-900/30 px-4 py-2 rounded">{error}</span>
+			<div class="flex h-full items-center justify-center text-red-400">
+				<span class="rounded bg-red-900/30 px-4 py-2">{error}</span>
 			</div>
 		{:else if logs.length === 0}
-			<div class="flex items-center justify-center h-full text-gray-500">
-				No logs available
-			</div>
+			<div class="flex h-full items-center justify-center text-gray-500">No logs available</div>
 		{:else}
 			{#each logs as line, i}
-				<div class="log-line hover:bg-gray-800/50 px-2 -mx-2 rounded">
-					<span class="text-gray-600 select-none mr-4">{String(i + 1).padStart(4, ' ')}</span>
-					<span class="text-gray-200 whitespace-pre-wrap break-all">{line}</span>
+				<div class="log-line -mx-2 rounded px-2 hover:bg-gray-800/50">
+					<span class="mr-4 text-gray-600 select-none">{String(i + 1).padStart(4, ' ')}</span>
+					<span class="break-all whitespace-pre-wrap text-gray-200">{line}</span>
 				</div>
 			{/each}
 		{/if}
 	</div>
 
 	<!-- Footer status -->
-	<div class="px-4 py-2 bg-gray-800 border-t border-gray-700 text-xs text-gray-400 flex items-center justify-between">
+	<div
+		class="flex items-center justify-between border-t border-gray-700 bg-gray-800 px-4 py-2 text-xs text-gray-400"
+	>
 		<span>
 			{logs.length} lines
 			{#if isConnected && follow}
@@ -317,14 +318,15 @@
 			{/if}
 		</span>
 		<span>
-			Press <kbd class="px-1.5 py-0.5 bg-gray-700 rounded text-gray-300">Esc</kbd> to close
+			Press <kbd class="rounded bg-gray-700 px-1.5 py-0.5 text-gray-300">Esc</kbd> to close
 		</span>
 	</div>
 </div>
 
 <style>
 	.log-line {
-		font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+		font-family:
+			ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono',
+			'Courier New', monospace;
 	}
 </style>
-

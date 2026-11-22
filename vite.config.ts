@@ -11,22 +11,24 @@ function webSocketPlugin(): Plugin {
 		name: 'websocket-plugin',
 		configureServer(server) {
 			// Dynamically import the WebSocket server module
-			import('./src/lib/server/websocket.js').then(({ createWebSocketServer, handleUpgrade }) => {
-				const wss = createWebSocketServer();
+			import('./src/lib/server/websocket.js')
+				.then(({ createWebSocketServer, handleUpgrade }) => {
+					const wss = createWebSocketServer();
 
-				server.httpServer?.on('upgrade', (request, socket, head) => {
-					const url = new URL(request.url || '', `http://${request.headers.host}`);
+					server.httpServer?.on('upgrade', (request, socket, head) => {
+						const url = new URL(request.url || '', `http://${request.headers.host}`);
 
-					// Only handle exec endpoint
-					if (url.pathname.match(/^\/api\/pods\/[^/]+\/[^/]+\/exec$/)) {
-						handleUpgrade(wss, request, socket, head);
-					}
+						// Only handle exec endpoint
+						if (url.pathname.match(/^\/api\/pods\/[^/]+\/[^/]+\/exec$/)) {
+							handleUpgrade(wss, request, socket, head);
+						}
+					});
+
+					console.log('[Vite] WebSocket server configured for /api/pods/.../exec');
+				})
+				.catch((err) => {
+					console.error('[Vite] Failed to load WebSocket module:', err);
 				});
-
-				console.log('[Vite] WebSocket server configured for /api/pods/.../exec');
-			}).catch((err) => {
-				console.error('[Vite] Failed to load WebSocket module:', err);
-			});
 		}
 	};
 }

@@ -19,14 +19,13 @@ export const GET: RequestHandler = async () => {
 			query: PROMETHEUS_HEALTH_CHECK_QUERY,
 			response: result
 		});
-
 	} catch (error) {
 		console.error('Prometheus test route failed:', error);
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 		return json(
-			{ 
+			{
 				error: `Failed to connect to Prometheus or execute query: ${errorMessage}`,
-				prometheus_url: process.env.PROMETHEUS_URL, // For debugging
+				prometheus_url: process.env.PROMETHEUS_URL // For debugging
 			},
 			{ status: 500 }
 		);

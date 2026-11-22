@@ -15,14 +15,16 @@ function createNavigationStore() {
 
 	return {
 		subscribe,
-		selectResource: (resource: string) => update(state => ({ ...state, selectedResource: resource })),
-		setNamespace: (namespace: string) => update(state => ({ ...state, namespace })),
-		setCluster: (cluster: string) => update(state => ({ ...state, cluster })),
-		reset: () => set({
-			selectedResource: 'overview',
-			namespace: '*',
-			cluster: 'default'
-		})
+		selectResource: (resource: string) =>
+			update((state) => ({ ...state, selectedResource: resource })),
+		setNamespace: (namespace: string) => update((state) => ({ ...state, namespace })),
+		setCluster: (cluster: string) => update((state) => ({ ...state, cluster })),
+		reset: () =>
+			set({
+				selectedResource: 'overview',
+				namespace: '*',
+				cluster: 'default'
+			})
 	};
 }
 

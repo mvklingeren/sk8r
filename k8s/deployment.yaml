@@ -16,19 +16,19 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
       containers:
-      - name: sk8r-app
-        image: mvkdev/sk8r-app:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 3000
-        env:
-        - name: PROMETHEUS_URL
-          value: "http://kube-prometheus-stack-prometheus.monitoring:9090"
+        - name: sk8r-app
+          image: mvkdev/sk8r-app:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PROMETHEUS_URL
+              value: 'http://kube-prometheus-stack-prometheus.monitoring:9090'
 
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-          seccompProfile:
-            type: RuntimeDefault
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault

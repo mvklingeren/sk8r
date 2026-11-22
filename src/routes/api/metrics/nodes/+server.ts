@@ -20,10 +20,10 @@ export const GET: RequestHandler = async ({ request }) => {
 		// Fetch and process node metrics
 		const nodeMetrics = await metricsService.processNodeMetrics();
 		console.log('Successfully fetched and processed metrics.');
-		
+
 		// Get historical data for charts
 		const historicalData: any[] = [];
-		
+
 		// Get all nodes to ensure we have data for each
 		const nodesResponse = await k8sApi.listResources('nodes', { namespace: '*' });
 		const nodes = nodesResponse.items || [];
@@ -31,7 +31,7 @@ export const GET: RequestHandler = async ({ request }) => {
 		for (const node of nodes) {
 			const nodeName = node.metadata.name;
 			const currentMetrics = nodeMetrics.get(nodeName);
-			
+
 			if (currentMetrics) {
 				// Get historical data
 				const cpuHistory = metricsService.getCachedMetrics(`${nodeName}.cpu`, 5);
@@ -41,15 +41,15 @@ export const GET: RequestHandler = async ({ request }) => {
 				if (cpuHistory.length > 0 || memoryHistory.length > 0) {
 					// Merge timestamps and create a unified dataset
 					const timestamps = new Set<number>();
-					cpuHistory.forEach(dp => timestamps.add(dp.timestamp.getTime()));
-					memoryHistory.forEach(dp => timestamps.add(dp.timestamp.getTime()));
-					
+					cpuHistory.forEach((dp) => timestamps.add(dp.timestamp.getTime()));
+					memoryHistory.forEach((dp) => timestamps.add(dp.timestamp.getTime()));
+
 					const sortedTimestamps = Array.from(timestamps).sort();
-					
+
 					for (const timestamp of sortedTimestamps) {
-						const cpuPoint = cpuHistory.find(dp => dp.timestamp.getTime() === timestamp);
-						const memoryPoint = memoryHistory.find(dp => dp.timestamp.getTime() === timestamp);
-						
+						const cpuPoint = cpuHistory.find((dp) => dp.timestamp.getTime() === timestamp);
+						const memoryPoint = memoryHistory.find((dp) => dp.timestamp.getTime() === timestamp);
+
 						if (cpuPoint || memoryPoint) {
 							historicalData.push({
 								node: nodeName,
@@ -74,12 +74,15 @@ export const GET: RequestHandler = async ({ request }) => {
 		// If we have multiple nodes, aggregate the data
 		if (nodes.length > 1) {
 			// Group by timestamp and aggregate
-			const aggregatedData = new Map<number, { timestamp: Date; cpu: number; memory: number; count: number }>();
-			
+			const aggregatedData = new Map<
+				number,
+				{ timestamp: Date; cpu: number; memory: number; count: number }
+			>();
+
 			for (const dataPoint of historicalData) {
 				const key = dataPoint.timestamp.getTime();
 				const existing = aggregatedData.get(key);
-				
+
 				if (existing) {
 					existing.cpu += dataPoint.cpu;
 					existing.memory += dataPoint.memory;
@@ -95,7 +98,7 @@ export const GET: RequestHandler = async ({ request }) => {
 			}
 
 			// Calculate averages and return
-			const result = Array.from(aggregatedData.values()).map(item => ({
+			const result = Array.from(aggregatedData.values()).map((item) => ({
 				timestamp: item.timestamp,
 				cpu: item.cpu / item.count,
 				memory: item.memory / item.count
@@ -107,23 +110,23 @@ export const GET: RequestHandler = async ({ request }) => {
 		return json(historicalData);
 	} catch (error) {
 		console.error('Failed to fetch metrics:', error);
-		
+
 		// Check if it's a metrics-server not found error
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 		const errorStack = error instanceof Error ? error.stack : '';
-		
+
 		console.error('Error details:', { errorMessage, errorStack });
-		
+
 		if (errorMessage.includes('metrics-server') || errorMessage.includes('404')) {
 			return json(
-				{ error: 'Metrics server is not installed. Please install metrics-server to enable monitoring.' },
+				{
+					error:
+						'Metrics server is not installed. Please install metrics-server to enable monitoring.'
+				},
 				{ status: 503 }
 			);
 		}
 
-		return json(
-			{ error: `Failed to fetch metrics: ${errorMessage}` },
-			{ status: 500 }
-		);
+		return json({ error: `Failed to fetch metrics: ${errorMessage}` }, { status: 500 });
 	}
 };

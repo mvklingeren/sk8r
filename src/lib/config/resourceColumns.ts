@@ -23,11 +23,11 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				path: 'status.phase',
 				type: 'badge',
 				colorMap: {
-					'Running': 'green',
-					'Pending': 'yellow',
-					'Succeeded': 'green',
-					'Failed': 'red',
-					'Unknown': 'gray'
+					Running: 'green',
+					Pending: 'yellow',
+					Succeeded: 'green',
+					Failed: 'red',
+					Unknown: 'gray'
 				}
 			},
 			{
@@ -279,9 +279,9 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				path: 'status.phase',
 				type: 'badge',
 				colorMap: {
-					'Bound': 'green',
-					'Pending': 'yellow',
-					'Lost': 'red'
+					Bound: 'green',
+					Pending: 'yellow',
+					Lost: 'red'
 				}
 			},
 			{
@@ -341,9 +341,9 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				type: 'badge',
 				formatter: 'nodeStatus',
 				colorMap: {
-					'Ready': 'green',
-					'NotReady': 'red',
-					'Unknown': 'gray'
+					Ready: 'green',
+					NotReady: 'red',
+					Unknown: 'gray'
 				}
 			},
 			{
@@ -431,9 +431,9 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				type: 'badge',
 				formatter: 'certificateReady',
 				colorMap: {
-					'True': 'green',
-					'False': 'red',
-					'Unknown': 'gray'
+					True: 'green',
+					False: 'red',
+					Unknown: 'gray'
 				}
 			},
 			{
@@ -698,9 +698,9 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				path: 'status.phase',
 				type: 'badge',
 				colorMap: {
-					'Active': 'green',
-					'Terminating': 'yellow',
-					'Failed': 'red'
+					Active: 'green',
+					Terminating: 'yellow',
+					Failed: 'red'
 				}
 			},
 			{
@@ -727,8 +727,8 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				path: 'type',
 				type: 'badge',
 				colorMap: {
-					'Normal': 'green',
-					'Warning': 'yellow'
+					Normal: 'green',
+					Warning: 'yellow'
 				}
 			},
 			{
@@ -814,9 +814,9 @@ export const resourceColumnConfigs: ResourceColumnConfigs = {
 				path: 'status.phase',
 				type: 'badge',
 				colorMap: {
-					'Bound': 'green',
-					'Pending': 'yellow',
-					'Lost': 'red'
+					Bound: 'green',
+					Pending: 'yellow',
+					Lost: 'red'
 				}
 			},
 			{

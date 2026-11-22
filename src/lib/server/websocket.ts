@@ -79,7 +79,7 @@ async function handleExecConnection(
 	const exec = new Exec(kc);
 
 	// Track K8s connection for cleanup
-	let k8sConnection: { stdin: stream.Writable | null; close: () => void } = {
+	const k8sConnection: { stdin: stream.Writable | null; close: () => void } = {
 		stdin: null,
 		close: () => {}
 	};
@@ -154,7 +154,9 @@ async function handleExecConnection(
 		});
 
 		// Send connection message
-		sendToClient(`\x1b[32mConnecting to ${podName}${container ? `/${container}` : ''}...\x1b[0m\r\n`);
+		sendToClient(
+			`\x1b[32mConnecting to ${podName}${container ? `/${container}` : ''}...\x1b[0m\r\n`
+		);
 
 		// Try different shells
 		const shellCommands =
@@ -171,23 +173,24 @@ async function handleExecConnection(
 				k8sConnection.stdin = stdinStream;
 
 				await new Promise<void>((resolve, reject) => {
-					exec.exec(
-						namespace,
-						podName,
-						container || '',
-						[shell],
-						stdout,
-						stderr,
-						stdinStream,
-						true, // tty
-						(status) => {
-							console.log(`[WebSocket] Exec completed for ${connectionId}:`, status);
-							if (ws.readyState === WebSocket.OPEN) {
-								sendToClient(`\r\n\x1b[33m[Session ended]\x1b[0m\r\n`);
-								ws.close(1000, 'Session ended');
+					exec
+						.exec(
+							namespace,
+							podName,
+							container || '',
+							[shell],
+							stdout,
+							stderr,
+							stdinStream,
+							true, // tty
+							(status) => {
+								console.log(`[WebSocket] Exec completed for ${connectionId}:`, status);
+								if (ws.readyState === WebSocket.OPEN) {
+									sendToClient(`\r\n\x1b[33m[Session ended]\x1b[0m\r\n`);
+									ws.close(1000, 'Session ended');
+								}
 							}
-						}
-					)
+						)
 						.then((execWebSocket) => {
 							console.log(`[WebSocket] Exec started successfully with ${shell}`);
 

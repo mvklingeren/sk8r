@@ -14,7 +14,7 @@
 	import { resourceCreator } from '$lib/stores/resourceCreator';
 	import { clusterStore } from '$lib/stores/cluster';
 	import { get } from 'svelte/store';
-	
+
 	// Lazy load components to avoid SSR issues with shiki/js-yaml
 	let ResourceCreator: any = $state(null);
 	let PodLogsViewer: any = $state(null);
@@ -28,49 +28,48 @@
 			error?: string;
 			metricsEnabled?: boolean;
 			metricsCharts?: MetricChartConfig[];
-			loadClientSide?: boolean;
 		};
 	}
 
 	let { data }: Props = $props();
 	let initialized = $state(false);
-	
+
 	// Client-side loaded resources
 	let clientResources = $state<K8sResource[]>([]);
 	let clientError = $state<string | null>(null);
 	let isLoading = $state(false);
-	
+
 	// Use client resources if loaded, otherwise fall back to server data
 	let resources = $derived(clientResources.length > 0 ? clientResources : data.resources);
 	let error = $derived(clientError || data.error);
-	
+
 	// Load resources client-side
 	async function loadResources() {
 		if (!browser) return;
-		
+
 		const clusterState = get(clusterStore);
 		if (!clusterState.currentCustomClusterId) {
 			clientError = 'No cluster selected. Please add a cluster first.';
 			return;
 		}
-		
+
 		if (!data.resourceType || data.resourceType === 'overview') return;
-		
+
 		isLoading = true;
 		clientError = null;
-		
+
 		try {
 			const params = new URLSearchParams();
 			params.set('type', data.resourceType);
 			params.set('namespace', data.namespace);
-			
+
 			const response = await apiClient(`/api/resources/list?${params.toString()}`);
-			
+
 			if (!response.ok) {
 				const result = await response.json();
 				throw new Error(result.error || result.message || 'Failed to load resources');
 			}
-			
+
 			const result = await response.json();
 			clientResources = result.items || [];
 		} catch (err) {
@@ -81,32 +80,32 @@
 			isLoading = false;
 		}
 	}
-	
+
 	// Load resources when resource type or namespace changes
 	$effect(() => {
 		if (browser && initialized && data.resourceType && data.resourceType !== 'overview') {
 			loadResources();
 		}
 	});
-	
+
 	// Pod logs state
 	let showLogs = $state(false);
 	let logsPodName = $state('');
 	let logsPodNamespace = $state('');
 	let logsPodContainers = $state<string[]>([]);
-	
+
 	// Pod terminal state
 	let showTerminal = $state(false);
 	let terminalPodName = $state('');
 	let terminalPodNamespace = $state('');
 	let terminalPodContainers = $state<string[]>([]);
-	
+
 	// Events panel state for resource-specific events
 	let showResourceEvents = $state(false);
 	let eventsFilterKind = $state('');
 	let eventsFilterName = $state('');
 	let eventsFilterNamespace = $state('');
-	
+
 	// Events panel expanded state (for hiding table)
 	let eventsExpanded = $state(false);
 
@@ -127,8 +126,11 @@
 	// After initialization, sync URL FROM store changes (user interactions)
 	$effect(() => {
 		if (!initialized) return;
-		
-		if ($navigation.selectedResource !== data.resourceType || $navigation.namespace !== data.namespace) {
+
+		if (
+			$navigation.selectedResource !== data.resourceType ||
+			$navigation.namespace !== data.namespace
+		) {
 			const params = new URLSearchParams();
 			if ($navigation.selectedResource && $navigation.selectedResource !== 'overview') {
 				params.set('resource', $navigation.selectedResource);
@@ -136,7 +138,7 @@
 			if ($navigation.namespace && $navigation.namespace !== 'default') {
 				params.set('namespace', $navigation.namespace);
 			}
-			
+
 			const queryString = params.toString();
 			goto(queryString ? `/?${queryString}` : '/', { replaceState: true });
 		}
@@ -151,19 +153,20 @@
 		}
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		document.addEventListener('keydown', handleKeydown);
-		
-		// Lazy load components
-		const [creatorModule, logsModule, terminalModule] = await Promise.all([
+
+		// Lazy load components (not awaited: an async onMount's cleanup is ignored)
+		Promise.all([
 			import('$lib/components/ResourceCreator.svelte'),
 			import('$lib/components/PodLogsViewer.svelte'),
 			import('$lib/components/PodTerminal.svelte')
-		]);
-		ResourceCreator = creatorModule.default;
-		PodLogsViewer = logsModule.default;
-		PodTerminal = terminalModule.default;
-		
+		]).then(([creatorModule, logsModule, terminalModule]) => {
+			ResourceCreator = creatorModule.default;
+			PodLogsViewer = logsModule.default;
+			PodTerminal = terminalModule.default;
+		});
+
 		return () => {
 			document.removeEventListener('keydown', handleKeydown);
 		};
@@ -183,11 +186,11 @@
 			},
 			spec: resource.spec
 		};
-		
+
 		// Dynamically import js-yaml only when needed
 		const yaml = await import('js-yaml');
-		const yamlStr = yaml.dump(cleanResource, { 
-			indent: 2, 
+		const yamlStr = yaml.dump(cleanResource, {
+			indent: 2,
 			lineWidth: -1,
 			noRefs: true,
 			sortKeys: false
@@ -201,16 +204,16 @@
 				const response = await apiClient('/api/resources', {
 					method: 'DELETE',
 					headers: {
-						'Content-Type': 'application/json',
+						'Content-Type': 'application/json'
 					},
-					body: JSON.stringify({ 
+					body: JSON.stringify({
 						kind: resource.kind,
 						apiVersion: resource.apiVersion,
 						name: resource.metadata.name,
 						namespace: resource.metadata.namespace || data.namespace
 					})
 				});
-				
+
 				if (response.ok) {
 					handleRefresh();
 				} else {
@@ -262,16 +265,16 @@
 		const metricsMap = new Map<string, MetricSeries[]>();
 
 		try {
-			for (const chart of data.metricsCharts) {
+			for (const chart of data.metricsCharts ?? []) {
 				if (!chart.query) continue;
 
 				// Use range query for line charts to get multiple data points
 				const timeRange = chart.timeRange || 5; // default 5 minutes
 				const queryUrl = `/api/prometheus/query?q=${encodeURIComponent(chart.query)}&type=range&range=${timeRange}&step=15`;
-				
+
 				console.log(`Executing range query for chart '${chart.title}':`, chart.query);
 				const response = await apiClient(queryUrl);
-				
+
 				if (!response.ok) {
 					const errorText = await response.text();
 					console.error(`Query for '${chart.title}' failed:`, errorText);
@@ -286,16 +289,16 @@
 				if (result.status === 'success' && result.data.result.length > 0) {
 					// Handle range query result (matrix with multiple values)
 					const matrixResult = result.data.result[0];
-					
+
 					if (matrixResult.values && matrixResult.values.length > 0) {
 						// Range query returns array of [timestamp, value] pairs
 						const dataPoints = matrixResult.values.map((v: [number, string]) => ({
 							timestamp: new Date(v[0] * 1000),
 							value: parseFloat(v[1])
 						}));
-						
+
 						console.log(`Processed ${dataPoints.length} data points for '${chart.title}'`);
-						
+
 						seriesData.push({
 							label: chart.title,
 							data: dataPoints
@@ -312,7 +315,7 @@
 				} else {
 					console.warn(`No data returned from Prometheus for query:`, chart.query);
 				}
-				
+
 				metricsMap.set(chart.id, seriesData);
 			}
 		} catch (error) {
@@ -324,36 +327,32 @@
 	}
 </script>
 
-<div class={eventsExpanded ? 'flex flex-col h-[calc(100vh-3rem)]' : ''}>
+<div class={eventsExpanded ? 'flex h-[calc(100vh-3rem)] flex-col' : ''}>
 	{#if data.resourceType === 'overview' || !data.resourceType}
 		<ClusterDashboard config={dashboardConfig} />
-		
+
 		<!-- Events Panel on Dashboard -->
 		<div class="mt-6">
 			<EventsPanel collapsed={true} />
 		</div>
 	{:else if error}
-		<div class="bg-red-50 border border-red-200 rounded-lg p-4">
+		<div class="rounded-lg border border-red-200 bg-red-50 p-4">
 			<p class="text-red-800">Error: {error}</p>
 		</div>
 	{:else}
 		{#if data.metricsEnabled && data.metricsCharts && data.metricsCharts.length > 0}
-			<MetricsPanel
-				charts={data.metricsCharts}
-				resourceType={data.resourceType}
-				fetchMetrics={fetchNodeMetrics}
-			/>
+			<MetricsPanel charts={data.metricsCharts} fetchMetrics={fetchNodeMetrics} />
 		{/if}
-		
+
 		{#if isLoading}
 			<div class="flex items-center justify-center p-8">
-				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+				<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
 				<span class="ml-3 text-gray-600 dark:text-gray-400">Loading resources...</span>
 			</div>
 		{:else}
-				<ResourceList
+			<ResourceList
+				{resources}
 				resourceType={data.resourceType}
-				resources={resources}
 				namespace={data.namespace}
 				onEdit={handleEdit}
 				onDelete={handleDelete}
@@ -362,17 +361,17 @@
 				onExec={data.resourceType === 'pods' ? handleExec : undefined}
 				onEvents={handleEvents}
 				hideTable={eventsExpanded}
-				onToggleEvents={() => eventsExpanded = !eventsExpanded}
+				onToggleEvents={() => (eventsExpanded = !eventsExpanded)}
 			/>
 		{/if}
-		
+
 		<!-- Events Panel below resource list (only visible when events toggle is on) -->
 		{#if eventsExpanded}
-			<div class="mt-6 flex-1 flex flex-col min-h-0">
-				<EventsPanel 
-					collapsed={false} 
-					namespace={data.namespace === '*' ? '' : data.namespace} 
-					onCollapseChange={(collapsed) => eventsExpanded = !collapsed}
+			<div class="mt-6 flex min-h-0 flex-1 flex-col">
+				<EventsPanel
+					collapsed={false}
+					namespace={data.namespace === '*' ? '' : data.namespace}
+					onCollapseChange={(collapsed) => (eventsExpanded = !collapsed)}
 					fillHeight={true}
 				/>
 			</div>
@@ -397,7 +396,7 @@
 		podName={logsPodName}
 		namespace={logsPodNamespace}
 		containers={logsPodContainers}
-		onClose={() => showLogs = false}
+		onClose={() => (showLogs = false)}
 	/>
 {/if}
 
@@ -407,19 +406,25 @@
 		podName={terminalPodName}
 		namespace={terminalPodNamespace}
 		containers={terminalPodContainers}
-		onClose={() => showTerminal = false}
+		onClose={() => (showTerminal = false)}
 	/>
 {/if}
 
 <!-- Resource-specific Events Panel Modal -->
 {#if showResourceEvents}
-	<div class="fixed inset-0 bg-black/50 z-40" onclick={() => showResourceEvents = false} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && (showResourceEvents = false)}></div>
-	<div class="fixed inset-x-4 bottom-4 md:inset-x-8 lg:inset-x-16 z-50 max-h-96">
+	<div
+		class="fixed inset-0 z-40 bg-black/50"
+		onclick={() => (showResourceEvents = false)}
+		role="button"
+		tabindex="-1"
+		onkeydown={(e) => e.key === 'Escape' && (showResourceEvents = false)}
+	></div>
+	<div class="fixed inset-x-4 bottom-4 z-50 max-h-96 md:inset-x-8 lg:inset-x-16">
 		<EventsPanel
 			filterKind={eventsFilterKind}
 			filterName={eventsFilterName}
 			namespace={eventsFilterNamespace}
-			onClose={() => showResourceEvents = false}
+			onClose={() => (showResourceEvents = false)}
 		/>
 	</div>
 {/if}

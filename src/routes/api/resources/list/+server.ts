@@ -19,11 +19,9 @@ export const GET: RequestHandler = async ({ url, request }) => {
 	try {
 		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
 		const response = await k8sApi.listResources(resourceType, { namespace });
-		
+
 		// Convert to serializable objects
-		const serializedItems = (response?.items || []).map(item => 
-			JSON.parse(JSON.stringify(item))
-		);
+		const serializedItems = (response?.items || []).map((item) => JSON.parse(JSON.stringify(item)));
 
 		return json({
 			items: serializedItems,
@@ -38,4 +36,3 @@ export const GET: RequestHandler = async ({ url, request }) => {
 		);
 	}
 };
-

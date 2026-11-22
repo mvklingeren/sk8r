@@ -46,13 +46,15 @@ export const columnFormatters = {
 
 	servicePorts(resource: K8sResource): string {
 		const ports = resource.spec?.ports || [];
-		return ports.map((port: any) => {
-			const protocol = port.protocol ? `/${port.protocol}` : '';
-			if (port.nodePort) {
-				return `${port.port}:${port.nodePort}${protocol}`;
-			}
-			return `${port.port}${protocol}`;
-		}).join(', ');
+		return ports
+			.map((port: any) => {
+				const protocol = port.protocol ? `/${port.protocol}` : '';
+				if (port.nodePort) {
+					return `${port.port}:${port.nodePort}${protocol}`;
+				}
+				return `${port.port}${protocol}`;
+			})
+			.join(', ');
 	},
 
 	// Ingress specific formatters
@@ -87,17 +89,25 @@ export const columnFormatters = {
 	nodeRoles(resource: K8sResource): string {
 		const labels = resource.metadata?.labels || {};
 		const roles: string[] = [];
-		
-		if (labels['node-role.kubernetes.io/control-plane'] || labels['node-role.kubernetes.io/master']) {
+
+		if (
+			labels['node-role.kubernetes.io/control-plane'] ||
+			labels['node-role.kubernetes.io/master']
+		) {
 			roles.push('control-plane');
 		}
 		if (labels['node-role.kubernetes.io/worker']) {
 			roles.push('worker');
 		}
-		
+
 		// Check for other role labels
-		Object.keys(labels).forEach(key => {
-			if (key.startsWith('node-role.kubernetes.io/') && key !== 'node-role.kubernetes.io/control-plane' && key !== 'node-role.kubernetes.io/master' && key !== 'node-role.kubernetes.io/worker') {
+		Object.keys(labels).forEach((key) => {
+			if (
+				key.startsWith('node-role.kubernetes.io/') &&
+				key !== 'node-role.kubernetes.io/control-plane' &&
+				key !== 'node-role.kubernetes.io/master' &&
+				key !== 'node-role.kubernetes.io/worker'
+			) {
 				const role = key.replace('node-role.kubernetes.io/', '');
 				if (!roles.includes(role)) {
 					roles.push(role);
@@ -119,7 +129,7 @@ export const columnFormatters = {
 	traefikHosts(resource: K8sResource): string {
 		const routes = resource.spec?.routes || [];
 		const hosts: string[] = [];
-		
+
 		routes.forEach((route: any) => {
 			if (route.match) {
 				// Extract Host() rules from match
@@ -134,7 +144,7 @@ export const columnFormatters = {
 				}
 			}
 		});
-		
+
 		return hosts.join(', ') || '*';
 	},
 
@@ -157,31 +167,37 @@ export const columnFormatters = {
 
 	accessModes(resource: K8sResource): string {
 		const modes = resource.spec?.accessModes || [];
-		return modes.map((mode: string) => {
-			switch (mode) {
-				case 'ReadWriteOnce': return 'RWO';
-				case 'ReadOnlyMany': return 'ROX';
-				case 'ReadWriteMany': return 'RWX';
-				default: return mode;
-			}
-		}).join(', ');
+		return modes
+			.map((mode: string) => {
+				switch (mode) {
+					case 'ReadWriteOnce':
+						return 'RWO';
+					case 'ReadOnlyMany':
+						return 'ROX';
+					case 'ReadWriteMany':
+						return 'RWX';
+					default:
+						return mode;
+				}
+			})
+			.join(', ');
 	},
 
 	// Job specific formatters
 	jobDuration(resource: K8sResource): string {
 		const startTime = resource.status?.startTime;
 		const completionTime = resource.status?.completionTime;
-		
+
 		if (!startTime) return '';
-		
+
 		const start = new Date(startTime);
 		const end = completionTime ? new Date(completionTime) : new Date();
 		const diff = end.getTime() - start.getTime();
-		
+
 		const seconds = Math.floor(diff / 1000);
 		const minutes = Math.floor(seconds / 60);
 		const hours = Math.floor(minutes / 60);
-		
+
 		if (hours > 0) return `${hours}h${minutes % 60}m`;
 		if (minutes > 0) return `${minutes}m${seconds % 60}s`;
 		return `${seconds}s`;
@@ -224,22 +240,22 @@ export function extractColumnValue(resource: K8sResource, path: string, formatte
 		const formatterFn = columnFormatters[formatter as keyof typeof columnFormatters] as any;
 		return formatterFn(resource, path);
 	}
-	
+
 	return getNestedValue(resource, path);
 }
 
 // Helper function to get age string
 export function getAge(timestamp: string | undefined): string {
 	if (!timestamp) return 'Unknown';
-	
+
 	const created = new Date(timestamp);
 	const now = new Date();
 	const diff = now.getTime() - created.getTime();
-	
+
 	const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 	const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 	const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-	
+
 	if (days > 0) return `${days}d${hours > 0 ? ` ${hours}h` : ''}`;
 	if (hours > 0) return `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
 	return `${minutes}m`;

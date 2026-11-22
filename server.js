@@ -2,7 +2,7 @@
 import { handler } from './build/handler.js';
 import express from 'express';
 import { createServer } from 'http';
-import { createWebSocketServer, handleUpgrade, cleanupAllConnections } from './websocket.js';
+import { createWebSocketServer, handleUpgrade, cleanupAllConnections } from './build/websocket.js';
 
 const app = express();
 const server = createServer(app);
@@ -48,4 +48,3 @@ process.on('SIGINT', () => {
 		process.exit(0);
 	});
 });
-

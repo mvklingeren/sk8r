@@ -6,7 +6,7 @@ import { resourceMetricsConfig } from '$lib/config/metricsConfig';
 export const load: PageServerLoad = async ({ url }) => {
 	const resourceType = url.searchParams.get('resource') || '';
 	const namespace = url.searchParams.get('namespace') || '*';
-	
+
 	if (!resourceType || resourceType === 'overview') {
 		return {
 			resourceType: 'overview',
@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	// Check if metrics are enabled for this resource type
 	const metricsConfig = resourceMetricsConfig[resourceType];
-	
+
 	// Return empty resources - they will be loaded client-side
 	return {
 		resourceType,

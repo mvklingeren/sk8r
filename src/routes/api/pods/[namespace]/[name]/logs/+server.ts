@@ -13,7 +13,7 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 				headers: {
 					'Content-Type': 'text/event-stream',
 					'Cache-Control': 'no-cache',
-					'Connection': 'keep-alive'
+					Connection: 'keep-alive'
 				}
 			}
 		);
@@ -56,11 +56,11 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 					write(chunk: Buffer, _encoding, callback) {
 						const text = chunk.toString('utf8');
 						buffer += text;
-						
+
 						// Split by newlines and send complete lines
 						const lines = buffer.split('\n');
 						buffer = lines.pop() || ''; // Keep incomplete line in buffer
-						
+
 						for (const line of lines) {
 							if (line.trim()) {
 								sendEvent(line, 'log');
@@ -87,23 +87,17 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 				// Start streaming logs
 				// Container is required, use first container if not specified
 				const containerName = container || 'main';
-				await log.log(
-					namespace,
-					name,
-					containerName,
-					logStream,
-					{
-						follow,
-						tailLines,
-						timestamps,
-						previous
-					}
-				);
+				await log.log(namespace, name, containerName, logStream, {
+					follow,
+					tailLines,
+					timestamps,
+					previous
+				});
 
 				// If not following, the stream will end naturally
 				if (!follow) {
 					// Give some time for the stream to complete
-					await new Promise(resolve => setTimeout(resolve, 1000));
+					await new Promise((resolve) => setTimeout(resolve, 1000));
 					logStream.end(); // Signal end of stream
 				}
 			} catch (error) {
@@ -123,7 +117,7 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 		headers: {
 			'Content-Type': 'text/event-stream',
 			'Cache-Control': 'no-cache',
-			'Connection': 'keep-alive',
+			Connection: 'keep-alive',
 			'X-Accel-Buffering': 'no' // Disable nginx buffering
 		}
 	});

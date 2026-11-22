@@ -11,22 +11,25 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 
 	// Check for WebSocket upgrade header
 	const upgradeHeader = request.headers.get('upgrade');
-	
+
 	if (upgradeHeader?.toLowerCase() !== 'websocket') {
 		// Return info about the endpoint if not a WebSocket request
-		return new Response(JSON.stringify({
-			message: 'Pod exec endpoint - requires WebSocket upgrade',
-			pod: name,
-			namespace: namespace,
-			container: container || 'default',
-			command: command,
-			usage: 'Connect via WebSocket to execute commands in the pod'
-		}), {
-			status: 200,
-			headers: {
-				'Content-Type': 'application/json'
+		return new Response(
+			JSON.stringify({
+				message: 'Pod exec endpoint - requires WebSocket upgrade',
+				pod: name,
+				namespace: namespace,
+				container: container || 'default',
+				command: command,
+				usage: 'Connect via WebSocket to execute commands in the pod'
+			}),
+			{
+				status: 200,
+				headers: {
+					'Content-Type': 'application/json'
+				}
 			}
-		});
+		);
 	}
 
 	// WebSocket upgrade is handled by the server/vite plugin
@@ -35,8 +38,8 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 		status: 426,
 		statusText: 'Upgrade Required',
 		headers: {
-			'Upgrade': 'websocket',
-			'Connection': 'Upgrade'
+			Upgrade: 'websocket',
+			Connection: 'Upgrade'
 		}
 	});
 };

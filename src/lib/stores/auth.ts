@@ -32,7 +32,7 @@ const createAuthStore = () => {
 		getCurrentToken: (): string | null => {
 			const state = get(clusterStore);
 			if (state.currentCustomClusterId) {
-				const cluster = state.customClusters.find(c => c.id === state.currentCustomClusterId);
+				const cluster = state.customClusters.find((c) => c.id === state.currentCustomClusterId);
 				if (cluster) {
 					return cluster.token;
 				}
@@ -43,7 +43,7 @@ const createAuthStore = () => {
 		getCurrentServer: (): string | null => {
 			const state = get(clusterStore);
 			if (state.currentCustomClusterId) {
-				const cluster = state.customClusters.find(c => c.id === state.currentCustomClusterId);
+				const cluster = state.customClusters.find((c) => c.id === state.currentCustomClusterId);
 				if (cluster) {
 					return cluster.server;
 				}
@@ -54,7 +54,7 @@ const createAuthStore = () => {
 		getSkipTLSVerify: (): boolean => {
 			const state = get(clusterStore);
 			if (state.currentCustomClusterId) {
-				const cluster = state.customClusters.find(c => c.id === state.currentCustomClusterId);
+				const cluster = state.customClusters.find((c) => c.id === state.currentCustomClusterId);
 				if (cluster) {
 					return cluster.skipTLSVerify ?? true;
 				}

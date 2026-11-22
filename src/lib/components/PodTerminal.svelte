@@ -103,7 +103,7 @@
 		const params = new URLSearchParams();
 		if (selectedContainer) params.set('container', selectedContainer);
 		params.set('command', '/bin/sh');
-		
+
 		// Include credentials for WebSocket connection
 		const server = authToken.getCurrentServer();
 		const token = authToken.getCurrentToken();
@@ -246,7 +246,7 @@
 					class="h-2 w-2 rounded-full {isConnected
 						? 'bg-green-400'
 						: isConnecting
-							? 'bg-yellow-400 animate-pulse'
+							? 'animate-pulse bg-yellow-400'
 							: 'bg-gray-500'}"
 				></span>
 				Terminal: {podName}
@@ -265,7 +265,7 @@
 					</select>
 					<ChevronDown
 						size={14}
-						class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+						class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-gray-400"
 					/>
 				</div>
 			{:else if selectedContainer}
@@ -357,4 +357,3 @@
 		</span>
 	</div>
 </div>
-

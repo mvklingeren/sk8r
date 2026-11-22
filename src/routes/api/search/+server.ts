@@ -20,18 +20,18 @@ export const GET: RequestHandler = async ({ url, request }) => {
 	try {
 		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
 		const response = await k8sApi.listResources(resourceType, { namespace });
-		
+
 		// Filter results by search query (name contains query)
-		const filteredItems = (response?.items || []).filter(item => {
+		const filteredItems = (response?.items || []).filter((item) => {
 			const name = item.metadata?.name?.toLowerCase() || '';
 			const searchQuery = query.toLowerCase();
 			return name.includes(searchQuery);
 		});
 
 		// Convert to serializable objects and limit results
-		const serializedItems = filteredItems.slice(0, 20).map(item => 
-			JSON.parse(JSON.stringify(item))
-		);
+		const serializedItems = filteredItems
+			.slice(0, 20)
+			.map((item) => JSON.parse(JSON.stringify(item)));
 
 		return json({ items: serializedItems });
 	} catch (error) {

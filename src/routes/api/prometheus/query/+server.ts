@@ -7,7 +7,7 @@ export const GET: RequestHandler = async ({ url }) => {
 	const type = url.searchParams.get('type') || 'instant'; // 'instant' or 'range'
 	const rangeMinutes = parseInt(url.searchParams.get('range') || '5', 10);
 	const step = parseInt(url.searchParams.get('step') || '15', 10);
-	
+
 	// Support for custom date range with start/end timestamps (Unix seconds)
 	const startParam = url.searchParams.get('start');
 	const endParam = url.searchParams.get('end');
@@ -20,13 +20,12 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	try {
 		const prometheusService = new PrometheusService();
-		
+
 		if (type === 'range') {
 			// Use range query for charts (returns multiple data points)
 			// If start/end are provided, use absolute timestamps; otherwise use rangeMinutes
-			const options = start !== undefined && end !== undefined
-				? { start, end, step }
-				: { rangeMinutes, step };
+			const options =
+				start !== undefined && end !== undefined ? { start, end, step } : { rangeMinutes, step };
 			const result = await prometheusService.queryRange(query, options);
 			return json(result);
 		} else {
@@ -34,13 +33,9 @@ export const GET: RequestHandler = async ({ url }) => {
 			const result = await prometheusService.query(query);
 			return json(result);
 		}
-
 	} catch (error) {
 		console.error(`Failed to execute Prometheus query: ${query}`, error);
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-		return json(
-			{ error: `Failed to execute Prometheus query: ${errorMessage}` },
-			{ status: 500 }
-		);
+		return json({ error: `Failed to execute Prometheus query: ${errorMessage}` }, { status: 500 });
 	}
 };
