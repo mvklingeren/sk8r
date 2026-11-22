@@ -47,19 +47,13 @@ export class PrometheusService {
 		const queryUrl = new URL('/api/v1/query', this.prometheusUrl);
 		queryUrl.searchParams.append('query', promql);
 
-		try {
-			const response = await fetch(queryUrl.toString());
-			if (!response.ok) {
-				throw new Error(
-					`Prometheus query failed with status ${response.status}: ${await response.text()}`
-				);
-			}
-			const data = await response.json();
-			return data as PrometheusQueryResponse;
-		} catch (error) {
-			console.error('Error querying Prometheus:', error);
-			throw error;
+		const response = await fetch(queryUrl, { signal: AbortSignal.timeout(10_000) });
+		if (!response.ok) {
+			throw new Error(
+				`Prometheus query failed with status ${response.status}: ${await response.text()}`
+			);
 		}
+		return (await response.json()) as PrometheusQueryResponse;
 	}
 
 	/**
@@ -83,18 +77,12 @@ export class PrometheusService {
 		queryUrl.searchParams.append('end', end.toString());
 		queryUrl.searchParams.append('step', step.toString());
 
-		try {
-			const response = await fetch(queryUrl.toString());
-			if (!response.ok) {
-				throw new Error(
-					`Prometheus range query failed with status ${response.status}: ${await response.text()}`
-				);
-			}
-			const data = await response.json();
-			return data as PrometheusQueryResponse;
-		} catch (error) {
-			console.error('Error querying Prometheus range:', error);
-			throw error;
+		const response = await fetch(queryUrl, { signal: AbortSignal.timeout(10_000) });
+		if (!response.ok) {
+			throw new Error(
+				`Prometheus range query failed with status ${response.status}: ${await response.text()}`
+			);
 		}
+		return (await response.json()) as PrometheusQueryResponse;
 	}
 }

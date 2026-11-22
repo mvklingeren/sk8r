@@ -131,13 +131,18 @@
 			: `${baseUrl}&range=${range.minutes}`;
 	}
 
+	// Polling and time-range changes can overlap; only the newest fetch may write chart data
+	let chartRequestSeq = 0;
+
 	async function fetchChartData() {
+		const seq = ++chartRequestSeq;
+		const nextChartData = new Map<string, MetricSeries[]>();
 		chartsLoading = true;
 
 		// Absolute ranges with end === null follow "now" on every refresh
 		const effectiveEndTimestamp = range.end ?? Math.floor(Date.now() / 1000);
 		const rangeMinutes =
-			range.start !== null ? Math.ceil((effectiveEndTimestamp - range.start) / 60) : range.minutes;
+			range.start !== null ? Math.round((effectiveEndTimestamp - range.start) / 60) : range.minutes;
 		const step = getStepForTimeRange(rangeMinutes);
 
 		for (const chart of config.charts) {
@@ -178,8 +183,7 @@
 					const response = await apiClient(queryUrl);
 
 					if (!response.ok) {
-						console.error(`Chart query failed for ${chart.id}`);
-						continue;
+						throw new Error(`Chart query failed for ${chart.id}`);
 					}
 
 					const result = await response.json();
@@ -197,13 +201,15 @@
 					}
 				}
 
-				chartData.set(chart.id, seriesData);
+				nextChartData.set(chart.id, seriesData);
 			} catch (error) {
 				console.error(`Error fetching chart ${chart.id}:`, error);
+				nextChartData.set(chart.id, []); // don't keep showing stale data from an earlier source
 			}
 		}
 
-		chartData = new Map(chartData);
+		if (seq !== chartRequestSeq) return; // a newer fetch started meanwhile
+		chartData = nextChartData;
 		chartsLoading = false;
 		lastRefresh = new Date();
 	}
