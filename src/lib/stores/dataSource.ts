@@ -15,11 +15,10 @@ function createDataSourceStore() {
 
 	return {
 		subscribe,
-		setSource: (source: DataSourceType) => update(state => ({ ...state, source })),
-		setConnected: (connected: boolean) => update(state => ({ ...state, connected })),
+		setSource: (source: DataSourceType) => update((state) => ({ ...state, source })),
+		setConnected: (connected: boolean) => update((state) => ({ ...state, connected })),
 		update: (source: DataSourceType, connected: boolean) => set({ source, connected })
 	};
 }
 
 export const dataSource = createDataSourceStore();
-

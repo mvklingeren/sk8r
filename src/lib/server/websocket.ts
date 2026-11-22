@@ -3,7 +3,7 @@ import type { IncomingMessage } from 'http';
 import type { Duplex } from 'stream';
 import { Exec } from '@kubernetes/client-node';
 import * as stream from 'stream';
-import { createKubeConfig } from './k8sAuth';
+import { createKubeConfig, isServerAllowed } from './k8sAuth';
 
 // Store active connections for cleanup
 const activeConnections = new Map<string, { ws: WebSocket; cleanup: () => void }>();
@@ -23,9 +23,9 @@ export function createWebSocketServer(): WebSocketServer {
 		// Extract credentials from query params (passed from client)
 		const server = url.searchParams.get('server');
 		const token = url.searchParams.get('token');
-		const skipTLSVerify = url.searchParams.get('skipTLSVerify') !== 'false';
+		const skipTLSVerify = url.searchParams.get('skipTLSVerify') === 'true';
 
-		if (!server || !token) {
+		if (!server || !token || !isServerAllowed(server)) {
 			ws.send('\x1b[31mError: Missing Kubernetes credentials\x1b[0m\r\n');
 			ws.close(1008, 'Missing credentials');
 			return;
@@ -69,23 +69,23 @@ async function handleExecConnection(
 	command: string,
 	server: string,
 	token: string,
-	skipTLSVerify: boolean = true
+	skipTLSVerify: boolean
 ): Promise<void> {
 	const connectionId = `${namespace}/${podName}/${container || 'default'}/${Date.now()}`;
 
-	console.log(`[WebSocket] New exec connection: ${connectionId}`);
+	console.info(`[WebSocket] New exec connection: ${connectionId}`);
 
 	const kc = createKubeConfig(server, token, skipTLSVerify);
 	const exec = new Exec(kc);
 
 	// Track K8s connection for cleanup
-	let k8sConnection: { stdin: stream.Writable | null; close: () => void } = {
+	const k8sConnection: { stdin: stream.Writable | null; close: () => void } = {
 		stdin: null,
 		close: () => {}
 	};
 
 	const cleanup = () => {
-		console.log(`[WebSocket] Cleaning up connection: ${connectionId}`);
+		console.info(`[WebSocket] Cleaning up connection: ${connectionId}`);
 		k8sConnection.close();
 		activeConnections.delete(connectionId);
 	};
@@ -129,7 +129,6 @@ async function handleExecConnection(
 					if (msg.type === 'resize' && msg.cols && msg.rows) {
 						// Terminal resize - K8s exec doesn't support resize after connection
 						// but we acknowledge it to prevent errors
-						console.log(`[WebSocket] Resize request: ${msg.cols}x${msg.rows}`);
 						return;
 					}
 				} catch {
@@ -144,7 +143,7 @@ async function handleExecConnection(
 		});
 
 		ws.on('close', () => {
-			console.log(`[WebSocket] Client disconnected: ${connectionId}`);
+			console.info(`[WebSocket] Client disconnected: ${connectionId}`);
 			cleanup();
 		});
 
@@ -154,7 +153,9 @@ async function handleExecConnection(
 		});
 
 		// Send connection message
-		sendToClient(`\x1b[32mConnecting to ${podName}${container ? `/${container}` : ''}...\x1b[0m\r\n`);
+		sendToClient(
+			`\x1b[32mConnecting to ${podName}${container ? `/${container}` : ''}...\x1b[0m\r\n`
+		);
 
 		// Try different shells
 		const shellCommands =
@@ -164,32 +165,31 @@ async function handleExecConnection(
 
 		for (const shell of shellCommands) {
 			try {
-				console.log(`[WebSocket] Trying shell: ${shell}`);
-
 				// Create a passthrough stream for stdin
 				const stdinStream = new stream.PassThrough();
 				k8sConnection.stdin = stdinStream;
 
 				await new Promise<void>((resolve, reject) => {
-					exec.exec(
-						namespace,
-						podName,
-						container || '',
-						[shell],
-						stdout,
-						stderr,
-						stdinStream,
-						true, // tty
-						(status) => {
-							console.log(`[WebSocket] Exec completed for ${connectionId}:`, status);
-							if (ws.readyState === WebSocket.OPEN) {
-								sendToClient(`\r\n\x1b[33m[Session ended]\x1b[0m\r\n`);
-								ws.close(1000, 'Session ended');
+					exec
+						.exec(
+							namespace,
+							podName,
+							container || '',
+							[shell],
+							stdout,
+							stderr,
+							stdinStream,
+							true, // tty
+							(status) => {
+								console.info(`[WebSocket] Exec completed for ${connectionId}:`, status);
+								if (ws.readyState === WebSocket.OPEN) {
+									sendToClient(`\r\n\x1b[33m[Session ended]\x1b[0m\r\n`);
+									ws.close(1000, 'Session ended');
+								}
 							}
-						}
-					)
+						)
 						.then((execWebSocket) => {
-							console.log(`[WebSocket] Exec started successfully with ${shell}`);
+							console.info(`[WebSocket] Exec started successfully with ${shell}`);
 
 							// Store close function
 							k8sConnection.close = () => {
@@ -215,7 +215,7 @@ async function handleExecConnection(
 				break;
 			} catch (err) {
 				lastError = err as Error;
-				console.log(`[WebSocket] Shell ${shell} failed:`, (err as Error).message);
+				console.info(`[WebSocket] Shell ${shell} failed:`, (err as Error).message);
 			}
 		}
 
@@ -234,7 +234,7 @@ async function handleExecConnection(
 
 // Cleanup all connections on shutdown
 export function cleanupAllConnections(): void {
-	console.log(`[WebSocket] Cleaning up ${activeConnections.size} connections`);
+	console.info(`[WebSocket] Cleaning up ${activeConnections.size} connections`);
 	for (const [, { cleanup }] of activeConnections) {
 		cleanup();
 	}

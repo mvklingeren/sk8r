@@ -9,7 +9,8 @@ export const resourceMetricsConfig: ResourceMetricsConfig = {
 				type: 'line',
 				title: 'Average CPU Usage',
 				height: 250,
-				query: 'sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) / sum(machine_cpu_cores)',
+				query:
+					'sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) / sum(machine_cpu_cores)',
 				unit: 'cores',
 				color: 'rgb(59, 130, 246)', // blue-500
 				fill: true, // Fill area under the line

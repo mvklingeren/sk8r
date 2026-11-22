@@ -5,12 +5,12 @@ function createDarkModeStore() {
 	// Initialize from localStorage or system preference
 	const getInitialValue = (): boolean => {
 		if (!browser) return false;
-		
+
 		const stored = localStorage.getItem('darkMode');
 		if (stored !== null) {
 			return stored === 'true';
 		}
-		
+
 		// Fall back to system preference
 		return window.matchMedia('(prefers-color-scheme: dark)').matches;
 	};
@@ -20,7 +20,7 @@ function createDarkModeStore() {
 	return {
 		subscribe,
 		toggle: () => {
-			update(value => {
+			update((value) => {
 				const newValue = !value;
 				if (browser) {
 					localStorage.setItem('darkMode', String(newValue));
@@ -60,6 +60,3 @@ function createDarkModeStore() {
 }
 
 export const darkMode = createDarkModeStore();
-
-
-

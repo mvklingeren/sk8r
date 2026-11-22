@@ -10,15 +10,19 @@ export const GET: RequestHandler = async ({ request }) => {
 	}
 
 	try {
-		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
+		const k8sApi = new K8sApiServiceSimple(
+			credentials.server,
+			credentials.token,
+			credentials.skipTLSVerify
+		);
 		const namespaces = await k8sApi.listNamespaces();
-		
+
 		// Sort namespaces alphabetically, but keep 'default' and 'kube-system' at top
 		const priorityNamespaces = ['default', 'kube-system'];
 		const sortedNamespaces = namespaces.sort((a, b) => {
 			const aIndex = priorityNamespaces.indexOf(a);
 			const bIndex = priorityNamespaces.indexOf(b);
-			
+
 			// Both are priority namespaces - sort by priority order
 			if (aIndex !== -1 && bIndex !== -1) {
 				return aIndex - bIndex;
@@ -30,7 +34,7 @@ export const GET: RequestHandler = async ({ request }) => {
 			// Neither is priority - sort alphabetically
 			return a.localeCompare(b);
 		});
-		
+
 		return json({
 			namespaces: sortedNamespaces,
 			total: sortedNamespaces.length
@@ -38,7 +42,7 @@ export const GET: RequestHandler = async ({ request }) => {
 	} catch (error) {
 		console.error('Error listing namespaces:', error);
 		return json(
-			{ 
+			{
 				error: 'Failed to list namespaces',
 				message: error instanceof Error ? error.message : 'Unknown error',
 				namespaces: ['default'] // Fallback to default namespace

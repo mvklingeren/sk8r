@@ -88,7 +88,8 @@ export const dashboardConfig: DashboardConfig = {
 			type: 'line',
 			title: 'CPU Usage',
 			height: 200,
-			query: '100 * sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) / sum(machine_cpu_cores)',
+			query:
+				'100 * sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) / sum(machine_cpu_cores)',
 			unit: 'percentage',
 			color: 'rgb(59, 130, 246)', // blue-500
 			fill: true,
@@ -101,7 +102,8 @@ export const dashboardConfig: DashboardConfig = {
 			type: 'line',
 			title: 'Memory Usage',
 			height: 200,
-			query: '100 * sum(container_memory_working_set_bytes{container!=""}) / sum(machine_memory_bytes)',
+			query:
+				'100 * sum(container_memory_working_set_bytes{container!=""}) / sum(machine_memory_bytes)',
 			unit: 'percentage',
 			color: 'rgb(34, 197, 94)', // green-500
 			fill: true,
@@ -248,11 +250,12 @@ export const dashboardConfig: DashboardConfig = {
 // Alternative queries for different Prometheus setups (cadvisor vs node-exporter vs kube-state-metrics)
 export const alternativeQueries = {
 	// If using cadvisor metrics
-	cpuCadvisor: 'sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) / sum(machine_cpu_cores) * 100',
-	memoryCadvisor: 'sum(container_memory_working_set_bytes{container!=""}) / sum(machine_memory_bytes) * 100',
-	
+	cpuCadvisor:
+		'sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) / sum(machine_cpu_cores) * 100',
+	memoryCadvisor:
+		'sum(container_memory_working_set_bytes{container!=""}) / sum(machine_memory_bytes) * 100',
+
 	// If kube-state-metrics is not available, use kubernetes API metrics
 	nodesKubeApi: 'count(up{job="kubernetes-nodes"})',
 	podsKubeApi: 'count(up{job="kubernetes-pods"})'
 };
-

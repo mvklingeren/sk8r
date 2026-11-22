@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { 
-		Activity, 
-		ChevronDown, 
-		ChevronUp, 
-		Trash2, 
-		RefreshCw, 
-		Pause, 
+	import { openEventStream } from '$lib/utils/eventStream';
+	import {
+		Activity,
+		ChevronDown,
+		ChevronUp,
+		Trash2,
+		RefreshCw,
+		Pause,
 		Play,
 		AlertTriangle,
 		CheckCircle,
@@ -49,9 +50,9 @@
 		onCollapseChange?: (collapsed: boolean) => void;
 	}
 
-	let { 
-		namespace = '', 
-		filterKind = '', 
+	let {
+		namespace = '',
+		filterKind = '',
 		filterName = '',
 		collapsed = false,
 		maxEvents = 100,
@@ -61,31 +62,27 @@
 	}: Props = $props();
 
 	let events = $state<K8sEvent[]>([]);
-	let isCollapsed = $state(collapsed);
+	// Follows the prop, but stays locally writable
+	let isCollapsed = $derived(collapsed);
 	let isConnected = $state(false);
-	
-	// Sync internal state with prop changes
-	$effect(() => {
-		isCollapsed = collapsed;
-	});
 	let isLoading = $state(false);
 	let isPaused = $state(false);
 	let error = $state<string | null>(null);
 	let filterType = $state<'all' | 'Normal' | 'Warning'>('all');
 	let autoScroll = $state(true);
 
-	let eventSource: EventSource | null = null;
+	let closeStream: (() => void) | null = null;
 	let eventsContainer = $state<HTMLDivElement | null>(null);
 
 	// Filtered events based on type filter
 	let filteredEvents = $derived.by(() => {
 		if (filterType === 'all') return events;
-		return events.filter(e => e.type === filterType);
+		return events.filter((e) => e.type === filterType);
 	});
 
 	// Count by type
-	let normalCount = $derived(events.filter(e => e.type === 'Normal').length);
-	let warningCount = $derived(events.filter(e => e.type === 'Warning').length);
+	let normalCount = $derived(events.filter((e) => e.type === 'Normal').length);
+	let warningCount = $derived(events.filter((e) => e.type === 'Warning').length);
 
 	function buildStreamUrl(): string {
 		const params = new URLSearchParams();
@@ -97,70 +94,61 @@
 
 	function connect() {
 		disconnect();
-		
+
 		isLoading = true;
 		error = null;
 
-		const url = buildStreamUrl();
-		eventSource = new EventSource(url);
+		closeStream = openEventStream(
+			buildStreamUrl(),
+			{
+				connected: () => {
+					isConnected = true;
+					isLoading = false;
+				},
+				event: (data) => {
+					if (isPaused) return;
 
-		eventSource.addEventListener('connected', () => {
-			isConnected = true;
-			isLoading = false;
-		});
+					try {
+						const event = JSON.parse(data) as K8sEvent;
 
-		eventSource.addEventListener('event', (e) => {
-			if (isPaused) return;
+						// Add to events array, maintaining max limit
+						events = [...events, event].slice(-maxEvents);
 
-			try {
-				const event = JSON.parse(e.data) as K8sEvent;
-				
-				// Add to events array, maintaining max limit
-				events = [...events, event].slice(-maxEvents);
-
-				if (autoScroll && eventsContainer) {
-					requestAnimationFrame(() => {
-						eventsContainer.scrollTop = eventsContainer.scrollHeight;
-					});
+						if (autoScroll && eventsContainer) {
+							const el = eventsContainer;
+							requestAnimationFrame(() => {
+								el.scrollTop = el.scrollHeight;
+							});
+						}
+					} catch (err) {
+						console.error('Failed to parse event:', err);
+					}
+				},
+				error: (data) => {
+					try {
+						error = JSON.parse(data).message || 'Connection error';
+					} catch {
+						error = 'Connection error';
+					}
+					isConnected = false;
+					isLoading = false;
+				},
+				end: () => {
+					isConnected = false;
+					isLoading = false;
 				}
-			} catch (err) {
-				console.error('Failed to parse event:', err);
-			}
-		});
-
-		eventSource.addEventListener('error', (e) => {
-			if (e instanceof MessageEvent) {
-				try {
-					const data = JSON.parse(e.data);
-					error = data.message || 'Connection error';
-				} catch {
-					error = 'Connection error';
-				}
-			} else {
-				error = 'Connection lost';
-			}
-			isConnected = false;
-			isLoading = false;
-		});
-
-		eventSource.addEventListener('end', () => {
-			isConnected = false;
-			isLoading = false;
-		});
-
-		eventSource.onerror = () => {
-			if (eventSource?.readyState === EventSource.CLOSED) {
+			},
+			(err) => {
+				if (err) error = 'Connection lost';
 				isConnected = false;
 				isLoading = false;
 			}
-		};
+		);
 	}
 
 	function disconnect() {
-		if (eventSource) {
-			eventSource.close();
-			eventSource = null;
-		}
+		closeStream?.();
+		closeStream = null;
 		isConnected = false;
 	}
 
@@ -187,7 +175,7 @@
 	function formatTimestamp(timestamp: string): string {
 		if (!timestamp) return '';
 		const date = new Date(timestamp);
-		return date.toLocaleTimeString('en-US', { 
+		return date.toLocaleTimeString('en-US', {
 			hour12: false,
 			hour: '2-digit',
 			minute: '2-digit',
@@ -200,11 +188,11 @@
 		const now = new Date();
 		const then = new Date(timestamp);
 		const diff = now.getTime() - then.getTime();
-		
+
 		const seconds = Math.floor(diff / 1000);
 		const minutes = Math.floor(seconds / 60);
 		const hours = Math.floor(minutes / 60);
-		
+
 		if (hours > 0) return `${hours}h ago`;
 		if (minutes > 0) return `${minutes}m ago`;
 		return `${seconds}s ago`;
@@ -229,27 +217,42 @@
 	});
 </script>
 
-<div class="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden {fillHeight ? 'flex flex-col h-full' : ''}">
+<div
+	class="overflow-hidden rounded-lg border border-gray-700 bg-gray-900 {fillHeight
+		? 'flex h-full flex-col'
+		: ''}"
+>
 	<!-- Header -->
-	<div 
-		class="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700 cursor-pointer select-none"
-		onclick={() => { isCollapsed = !isCollapsed; onCollapseChange?.(isCollapsed); if (!isCollapsed && !isConnected) connect(); }}
+	<div
+		class="flex cursor-pointer items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3 select-none"
+		onclick={() => {
+			isCollapsed = !isCollapsed;
+			onCollapseChange?.(isCollapsed);
+			if (!isCollapsed && !isConnected) connect();
+		}}
 		role="button"
 		tabindex="0"
-		onkeydown={(e) => { if (e.key === 'Enter') { isCollapsed = !isCollapsed; onCollapseChange?.(isCollapsed); } }}
+		onkeydown={(e) => {
+			if (e.key === 'Enter') {
+				isCollapsed = !isCollapsed;
+				onCollapseChange?.(isCollapsed);
+			}
+		}}
 	>
 		<div class="flex items-center gap-3">
 			<Activity size={18} class="text-cyan-400" />
 			<h3 class="text-sm font-semibold text-white">
 				Events Stream
 				{#if filterKind && filterName}
-					<span class="text-gray-400 font-normal ml-2">
+					<span class="ml-2 font-normal text-gray-400">
 						({filterKind}/{filterName})
 					</span>
 				{/if}
 			</h3>
 			<div class="flex items-center gap-2">
-				<span class="w-2 h-2 rounded-full {isConnected ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}"></span>
+				<span
+					class="h-2 w-2 rounded-full {isConnected ? 'animate-pulse bg-green-400' : 'bg-gray-500'}"
+				></span>
 				<span class="text-xs text-gray-400">
 					{events.length} events
 				</span>
@@ -265,23 +268,40 @@
 		<div class="flex items-center gap-2">
 			{#if !isCollapsed}
 				<!-- Filter buttons -->
-				<div class="flex items-center gap-1 mr-2">
+				<div class="mr-2 flex items-center gap-1">
 					<button
-						onclick={(e) => { e.stopPropagation(); filterType = 'all'; }}
-						class="px-2 py-1 text-xs rounded transition-colors {filterType === 'all' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-gray-200'}"
+						onclick={(e) => {
+							e.stopPropagation();
+							filterType = 'all';
+						}}
+						class="rounded px-2 py-1 text-xs transition-colors {filterType === 'all'
+							? 'bg-gray-600 text-white'
+							: 'text-gray-400 hover:text-gray-200'}"
 					>
 						All
 					</button>
 					<button
-						onclick={(e) => { e.stopPropagation(); filterType = 'Normal'; }}
-						class="px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 {filterType === 'Normal' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-gray-200'}"
+						onclick={(e) => {
+							e.stopPropagation();
+							filterType = 'Normal';
+						}}
+						class="flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors {filterType ===
+						'Normal'
+							? 'bg-green-600 text-white'
+							: 'text-gray-400 hover:text-gray-200'}"
 					>
 						<CheckCircle size={12} />
 						{normalCount}
 					</button>
 					<button
-						onclick={(e) => { e.stopPropagation(); filterType = 'Warning'; }}
-						class="px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 {filterType === 'Warning' ? 'bg-yellow-600 text-white' : 'text-gray-400 hover:text-gray-200'}"
+						onclick={(e) => {
+							e.stopPropagation();
+							filterType = 'Warning';
+						}}
+						class="flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors {filterType ===
+						'Warning'
+							? 'bg-yellow-600 text-white'
+							: 'text-gray-400 hover:text-gray-200'}"
 					>
 						<AlertTriangle size={12} />
 						{warningCount}
@@ -290,8 +310,13 @@
 
 				<!-- Auto-scroll toggle -->
 				<button
-					onclick={(e) => { e.stopPropagation(); toggleAutoScroll(); }}
-					class="p-1.5 rounded transition-colors {autoScroll ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:text-gray-200'}"
+					onclick={(e) => {
+						e.stopPropagation();
+						toggleAutoScroll();
+					}}
+					class="rounded p-1.5 transition-colors {autoScroll
+						? 'bg-blue-600 text-white'
+						: 'bg-gray-700 text-gray-400 hover:text-gray-200'}"
 					title={autoScroll ? 'Auto-scroll enabled' : 'Auto-scroll disabled'}
 				>
 					{#if autoScroll}
@@ -303,8 +328,13 @@
 
 				<!-- Pause/Resume -->
 				<button
-					onclick={(e) => { e.stopPropagation(); togglePause(); }}
-					class="p-1.5 rounded transition-colors {isPaused ? 'bg-yellow-600 text-white' : 'bg-gray-700 text-gray-400 hover:text-gray-200'}"
+					onclick={(e) => {
+						e.stopPropagation();
+						togglePause();
+					}}
+					class="rounded p-1.5 transition-colors {isPaused
+						? 'bg-yellow-600 text-white'
+						: 'bg-gray-700 text-gray-400 hover:text-gray-200'}"
 					title={isPaused ? 'Resume' : 'Pause'}
 				>
 					{#if isPaused}
@@ -316,8 +346,11 @@
 
 				<!-- Refresh -->
 				<button
-					onclick={(e) => { e.stopPropagation(); refresh(); }}
-					class="p-1.5 rounded bg-gray-700 text-gray-400 hover:text-gray-200 transition-colors"
+					onclick={(e) => {
+						e.stopPropagation();
+						refresh();
+					}}
+					class="rounded bg-gray-700 p-1.5 text-gray-400 transition-colors hover:text-gray-200"
 					title="Refresh"
 					disabled={isLoading}
 				>
@@ -326,8 +359,11 @@
 
 				<!-- Clear -->
 				<button
-					onclick={(e) => { e.stopPropagation(); clearEvents(); }}
-					class="p-1.5 rounded bg-gray-700 text-gray-400 hover:text-gray-200 transition-colors"
+					onclick={(e) => {
+						e.stopPropagation();
+						clearEvents();
+					}}
+					class="rounded bg-gray-700 p-1.5 text-gray-400 transition-colors hover:text-gray-200"
 					title="Clear events"
 				>
 					<Trash2 size={14} />
@@ -335,8 +371,11 @@
 
 				{#if onClose}
 					<button
-						onclick={(e) => { e.stopPropagation(); onClose(); }}
-						class="p-1.5 rounded bg-gray-700 text-gray-400 hover:text-red-400 transition-colors ml-1"
+						onclick={(e) => {
+							e.stopPropagation();
+							onClose();
+						}}
+						class="ml-1 rounded bg-gray-700 p-1.5 text-gray-400 transition-colors hover:text-red-400"
 						title="Close"
 					>
 						<X size={14} />
@@ -354,21 +393,21 @@
 
 	<!-- Events list -->
 	{#if !isCollapsed}
-		<div 
+		<div
 			bind:this={eventsContainer}
-			class="{fillHeight ? 'flex-1 min-h-0' : 'max-h-64'} overflow-y-auto"
+			class="{fillHeight ? 'min-h-0 flex-1' : 'max-h-64'} overflow-y-auto"
 		>
 			{#if error}
-				<div class="p-4 text-center text-red-400 text-sm">
+				<div class="p-4 text-center text-sm text-red-400">
 					{error}
 				</div>
 			{:else if isLoading && events.length === 0}
-				<div class="p-4 text-center text-gray-400 text-sm flex items-center justify-center gap-2">
+				<div class="flex items-center justify-center gap-2 p-4 text-center text-sm text-gray-400">
 					<RefreshCw size={14} class="animate-spin" />
 					Connecting to events stream...
 				</div>
 			{:else if filteredEvents.length === 0}
-				<div class="p-4 text-center text-gray-500 text-sm">
+				<div class="p-4 text-center text-sm text-gray-500">
 					No events
 					{#if filterType !== 'all'}
 						matching filter
@@ -377,10 +416,10 @@
 			{:else}
 				<div class="divide-y divide-gray-800">
 					{#each filteredEvents as event (event.metadata.uid + event.lastTimestamp)}
-						<div class="px-4 py-2 hover:bg-gray-800/50 transition-colors text-sm">
+						<div class="px-4 py-2 text-sm transition-colors hover:bg-gray-800/50">
 							<div class="flex items-start gap-3">
 								<!-- Type indicator -->
-								<div class="flex-shrink-0 mt-0.5">
+								<div class="mt-0.5 flex-shrink-0">
 									{#if event.type === 'Warning'}
 										<AlertTriangle size={14} class="text-yellow-400" />
 									{:else}
@@ -389,21 +428,21 @@
 								</div>
 
 								<!-- Event content -->
-								<div class="flex-1 min-w-0">
-									<div class="flex items-center gap-2 flex-wrap">
+								<div class="min-w-0 flex-1">
+									<div class="flex flex-wrap items-center gap-2">
 										<span class="font-medium text-white">{event.reason}</span>
-										<span class="text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">
+										<span class="rounded bg-gray-700 px-1.5 py-0.5 text-xs text-gray-300">
 											{event.involvedObject.kind}/{event.involvedObject.name}
 										</span>
 										{#if event.count > 1}
 											<span class="text-xs text-gray-500">×{event.count}</span>
 										{/if}
 									</div>
-									<p class="text-gray-400 text-xs mt-0.5 break-words">{event.message}</p>
+									<p class="mt-0.5 text-xs break-words text-gray-400">{event.message}</p>
 								</div>
 
 								<!-- Timestamp -->
-								<div class="flex-shrink-0 text-xs text-gray-500 text-right">
+								<div class="flex-shrink-0 text-right text-xs text-gray-500">
 									<div>{formatTimestamp(event.lastTimestamp)}</div>
 									<div class="text-gray-600">{getTimeAgo(event.lastTimestamp)}</div>
 								</div>
@@ -415,7 +454,9 @@
 		</div>
 
 		<!-- Footer -->
-		<div class="px-4 py-2 bg-gray-800 border-t border-gray-700 text-xs text-gray-500 flex items-center justify-between">
+		<div
+			class="flex items-center justify-between border-t border-gray-700 bg-gray-800 px-4 py-2 text-xs text-gray-500"
+		>
 			<span>
 				{filteredEvents.length} of {events.length} events
 				{#if isPaused}
@@ -433,4 +474,3 @@
 		</div>
 	{/if}
 </div>
-

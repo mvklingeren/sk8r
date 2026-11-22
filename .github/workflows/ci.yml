@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run check
+      - run: npm run lint
+
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+
+      - run: npm run build
+
+      # Boot the production server: catches runtime import errors the build doesn't
+      - name: Smoke test production server
+        run: |
+          PORT=3000 node server.js > server.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -sf -o /dev/null http://localhost:3000/ && exit 0
+            sleep 1
+          done
+          cat server.log
+          exit 1

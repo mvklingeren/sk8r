@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { KubernetesObjectApi } from '@kubernetes/client-node';
 import yaml from 'js-yaml';
 import { getK8sCredentials, unauthorizedResponse, createKubeConfig } from '$lib/server/k8sAuth';
+import { k8sErrorMessage, k8sErrorStatus } from '$lib/types/k8s';
 
 interface K8sManifest {
 	apiVersion: string;
@@ -17,7 +18,7 @@ interface K8sManifest {
 
 function parseYamlManifests(yamlContent: string): K8sManifest[] {
 	const documents = yaml.loadAll(yamlContent) as K8sManifest[];
-	return documents.filter(doc => doc !== null && doc !== undefined);
+	return documents.filter((doc) => doc !== null && doc !== undefined);
 }
 
 function validateManifest(manifest: K8sManifest): { valid: boolean; error?: string } {
@@ -80,7 +81,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				success: true,
 				dryRun: true,
 				message: `Validated ${manifests.length} resource(s)`,
-				resources: manifests.map(m => ({
+				resources: manifests.map((m) => ({
 					kind: m.kind,
 					name: m.metadata.name,
 					namespace: m.metadata.namespace || 'default'
@@ -102,15 +103,15 @@ export const POST: RequestHandler = async ({ request }) => {
 					manifest.metadata.namespace = 'default';
 				}
 
-				await client.create(manifest as any);
+				await client.create(manifest);
 				results.push({
 					kind: manifest.kind,
 					name: manifest.metadata.name,
 					namespace: manifest.metadata.namespace,
 					status: 'created'
 				});
-			} catch (err: any) {
-				const errorMessage = err.body?.message || err.message || 'Unknown error';
+			} catch (err) {
+				const errorMessage = k8sErrorMessage(err);
 				errors.push({
 					kind: manifest.kind,
 					name: manifest.metadata.name,
@@ -121,9 +122,9 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		if (errors.length > 0 && results.length === 0) {
 			return json(
-				{ 
-					error: 'Failed to create resources', 
-					details: errors 
+				{
+					error: 'Failed to create resources',
+					details: errors
 				},
 				{ status: 500 }
 			);
@@ -210,15 +211,15 @@ export const PUT: RequestHandler = async ({ request }) => {
 			}
 
 			// First, read the current resource to get resourceVersion
-			const current = await client.read(manifest as any) as any;
-			
+			const current = await client.read(manifest);
+
 			// Preserve resourceVersion for optimistic concurrency
 			if (current?.metadata?.resourceVersion) {
 				manifest.metadata.resourceVersion = current.metadata.resourceVersion as string;
 			}
 
 			// Replace the resource
-			await client.replace(manifest as any);
+			await client.replace(manifest);
 
 			return json({
 				success: true,
@@ -229,11 +230,11 @@ export const PUT: RequestHandler = async ({ request }) => {
 					namespace: manifest.metadata.namespace
 				}
 			});
-		} catch (err: any) {
-			const errorMessage = err.body?.message || err.message || 'Unknown error';
+		} catch (err) {
+			const errorMessage = k8sErrorMessage(err);
 			return json(
 				{ error: `Failed to update resource: ${errorMessage}` },
-				{ status: err.statusCode || 500 }
+				{ status: k8sErrorStatus(err) || 500 }
 			);
 		}
 	} catch (error) {
@@ -257,10 +258,7 @@ export const DELETE: RequestHandler = async ({ request }) => {
 		const { kind, apiVersion, name, namespace = 'default' } = body;
 
 		if (!kind || !apiVersion || !name) {
-			return json(
-				{ error: 'kind, apiVersion, and name are required' },
-				{ status: 400 }
-			);
+			return json({ error: 'kind, apiVersion, and name are required' }, { status: 400 });
 		}
 
 		const kc = createKubeConfig(credentials.server, credentials.token, credentials.skipTLSVerify);
@@ -271,17 +269,17 @@ export const DELETE: RequestHandler = async ({ request }) => {
 				apiVersion,
 				kind,
 				metadata: { name, namespace }
-			} as any);
+			});
 
 			return json({
 				success: true,
 				message: `${kind} "${name}" deleted successfully`
 			});
-		} catch (err: any) {
-			const errorMessage = err.body?.message || err.message || 'Unknown error';
+		} catch (err) {
+			const errorMessage = k8sErrorMessage(err);
 			return json(
 				{ error: `Failed to delete resource: ${errorMessage}` },
-				{ status: err.statusCode || 500 }
+				{ status: k8sErrorStatus(err) || 500 }
 			);
 		}
 	} catch (error) {

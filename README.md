@@ -6,10 +6,10 @@ sk8r is a modern, open-source dashboard for your Kubernetes cluster. It provides
 
 ## Features
 
--   **Resource Management:** View, create, and manage Kubernetes resources like Pods, Deployments, Services, etc.
--   **Real-time Logs:** Stream logs from your pods directly in the UI.
--   **Metrics:** Visualize cluster and application metrics with Prometheus integration.
--   **Interactive Pod Shell:** Access a terminal inside your running pods.
+- **Resource Management:** View, create, and manage Kubernetes resources like Pods, Deployments, Services, etc.
+- **Real-time Logs:** Stream logs from your pods directly in the UI.
+- **Metrics:** Visualize cluster and application metrics with Prometheus integration.
+- **Interactive Pod Shell:** Access a terminal inside your running pods.
 
 ## Quick Start
 
@@ -32,9 +32,9 @@ kubectl apply -f k8s/
 
 ## Prerequisites
 
--   A running Kubernetes cluster
--   `kubectl` installed and configured to connect to your cluster
--   **(Optional) Prometheus:** For metrics visualization, the dashboard expects Prometheus to be available at `http://kube-prometheus-stack-prometheus.monitoring:9090`. We recommend installing the [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) Helm chart.
+- A running Kubernetes cluster
+- `kubectl` installed and configured to connect to your cluster
+- **(Optional) Prometheus:** For metrics visualization, the dashboard expects Prometheus to be available at `http://kube-prometheus-stack-prometheus.monitoring:9090`. We recommend installing the [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) Helm chart.
 
 ## Accessing the Dashboard
 
@@ -65,8 +65,18 @@ If your Prometheus instance is running at a different address, update the `PROME
 
 ```yaml
 env:
-- name: PROMETHEUS_URL
-  value: "http://your-prometheus-service:9090"
+  - name: PROMETHEUS_URL
+    value: 'http://your-prometheus-service:9090'
+```
+
+### Restricting cluster API servers
+
+The backend connects to whichever API server URL the browser sends. If sk8r is reachable by people you don't fully trust, limit it to known clusters (comma-separated, exact URLs):
+
+```yaml
+env:
+  - name: K8S_ALLOWED_SERVERS
+    value: 'https://10.0.0.1:6443,https://k8s.example.com:6443'
 ```
 
 ### Alternative Service Types
@@ -74,16 +84,18 @@ env:
 The default service type is `LoadBalancer`. For other environments:
 
 **NodePort:**
+
 ```yaml
 spec:
   type: NodePort
   ports:
     - port: 80
       targetPort: 3000
-      nodePort: 30080  # Optional: specify a port
+      nodePort: 30080 # Optional: specify a port
 ```
 
 **ClusterIP with Ingress:**
+
 ```yaml
 spec:
   type: ClusterIP
@@ -100,6 +112,7 @@ Then create an Ingress resource pointing to the `sk8r-app-service`.
 To run the application locally for development:
 
 1.  **Install dependencies:**
+
     ```sh
     npm install
     ```
@@ -115,11 +128,13 @@ To run the application locally for development:
 If you want to build and push your own Docker image:
 
 1.  **Build and push the Docker image:**
+
     ```sh
     docker buildx build --platform linux/amd64,linux/arm64 -t your-registry/sk8r-app:latest --push .
     ```
 
 2.  **Update the deployment to use your image:**
+
     ```sh
     kubectl set image deployment/sk8r-app sk8r-app=your-registry/sk8r-app:latest
     ```

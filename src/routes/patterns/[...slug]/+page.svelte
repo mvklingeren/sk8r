@@ -56,12 +56,9 @@
 
 <div class="min-h-screen bg-gray-950">
 	<!-- Header -->
-	<header class="sticky top-0 z-10 bg-gray-900/95 backdrop-blur border-b border-gray-800">
-		<div class="max-w-4xl mx-auto px-6 py-4 flex items-center gap-4">
-			<a 
-				href="/" 
-				class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-			>
+	<header class="sticky top-0 z-10 border-b border-gray-800 bg-gray-900/95 backdrop-blur">
+		<div class="mx-auto flex max-w-4xl items-center gap-4 px-6 py-4">
+			<a href="/" class="flex items-center gap-2 text-gray-400 transition-colors hover:text-white">
 				<ArrowLeft size={20} />
 				<span class="text-sm">Back to Dashboard</span>
 			</a>
@@ -74,8 +71,9 @@
 	</header>
 
 	<!-- Content -->
-	<main class="max-w-4xl mx-auto px-6 py-8">
+	<main class="mx-auto max-w-4xl px-6 py-8">
 		<article class="prose prose-invert prose-lg max-w-none">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- markdown rendered from repo-owned files only -->
 			{@html data.html}
 		</article>
 	</main>
@@ -264,4 +262,3 @@
 		margin: 0 auto;
 	}
 </style>
-

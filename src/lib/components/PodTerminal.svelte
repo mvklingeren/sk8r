@@ -103,7 +103,7 @@
 		const params = new URLSearchParams();
 		if (selectedContainer) params.set('container', selectedContainer);
 		params.set('command', '/bin/sh');
-		
+
 		// Include credentials for WebSocket connection
 		const server = authToken.getCurrentServer();
 		const token = authToken.getCurrentToken();
@@ -123,12 +123,10 @@
 		error = null;
 
 		const url = buildExecUrl();
-		console.log('[PodTerminal] Connecting to:', url);
 
 		ws = new WebSocket(url);
 
 		ws.onopen = () => {
-			console.log('[PodTerminal] WebSocket connected');
 			isConnected = true;
 			isConnecting = false;
 			terminal?.focus();
@@ -149,7 +147,6 @@
 		};
 
 		ws.onclose = (event) => {
-			console.log('[PodTerminal] WebSocket closed:', event.code, event.reason);
 			isConnected = false;
 			isConnecting = false;
 
@@ -246,7 +243,7 @@
 					class="h-2 w-2 rounded-full {isConnected
 						? 'bg-green-400'
 						: isConnecting
-							? 'bg-yellow-400 animate-pulse'
+							? 'animate-pulse bg-yellow-400'
 							: 'bg-gray-500'}"
 				></span>
 				Terminal: {podName}
@@ -259,13 +256,13 @@
 						onchange={handleContainerChange}
 						class="appearance-none rounded border border-gray-600 bg-gray-700 px-3 py-1.5 pr-8 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
 					>
-						{#each containers as container}
+						{#each containers as container (container)}
 							<option value={container}>{container}</option>
 						{/each}
 					</select>
 					<ChevronDown
 						size={14}
-						class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+						class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-gray-400"
 					/>
 				</div>
 			{:else if selectedContainer}
@@ -357,4 +354,3 @@
 		</span>
 	</div>
 </div>
-

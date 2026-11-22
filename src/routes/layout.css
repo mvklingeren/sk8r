@@ -30,9 +30,14 @@
 body {
 	background-color: var(--color-bg-primary);
 	color: var(--color-text-primary);
-	transition: background-color 0.2s ease, color 0.2s ease;
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease;
 }
 
-h2, h3, h4, h5 {
-    color: var(--color-text-primary);
+h2,
+h3,
+h4,
+h5 {
+	color: var(--color-text-primary);
 }

@@ -27,7 +27,7 @@
 		return {
 			text: isDarkMode ? 'rgb(226, 232, 240)' : 'rgb(107, 114, 128)', // slate-200 / gray-500
 			gridLines: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-			tickColor: isDarkMode ? 'rgb(148, 163, 184)' : 'rgb(107, 114, 128)', // slate-400 / gray-500
+			tickColor: isDarkMode ? 'rgb(148, 163, 184)' : 'rgb(107, 114, 128)' // slate-400 / gray-500
 		};
 	}
 
@@ -35,7 +35,7 @@
 		switch (unit) {
 			case 'percentage':
 				return `${value.toFixed(1)}%`;
-			case 'bytes':
+			case 'bytes': {
 				// Convert to human-readable format
 				const units = ['B', 'KB', 'MB', 'GB', 'TB'];
 				let size = value;
@@ -45,6 +45,7 @@
 					unitIndex++;
 				}
 				return `${size.toFixed(2)} ${units[unitIndex]}`;
+			}
 			case 'cores':
 				return `${value.toFixed(2)} cores`;
 			default:
@@ -102,12 +103,12 @@
 			const shouldFill = config.fill === true || config.type === 'area';
 			return {
 				label: series.label,
-				data: series.data.map(point => ({
-					x: point.timestamp,
+				data: series.data.map((point) => ({
+					x: new Date(point.timestamp).getTime(),
 					y: point.value
 				})),
 				borderColor: seriesColor,
-				backgroundColor: shouldFill 
+				backgroundColor: shouldFill
 					? colorToRgba(seriesColor, 0.15) // 15% opacity for a subtle fill
 					: seriesColor,
 				borderWidth: 2,
@@ -153,7 +154,7 @@
 						borderWidth: isDarkMode ? 1 : 0,
 						callbacks: {
 							label: (context) => {
-								const value = formatValue(context.parsed.y, config.unit);
+								const value = formatValue(context.parsed.y ?? 0, config.unit);
 								return `${context.dataset.label}: ${value}`;
 							}
 						}
@@ -254,8 +255,8 @@
 			// If the chart exists, just update it.
 			chart.data.datasets.forEach((dataset, index) => {
 				if (data[index]) {
-					dataset.data = data[index].data.map(point => ({
-						x: point.timestamp,
+					dataset.data = data[index].data.map((point) => ({
+						x: new Date(point.timestamp).getTime(),
 						y: point.value
 					}));
 				}

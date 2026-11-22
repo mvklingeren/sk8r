@@ -1,5 +1,12 @@
 import * as k8s from '@kubernetes/client-node';
-import type { MetricsApiResponse, NodeMetrics, MetricDataPoint } from '$lib/types/metricsTypes';
+import type { NodeMetrics, MetricDataPoint } from '$lib/types/metricsTypes';
+import { k8sErrorStatus } from '$lib/types/k8s';
+
+interface NodeMetricSample {
+	cpu: number;
+	memory: number;
+	timestamp: Date;
+}
 
 export class MetricsService {
 	private kubeConfig: k8s.KubeConfig;
@@ -14,18 +21,14 @@ export class MetricsService {
 		try {
 			// Create a custom object client for the metrics API
 			const client = k8s.KubernetesObjectApi.makeApiClient(this.kubeConfig);
-			
+
 			// Query the metrics API for node metrics
-			const response = await client.list(
-				'metrics.k8s.io',
-				'v1beta1',
-				'nodes'
-			);
-			
+			const response = await client.list('metrics.k8s.io/v1beta1', 'NodeMetrics');
+
 			// Transform the response to our NodeMetrics type
-			const responseAny = response as any;
-			if (responseAny.body && responseAny.body.items) {
-				return responseAny.body.items.map((item: any) => ({
+			const items = response.items as unknown as NodeMetrics[];
+			if (items) {
+				return items.map((item) => ({
 					metadata: {
 						name: item.metadata.name,
 						selfLink: item.metadata.selfLink || '',
@@ -39,15 +42,15 @@ export class MetricsService {
 					}
 				}));
 			}
-			
+
 			return [];
-		} catch (error: any) {
+		} catch (error) {
 			// If metrics API is not available, return empty array
-			if (error.response?.statusCode === 404 || error.message?.includes('404')) {
+			if (k8sErrorStatus(error) === 404) {
 				console.warn('Metrics API not available or insufficient permissions.');
 				return [];
 			}
-			
+
 			console.error('Failed to fetch metrics via API:', error);
 			throw error;
 		}
@@ -70,14 +73,14 @@ export class MetricsService {
 	// Convert memory value to bytes
 	parseMemoryValue(memoryString: string): number {
 		const units: { [key: string]: number } = {
-			'Ki': 1024,
-			'Mi': 1024 * 1024,
-			'Gi': 1024 * 1024 * 1024,
-			'Ti': 1024 * 1024 * 1024 * 1024,
-			'K': 1000,
-			'M': 1000 * 1000,
-			'G': 1000 * 1000 * 1000,
-			'T': 1000 * 1000 * 1000 * 1000
+			Ki: 1024,
+			Mi: 1024 * 1024,
+			Gi: 1024 * 1024 * 1024,
+			Ti: 1024 * 1024 * 1024 * 1024,
+			K: 1000,
+			M: 1000 * 1000,
+			G: 1000 * 1000 * 1000,
+			T: 1000 * 1000 * 1000 * 1000
 		};
 
 		for (const [unit, multiplier] of Object.entries(units)) {
@@ -112,14 +115,14 @@ export class MetricsService {
 	getCachedMetrics(key: string, timeRangeMinutes: number = 5): MetricDataPoint[] {
 		const dataPoints = this.metricsCache.get(key) || [];
 		const cutoffTime = new Date(Date.now() - timeRangeMinutes * 60 * 1000);
-		
-		return dataPoints.filter(dp => dp.timestamp >= cutoffTime);
+
+		return dataPoints.filter((dp) => dp.timestamp >= cutoffTime);
 	}
 
 	// Process and cache node metrics
-	async processNodeMetrics(): Promise<Map<string, any>> {
+	async processNodeMetrics(): Promise<Map<string, NodeMetricSample>> {
 		const metrics = await this.getNodeMetrics();
-		const processedMetrics = new Map<string, any>();
+		const processedMetrics = new Map<string, NodeMetricSample>();
 
 		for (const nodeMetric of metrics) {
 			const nodeName = nodeMetric.metadata.name;

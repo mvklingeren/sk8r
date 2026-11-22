@@ -16,7 +16,7 @@ function createResourceCreatorStore() {
 	return {
 		subscribe,
 		open: () => {
-			update(state => ({
+			update((state) => ({
 				...state,
 				isOpen: true,
 				mode: 'create',
@@ -24,7 +24,7 @@ function createResourceCreatorStore() {
 			}));
 		},
 		openEdit: (yaml: string) => {
-			update(state => ({
+			update((state) => ({
 				...state,
 				isOpen: true,
 				mode: 'edit',
@@ -32,7 +32,7 @@ function createResourceCreatorStore() {
 			}));
 		},
 		close: () => {
-			update(state => ({
+			update((state) => ({
 				...state,
 				isOpen: false
 			}));
@@ -48,6 +48,3 @@ function createResourceCreatorStore() {
 }
 
 export const resourceCreator = createResourceCreatorStore();
-
-
-

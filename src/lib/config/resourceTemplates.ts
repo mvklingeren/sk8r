@@ -427,7 +427,7 @@ spec:
 ];
 
 export function getTemplateByKind(kind: string): ResourceTemplate | undefined {
-	return resourceTemplates.find(t => t.kind === kind);
+	return resourceTemplates.find((t) => t.kind === kind);
 }
 
 export function getEmptyTemplate(): string {
@@ -439,4 +439,3 @@ metadata:
 spec:
 `;
 }
-

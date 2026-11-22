@@ -5,16 +5,14 @@ const STORAGE_KEY = 'sk8tes-learning-mode';
 
 const createLearningModeStore = () => {
 	// Default to true for new users to help them learn
-	const initialValue = browser 
-		? localStorage.getItem(STORAGE_KEY) !== 'false'
-		: true;
-	
+	const initialValue = browser ? localStorage.getItem(STORAGE_KEY) !== 'false' : true;
+
 	const { subscribe, set, update } = writable<boolean>(initialValue);
 
 	return {
 		subscribe,
 		toggle: () => {
-			update(value => {
+			update((value) => {
 				const newValue = !value;
 				if (browser) {
 					localStorage.setItem(STORAGE_KEY, String(newValue));
@@ -38,4 +36,3 @@ const createLearningModeStore = () => {
 };
 
 export const learningMode = createLearningModeStore();
-

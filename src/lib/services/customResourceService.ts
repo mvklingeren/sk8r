@@ -1,22 +1,51 @@
 import * as k8s from '@kubernetes/client-node';
-import type { K8sListResponse, ResourceFilter } from '$lib/types/k8s';
+import { createKubeConfig } from '$lib/server/k8sAuth';
+import type { K8sListResponse, K8sResource, ResourceFilter } from '$lib/types/k8s';
 
 // CRD definitions for known custom resources
-const crdDefinitions: Record<string, { group: string; version: string; plural: string; namespaced: boolean }> = {
-	'ingressroutes': { group: 'traefik.io', version: 'v1alpha1', plural: 'ingressroutes', namespaced: true },
-	'middlewares': { group: 'traefik.io', version: 'v1alpha1', plural: 'middlewares', namespaced: true },
-	'tlsoptions': { group: 'traefik.io', version: 'v1alpha1', plural: 'tlsoptions', namespaced: true },
-	'certificates': { group: 'cert-manager.io', version: 'v1', plural: 'certificates', namespaced: true },
-	'certificaterequests': { group: 'cert-manager.io', version: 'v1', plural: 'certificaterequests', namespaced: true },
-	'issuers': { group: 'cert-manager.io', version: 'v1', plural: 'issuers', namespaced: true },
-	'clusterissuers': { group: 'cert-manager.io', version: 'v1', plural: 'clusterissuers', namespaced: false }
+const crdDefinitions: Record<
+	string,
+	{ group: string; version: string; plural: string; namespaced: boolean }
+> = {
+	ingressroutes: {
+		group: 'traefik.io',
+		version: 'v1alpha1',
+		plural: 'ingressroutes',
+		namespaced: true
+	},
+	middlewares: {
+		group: 'traefik.io',
+		version: 'v1alpha1',
+		plural: 'middlewares',
+		namespaced: true
+	},
+	tlsoptions: { group: 'traefik.io', version: 'v1alpha1', plural: 'tlsoptions', namespaced: true },
+	certificates: {
+		group: 'cert-manager.io',
+		version: 'v1',
+		plural: 'certificates',
+		namespaced: true
+	},
+	certificaterequests: {
+		group: 'cert-manager.io',
+		version: 'v1',
+		plural: 'certificaterequests',
+		namespaced: true
+	},
+	issuers: { group: 'cert-manager.io', version: 'v1', plural: 'issuers', namespaced: true },
+	clusterissuers: {
+		group: 'cert-manager.io',
+		version: 'v1',
+		plural: 'clusterissuers',
+		namespaced: false
+	}
 };
 
 export class CustomResourceService {
 	private kc: k8s.KubeConfig;
 	private customObjectsApi: k8s.CustomObjectsApi;
 
-	constructor(server: string, token: string) {
+	constructor(server: string, token: string, skipTLSVerify: boolean) {
 		if (!server || !token) {
 			throw new Error('Server URL and token are required');
 		}
@@ -24,29 +53,15 @@ export class CustomResourceService {
 		// Remove trailing slash from server URL
 		const cleanServer = server.replace(/\/+$/, '');
 
-		this.kc = new k8s.KubeConfig();
-		this.kc.loadFromOptions({
-			clusters: [{
-				name: 'current-cluster',
-				server: cleanServer,
-				skipTLSVerify: true
-			}],
-			users: [{
-				name: 'current-user',
-				token: token
-			}],
-			contexts: [{
-				name: 'current-context',
-				cluster: 'current-cluster',
-				user: 'current-user'
-			}],
-			currentContext: 'current-context'
-		});
+		this.kc = createKubeConfig(cleanServer, token, skipTLSVerify);
 
 		this.customObjectsApi = this.kc.makeApiClient(k8s.CustomObjectsApi);
 	}
 
-	async listCustomResources(resourceType: string, filter: ResourceFilter = {}): Promise<K8sListResponse> {
+	async listCustomResources(
+		resourceType: string,
+		filter: ResourceFilter = {}
+	): Promise<K8sListResponse> {
 		const namespace = filter.namespace || '*';
 		const allNamespaces = namespace === '*';
 
@@ -61,8 +76,9 @@ export class CustomResourceService {
 		}
 
 		try {
-			let result: any;
-			
+			// CustomObjectsApi is untyped; pre-1.0 clients wrapped the payload in `.body`
+			let result: { body?: unknown };
+
 			if (crdDef.namespaced) {
 				if (allNamespaces) {
 					result = await this.customObjectsApi.listClusterCustomObject({
@@ -103,15 +119,19 @@ export class CustomResourceService {
 		}
 	}
 
-	async getCustomResource(resourceType: string, name: string, namespace: string = 'default'): Promise<any> {
+	async getCustomResource(
+		resourceType: string,
+		name: string,
+		namespace: string = 'default'
+	): Promise<K8sResource> {
 		const crdDef = crdDefinitions[resourceType];
 		if (!crdDef) {
 			throw new Error(`Unsupported custom resource type: ${resourceType}`);
 		}
 
 		try {
-			let result: any;
-			
+			let result: { body?: unknown };
+
 			if (crdDef.namespaced) {
 				result = await this.customObjectsApi.getNamespacedCustomObject({
 					group: crdDef.group,
@@ -130,16 +150,20 @@ export class CustomResourceService {
 			}
 
 			if (result.body) {
-				return result.body;
+				return result.body as K8sResource;
 			}
-			return result;
+			return result as K8sResource;
 		} catch (error) {
 			console.error(`Error fetching custom resource ${resourceType}/${name}:`, error);
 			throw error;
 		}
 	}
 
-	async deleteCustomResource(resourceType: string, name: string, namespace: string = 'default'): Promise<void> {
+	async deleteCustomResource(
+		resourceType: string,
+		name: string,
+		namespace: string = 'default'
+	): Promise<void> {
 		const crdDef = crdDefinitions[resourceType];
 		if (!crdDef) {
 			throw new Error(`Unsupported custom resource type: ${resourceType}`);
