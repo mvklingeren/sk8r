@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { openEventStream } from '$lib/utils/eventStream';
 	import {
 		Activity,
 		ChevronDown,
@@ -70,7 +71,7 @@
 	let filterType = $state<'all' | 'Normal' | 'Warning'>('all');
 	let autoScroll = $state(true);
 
-	let eventSource: EventSource | null = null;
+	let closeStream: (() => void) | null = null;
 	let eventsContainer = $state<HTMLDivElement | null>(null);
 
 	// Filtered events based on type filter
@@ -97,67 +98,57 @@
 		isLoading = true;
 		error = null;
 
-		const url = buildStreamUrl();
-		eventSource = new EventSource(url);
+		closeStream = openEventStream(
+			buildStreamUrl(),
+			{
+				connected: () => {
+					isConnected = true;
+					isLoading = false;
+				},
+				event: (data) => {
+					if (isPaused) return;
 
-		eventSource.addEventListener('connected', () => {
-			isConnected = true;
-			isLoading = false;
-		});
+					try {
+						const event = JSON.parse(data) as K8sEvent;
 
-		eventSource.addEventListener('event', (e) => {
-			if (isPaused) return;
+						// Add to events array, maintaining max limit
+						events = [...events, event].slice(-maxEvents);
 
-			try {
-				const event = JSON.parse(e.data) as K8sEvent;
-
-				// Add to events array, maintaining max limit
-				events = [...events, event].slice(-maxEvents);
-
-				if (autoScroll && eventsContainer) {
-					const el = eventsContainer;
-					requestAnimationFrame(() => {
-						el.scrollTop = el.scrollHeight;
-					});
+						if (autoScroll && eventsContainer) {
+							const el = eventsContainer;
+							requestAnimationFrame(() => {
+								el.scrollTop = el.scrollHeight;
+							});
+						}
+					} catch (err) {
+						console.error('Failed to parse event:', err);
+					}
+				},
+				error: (data) => {
+					try {
+						error = JSON.parse(data).message || 'Connection error';
+					} catch {
+						error = 'Connection error';
+					}
+					isConnected = false;
+					isLoading = false;
+				},
+				end: () => {
+					isConnected = false;
+					isLoading = false;
 				}
-			} catch (err) {
-				console.error('Failed to parse event:', err);
-			}
-		});
-
-		eventSource.addEventListener('error', (e) => {
-			if (e instanceof MessageEvent) {
-				try {
-					const data = JSON.parse(e.data);
-					error = data.message || 'Connection error';
-				} catch {
-					error = 'Connection error';
-				}
-			} else {
-				error = 'Connection lost';
-			}
-			isConnected = false;
-			isLoading = false;
-		});
-
-		eventSource.addEventListener('end', () => {
-			isConnected = false;
-			isLoading = false;
-		});
-
-		eventSource.onerror = () => {
-			if (eventSource?.readyState === EventSource.CLOSED) {
+			},
+			(err) => {
+				if (err) error = 'Connection lost';
 				isConnected = false;
 				isLoading = false;
 			}
-		};
+		);
 	}
 
 	function disconnect() {
-		if (eventSource) {
-			eventSource.close();
-			eventSource = null;
-		}
+		closeStream?.();
+		closeStream = null;
 		isConnected = false;
 	}
 

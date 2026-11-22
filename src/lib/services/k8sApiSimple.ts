@@ -1,6 +1,10 @@
 import * as k8s from '@kubernetes/client-node';
+import { createKubeConfig } from '$lib/server/k8sAuth';
 import type { K8sResource, K8sListResponse, ResourceFilter } from '$lib/types/k8s';
 import { CustomResourceService } from './customResourceService';
+
+// Client calls return the object itself (1.x) or wrap it in `.body` (pre-1.0)
+type ClientResponse = { body?: unknown; items?: unknown; metadata?: unknown };
 
 // Create a simple wrapper that avoids the complex factory pattern
 export class K8sApiServiceSimple {
@@ -11,7 +15,7 @@ export class K8sApiServiceSimple {
 		return this.kc;
 	}
 
-	constructor(server: string, token: string) {
+	constructor(server: string, token: string, skipTLSVerify: boolean) {
 		if (!server || !token) {
 			throw new Error('Server URL and token are required');
 		}
@@ -19,34 +23,9 @@ export class K8sApiServiceSimple {
 		// Remove trailing slash from server URL
 		const cleanServer = server.replace(/\/+$/, '');
 
-		this.kc = new k8s.KubeConfig();
+		this.kc = createKubeConfig(cleanServer, token, skipTLSVerify);
 
-		// Use loadFromOptions instead of loadFromDefault - no kubeconfig dependency
-		this.kc.loadFromOptions({
-			clusters: [
-				{
-					name: 'current-cluster',
-					server: cleanServer,
-					skipTLSVerify: true
-				}
-			],
-			users: [
-				{
-					name: 'current-user',
-					token: token
-				}
-			],
-			contexts: [
-				{
-					name: 'current-context',
-					cluster: 'current-cluster',
-					user: 'current-user'
-				}
-			],
-			currentContext: 'current-context'
-		});
-
-		this.customResourceService = new CustomResourceService(cleanServer, token);
+		this.customResourceService = new CustomResourceService(cleanServer, token, skipTLSVerify);
 	}
 
 	async listResources(resourceType: string, filter: ResourceFilter = {}): Promise<K8sListResponse> {
@@ -70,7 +49,7 @@ export class K8sApiServiceSimple {
 		const storageApi = this.kc.makeApiClient(k8s.StorageV1Api);
 
 		try {
-			let result: any;
+			let result: ClientResponse;
 
 			switch (resourceType) {
 				case 'pods':
@@ -279,10 +258,9 @@ export class K8sApiServiceSimple {
 				case 'certificaterequests':
 				case 'issuers':
 				case 'clusterissuers':
-					result = await this.customResourceService.listCustomResources(resourceType, {
+					return await this.customResourceService.listCustomResources(resourceType, {
 						namespace
-					});
-					return result; // Return directly since CustomResourceService already returns the right format
+					}); // Return directly since CustomResourceService already returns the right format
 
 				// These are often custom resources, return empty for now
 				case 'volumesnapshots':
@@ -326,7 +304,7 @@ export class K8sApiServiceSimple {
 		const storageApi = this.kc.makeApiClient(k8s.StorageV1Api);
 
 		try {
-			let result: any;
+			let result: ClientResponse;
 
 			switch (resourceType) {
 				case 'pods':
@@ -385,12 +363,7 @@ export class K8sApiServiceSimple {
 				case 'ingressroutes':
 				case 'middlewares':
 				case 'certificates':
-					result = await this.customResourceService.getCustomResource(
-						resourceType,
-						name,
-						namespace
-					);
-					return result; // Return directly
+					return await this.customResourceService.getCustomResource(resourceType, name, namespace); // Return directly
 				default:
 					// Fallback for other custom resources or unhandled types
 					try {
@@ -472,8 +445,9 @@ export class K8sApiServiceSimple {
 			const k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
 			const response = await k8sApi.listNamespace({});
 			// Handle both response structures (with and without .body wrapper)
-			const items = (response as any).body?.items || (response as any).items || [];
-			return items.map((ns: any) => ns.metadata?.name || '').filter((name: string) => name);
+			const items =
+				(response as { body?: k8s.V1NamespaceList }).body?.items || response.items || [];
+			return items.map((ns) => ns.metadata?.name || '').filter((name: string) => name);
 		} catch (error) {
 			console.error('Error listing namespaces:', error);
 			return ['default'];

@@ -16,9 +16,12 @@
 	import { get } from 'svelte/store';
 
 	// Lazy load components to avoid SSR issues with shiki/js-yaml
-	let ResourceCreator: any = $state(null);
-	let PodLogsViewer: any = $state(null);
-	let PodTerminal: any = $state(null);
+	let ResourceCreator: typeof import('$lib/components/ResourceCreator.svelte').default | null =
+		$state(null);
+	let PodLogsViewer: typeof import('$lib/components/PodLogsViewer.svelte').default | null =
+		$state(null);
+	let PodTerminal: typeof import('$lib/components/PodTerminal.svelte').default | null =
+		$state(null);
 
 	interface Props {
 		data: {
@@ -261,7 +264,6 @@
 	}
 
 	async function fetchNodeMetrics(): Promise<Map<string, MetricSeries[]>> {
-		console.log('Fetching node metrics...');
 		const metricsMap = new Map<string, MetricSeries[]>();
 
 		try {
@@ -272,7 +274,6 @@
 				const timeRange = chart.timeRange || 5; // default 5 minutes
 				const queryUrl = `/api/prometheus/query?q=${encodeURIComponent(chart.query)}&type=range&range=${timeRange}&step=15`;
 
-				console.log(`Executing range query for chart '${chart.title}':`, chart.query);
 				const response = await apiClient(queryUrl);
 
 				if (!response.ok) {
@@ -282,7 +283,6 @@
 				}
 
 				const result = await response.json();
-				console.log(`Raw response for '${chart.title}':`, JSON.stringify(result, null, 2));
 
 				const seriesData: MetricSeries[] = [];
 
@@ -296,8 +296,6 @@
 							timestamp: new Date(v[0] * 1000),
 							value: parseFloat(v[1])
 						}));
-
-						console.log(`Processed ${dataPoints.length} data points for '${chart.title}'`);
 
 						seriesData.push({
 							label: chart.title,
@@ -322,7 +320,6 @@
 			console.error('Error fetching or processing Prometheus metrics:', error);
 		}
 
-		console.log('Final metrics map:', metricsMap);
 		return metricsMap;
 	}
 </script>

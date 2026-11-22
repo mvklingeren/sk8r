@@ -69,6 +69,16 @@ env:
     value: 'http://your-prometheus-service:9090'
 ```
 
+### Restricting cluster API servers
+
+The backend connects to whichever API server URL the browser sends. If sk8r is reachable by people you don't fully trust, limit it to known clusters (comma-separated, exact URLs):
+
+```yaml
+env:
+  - name: K8S_ALLOWED_SERVERS
+    value: 'https://10.0.0.1:6443,https://k8s.example.com:6443'
+```
+
 ### Alternative Service Types
 
 The default service type is `LoadBalancer`. For other environments:

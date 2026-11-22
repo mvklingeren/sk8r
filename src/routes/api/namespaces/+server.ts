@@ -10,7 +10,11 @@ export const GET: RequestHandler = async ({ request }) => {
 	}
 
 	try {
-		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
+		const k8sApi = new K8sApiServiceSimple(
+			credentials.server,
+			credentials.token,
+			credentials.skipTLSVerify
+		);
 		const namespaces = await k8sApi.listNamespaces();
 
 		// Sort namespaces alphabetically, but keep 'default' and 'kube-system' at top

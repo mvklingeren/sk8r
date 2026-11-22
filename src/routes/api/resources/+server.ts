@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { KubernetesObjectApi } from '@kubernetes/client-node';
 import yaml from 'js-yaml';
 import { getK8sCredentials, unauthorizedResponse, createKubeConfig } from '$lib/server/k8sAuth';
+import { isK8sClientError, type K8sClientError } from '$lib/types/k8s';
 
 interface K8sManifest {
 	apiVersion: string;
@@ -102,15 +103,17 @@ export const POST: RequestHandler = async ({ request }) => {
 					manifest.metadata.namespace = 'default';
 				}
 
-				await client.create(manifest as any);
+				await client.create(manifest);
 				results.push({
 					kind: manifest.kind,
 					name: manifest.metadata.name,
 					namespace: manifest.metadata.namespace,
 					status: 'created'
 				});
-			} catch (err: any) {
-				const errorMessage = err.body?.message || err.message || 'Unknown error';
+			} catch (err) {
+				const e: K8sClientError = isK8sClientError(err) ? err : {};
+				const errorMessage =
+					(typeof e.body === 'object' && e.body.message) || e.message || 'Unknown error';
 				errors.push({
 					kind: manifest.kind,
 					name: manifest.metadata.name,
@@ -210,7 +213,7 @@ export const PUT: RequestHandler = async ({ request }) => {
 			}
 
 			// First, read the current resource to get resourceVersion
-			const current = (await client.read(manifest as any)) as any;
+			const current = await client.read(manifest);
 
 			// Preserve resourceVersion for optimistic concurrency
 			if (current?.metadata?.resourceVersion) {
@@ -218,7 +221,7 @@ export const PUT: RequestHandler = async ({ request }) => {
 			}
 
 			// Replace the resource
-			await client.replace(manifest as any);
+			await client.replace(manifest);
 
 			return json({
 				success: true,
@@ -229,11 +232,13 @@ export const PUT: RequestHandler = async ({ request }) => {
 					namespace: manifest.metadata.namespace
 				}
 			});
-		} catch (err: any) {
-			const errorMessage = err.body?.message || err.message || 'Unknown error';
+		} catch (err) {
+			const e: K8sClientError = isK8sClientError(err) ? err : {};
+			const errorMessage =
+				(typeof e.body === 'object' && e.body.message) || e.message || 'Unknown error';
 			return json(
 				{ error: `Failed to update resource: ${errorMessage}` },
-				{ status: err.statusCode || 500 }
+				{ status: e.statusCode || 500 }
 			);
 		}
 	} catch (error) {
@@ -268,17 +273,19 @@ export const DELETE: RequestHandler = async ({ request }) => {
 				apiVersion,
 				kind,
 				metadata: { name, namespace }
-			} as any);
+			});
 
 			return json({
 				success: true,
 				message: `${kind} "${name}" deleted successfully`
 			});
-		} catch (err: any) {
-			const errorMessage = err.body?.message || err.message || 'Unknown error';
+		} catch (err) {
+			const e: K8sClientError = isK8sClientError(err) ? err : {};
+			const errorMessage =
+				(typeof e.body === 'object' && e.body.message) || e.message || 'Unknown error';
 			return json(
 				{ error: `Failed to delete resource: ${errorMessage}` },
-				{ status: err.statusCode || 500 }
+				{ status: e.statusCode || 500 }
 			);
 		}
 	} catch (error) {

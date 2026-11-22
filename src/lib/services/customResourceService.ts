@@ -1,5 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
-import type { K8sListResponse, ResourceFilter } from '$lib/types/k8s';
+import { createKubeConfig } from '$lib/server/k8sAuth';
+import type { K8sListResponse, K8sResource, ResourceFilter } from '$lib/types/k8s';
 
 // CRD definitions for known custom resources
 const crdDefinitions: Record<
@@ -44,7 +45,7 @@ export class CustomResourceService {
 	private kc: k8s.KubeConfig;
 	private customObjectsApi: k8s.CustomObjectsApi;
 
-	constructor(server: string, token: string) {
+	constructor(server: string, token: string, skipTLSVerify: boolean) {
 		if (!server || !token) {
 			throw new Error('Server URL and token are required');
 		}
@@ -52,30 +53,7 @@ export class CustomResourceService {
 		// Remove trailing slash from server URL
 		const cleanServer = server.replace(/\/+$/, '');
 
-		this.kc = new k8s.KubeConfig();
-		this.kc.loadFromOptions({
-			clusters: [
-				{
-					name: 'current-cluster',
-					server: cleanServer,
-					skipTLSVerify: true
-				}
-			],
-			users: [
-				{
-					name: 'current-user',
-					token: token
-				}
-			],
-			contexts: [
-				{
-					name: 'current-context',
-					cluster: 'current-cluster',
-					user: 'current-user'
-				}
-			],
-			currentContext: 'current-context'
-		});
+		this.kc = createKubeConfig(cleanServer, token, skipTLSVerify);
 
 		this.customObjectsApi = this.kc.makeApiClient(k8s.CustomObjectsApi);
 	}
@@ -98,7 +76,8 @@ export class CustomResourceService {
 		}
 
 		try {
-			let result: any;
+			// CustomObjectsApi is untyped; pre-1.0 clients wrapped the payload in `.body`
+			let result: { body?: unknown };
 
 			if (crdDef.namespaced) {
 				if (allNamespaces) {
@@ -144,14 +123,14 @@ export class CustomResourceService {
 		resourceType: string,
 		name: string,
 		namespace: string = 'default'
-	): Promise<any> {
+	): Promise<K8sResource> {
 		const crdDef = crdDefinitions[resourceType];
 		if (!crdDef) {
 			throw new Error(`Unsupported custom resource type: ${resourceType}`);
 		}
 
 		try {
-			let result: any;
+			let result: { body?: unknown };
 
 			if (crdDef.namespaced) {
 				result = await this.customObjectsApi.getNamespacedCustomObject({
@@ -171,9 +150,9 @@ export class CustomResourceService {
 			}
 
 			if (result.body) {
-				return result.body;
+				return result.body as K8sResource;
 			}
-			return result;
+			return result as K8sResource;
 		} catch (error) {
 			console.error(`Error fetching custom resource ${resourceType}/${name}:`, error);
 			throw error;

@@ -137,7 +137,13 @@
 				error = result.error || `Failed to ${mode} resource`;
 				if (result.details) {
 					error +=
-						': ' + result.details.map((d: any) => `${d.kind}/${d.name}: ${d.error}`).join(', ');
+						': ' +
+						result.details
+							.map(
+								(d: { kind: string; name: string; error: string }) =>
+									`${d.kind}/${d.name}: ${d.error}`
+							)
+							.join(', ');
 				}
 			} else {
 				success =
@@ -259,7 +265,7 @@
 
 					{#if showTemplates}
 						<div class="flex-1 overflow-y-auto">
-							{#each templateGroups as group}
+							{#each templateGroups as group (group.name)}
 								{#if group.templates.length > 0}
 									<div class="px-3 py-2">
 										<div
@@ -267,7 +273,7 @@
 										>
 											{group.name}
 										</div>
-										{#each group.templates as template}
+										{#each group.templates as template (template.name)}
 											<button
 												onclick={() => selectTemplate(template)}
 												class="w-full rounded-md px-3 py-2 text-left text-sm transition-colors {selectedTemplate ===

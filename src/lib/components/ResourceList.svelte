@@ -66,10 +66,16 @@
 		return config.columns;
 	});
 
+	// Cluster-scoped kinds (Namespaces, Nodes, ...) have no namespace, so the column would be all "N/A"
+	let showNamespaceColumn = $derived(
+		namespace === '*' && resources.some((r) => r.metadata.namespace)
+	);
+
 	// Calculate proportional column widths based on flex values
-	// Actions column gets flex: 1, namespace column (if shown) gets flex: 1
+	// Actions column gets flex: 1, namespace column (if shown) gets flex: 1.5 (names like cert-manager)
+	const NAMESPACE_FLEX = 1.5;
 	let columnWidths = $derived.by(() => {
-		const extraColumns = (namespace === '*' ? 1 : 0) + 1; // namespace + actions
+		const extraColumns = (showNamespaceColumn ? NAMESPACE_FLEX : 0) + 1; // namespace + actions
 		const totalFlex = columns.reduce((sum, col) => sum + (col.flex || 1), 0) + extraColumns;
 
 		return {
@@ -77,7 +83,7 @@
 				...col,
 				width: `${((col.flex || 1) / totalFlex) * 100}%`
 			})),
-			namespaceWidth: `${(1 / totalFlex) * 100}%`,
+			namespaceWidth: `${(NAMESPACE_FLEX / totalFlex) * 100}%`,
 			actionsWidth: `${(1 / totalFlex) * 100}%`
 		};
 	});
@@ -247,7 +253,7 @@
 						Common CLI Commands
 					</h4>
 					<div class="custom-scrollbar max-h-48 space-y-2 overflow-y-auto pr-2">
-						{#each learning.cliCommands as cmd}
+						{#each learning.cliCommands as cmd (cmd.command)}
 							<div class="group">
 								<div class="mb-0.5 text-xs text-gray-400"># {cmd.description}</div>
 								<code
@@ -279,7 +285,7 @@
 		</div>
 	{/if}
 
-	<div class="relative border-b border-gray-200 px-6 py-4 dark:border-slate-700">
+	<div class="relative border-b border-gray-200 px-4 py-3 dark:border-slate-700">
 		<div class="flex items-center justify-between">
 			<h2 class="text-xl font-semibold text-gray-800 capitalize dark:text-slate-100">
 				{resourceType}
@@ -345,9 +351,9 @@
 			<table class="w-full" style="table-layout: fixed;">
 				<thead class="bg-gray-50 dark:bg-slate-700">
 					<tr>
-						{#each columnWidths.columns as column}
+						{#each columnWidths.columns as column (column.key)}
 							<th
-								class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-slate-400 {column.sortable !==
+								class="px-4 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-slate-400 {column.sortable !==
 								false
 									? 'cursor-pointer transition-colors select-none hover:bg-gray-100 dark:hover:bg-slate-600'
 									: ''}"
@@ -366,9 +372,9 @@
 								</span>
 							</th>
 						{/each}
-						{#if namespace === '*'}
+						{#if showNamespaceColumn}
 							<th
-								class="cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors select-none hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-600"
+								class="cursor-pointer px-4 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors select-none hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-600"
 								style="width: {columnWidths.namespaceWidth};"
 								onclick={() => handleSort('__namespace__')}
 							>
@@ -383,7 +389,7 @@
 							</th>
 						{/if}
 						<th
-							class="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-slate-400"
+							class="px-4 py-2 text-right text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-slate-400"
 							style="width: {columnWidths.actionsWidth};"
 						>
 							Actions
@@ -391,12 +397,16 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-200 bg-white dark:divide-slate-700 dark:bg-slate-900">
-					{#each filteredResources as resource}
+					{#each filteredResources as resource (`${resource.metadata.namespace}/${resource.metadata.name}`)}
 						<tr class="transition-colors hover:bg-gray-50 dark:hover:bg-slate-700">
-							{#each columnWidths.columns as column}
+							{#each columnWidths.columns as column (column.key)}
 								<td
-									class="overflow-hidden px-6 py-4 text-sm text-ellipsis whitespace-nowrap"
-									title={getColumnValue(resource, column)}
+									class="overflow-hidden px-4 py-1.5 text-sm text-ellipsis whitespace-nowrap"
+									title={column.type === 'labels'
+										? getLabels(resource)
+												.map((l) => `${l.key}=${l.value}`)
+												.join('\n')
+										: getColumnValue(resource, column)}
 								>
 									{#if column.type === 'link'}
 										<a
@@ -408,7 +418,7 @@
 										</a>
 									{:else if column.type === 'badge'}
 										<span
-											class="inline-flex rounded-full px-2 py-1 text-xs font-medium {getBadgeClass(
+											class="inline-flex rounded-full px-1.5 text-[11px] leading-4 font-medium {getBadgeClass(
 												getColumnValue(resource, column),
 												column.colorMap
 											)}"
@@ -416,10 +426,10 @@
 											{getColumnValue(resource, column)}
 										</span>
 									{:else if column.type === 'labels'}
-										<div class="flex flex-wrap gap-1">
-											{#each getLabels(resource) as label}
+										<div class="flex gap-1 overflow-hidden">
+											{#each getLabels(resource) as label (label.key)}
 												<span
-													class="inline-flex rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-slate-600 dark:text-slate-200"
+													class="inline-flex rounded-md bg-gray-100 px-1.5 text-[11px] leading-4 font-medium text-gray-700 dark:bg-slate-600 dark:text-slate-200"
 													title="{label.key}={label.value}"
 												>
 													{label.key.split('/').pop()}={label.value.length > 20
@@ -442,24 +452,27 @@
 									{/if}
 								</td>
 							{/each}
-							{#if namespace === '*'}
-								<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-slate-400">
+							{#if showNamespaceColumn}
+								<td
+									class="overflow-hidden px-4 py-1.5 text-sm whitespace-nowrap text-gray-500 dark:text-slate-400"
+								>
 									<span
-										class="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"
+										class="inline-block max-w-full truncate rounded-full bg-blue-100 px-1.5 text-[11px] leading-4 font-medium text-blue-800"
+										title={resource.metadata.namespace}
 									>
 										{resource.metadata.namespace || 'N/A'}
 									</span>
 								</td>
 							{/if}
-							<td class="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
-								<div class="flex items-center justify-end gap-2">
+							<td class="px-4 py-1.5 text-right text-sm font-medium whitespace-nowrap">
+								<div class="flex items-center justify-end gap-1.5">
 									{#if onLogs}
 										<button
 											onclick={() => onLogs(resource)}
 											class="text-cyan-600 transition-colors hover:text-cyan-900"
 											title="View Logs"
 										>
-											<ScrollText size={16} />
+											<ScrollText size={14} />
 										</button>
 									{/if}
 									{#if onExec}
@@ -468,7 +481,7 @@
 											class="text-emerald-600 transition-colors hover:text-emerald-900"
 											title="Open Terminal"
 										>
-											<Terminal size={16} />
+											<Terminal size={14} />
 										</button>
 									{/if}
 									{#if onEvents}
@@ -477,7 +490,7 @@
 											class="text-purple-600 transition-colors hover:text-purple-900"
 											title="View Events"
 										>
-											<Activity size={16} />
+											<Activity size={14} />
 										</button>
 									{/if}
 									{#if onEdit}
@@ -486,7 +499,7 @@
 											class="text-blue-600 transition-colors hover:text-blue-900"
 											title="Edit"
 										>
-											<Edit size={16} />
+											<Edit size={14} />
 										</button>
 									{/if}
 									{#if onDelete}
@@ -495,7 +508,7 @@
 											class="text-red-600 transition-colors hover:text-red-900"
 											title="Delete"
 										>
-											<Trash2 size={16} />
+											<Trash2 size={14} />
 										</button>
 									{/if}
 								</div>

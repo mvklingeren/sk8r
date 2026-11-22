@@ -1,5 +1,12 @@
 import * as k8s from '@kubernetes/client-node';
 import type { NodeMetrics, MetricDataPoint } from '$lib/types/metricsTypes';
+import { isK8sClientError, type K8sClientError } from '$lib/types/k8s';
+
+interface NodeMetricSample {
+	cpu: number;
+	memory: number;
+	timestamp: Date;
+}
 
 export class MetricsService {
 	private kubeConfig: k8s.KubeConfig;
@@ -19,9 +26,9 @@ export class MetricsService {
 			const response = await client.list('metrics.k8s.io', 'v1beta1', 'nodes');
 
 			// Transform the response to our NodeMetrics type
-			const responseAny = response as any;
+			const responseAny = response as { body?: { items?: NodeMetrics[] } };
 			if (responseAny.body && responseAny.body.items) {
-				return responseAny.body.items.map((item: any) => ({
+				return responseAny.body.items.map((item) => ({
 					metadata: {
 						name: item.metadata.name,
 						selfLink: item.metadata.selfLink || '',
@@ -37,9 +44,10 @@ export class MetricsService {
 			}
 
 			return [];
-		} catch (error: any) {
+		} catch (error) {
+			const e: K8sClientError = isK8sClientError(error) ? error : {};
 			// If metrics API is not available, return empty array
-			if (error.response?.statusCode === 404 || error.message?.includes('404')) {
+			if (e.response?.statusCode === 404 || e.message?.includes('404')) {
 				console.warn('Metrics API not available or insufficient permissions.');
 				return [];
 			}
@@ -113,9 +121,9 @@ export class MetricsService {
 	}
 
 	// Process and cache node metrics
-	async processNodeMetrics(): Promise<Map<string, any>> {
+	async processNodeMetrics(): Promise<Map<string, NodeMetricSample>> {
 		const metrics = await this.getNodeMetrics();
-		const processedMetrics = new Map<string, any>();
+		const processedMetrics = new Map<string, NodeMetricSample>();
 
 		for (const nodeMetric of metrics) {
 			const nodeName = nodeMetric.metadata.name;

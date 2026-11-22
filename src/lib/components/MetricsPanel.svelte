@@ -94,7 +94,7 @@
 			</div>
 		{:else}
 			<div class="grid grid-cols-1 gap-6 lg:grid-cols-[repeat(auto-fit,minmax(400px,1fr))]">
-				{#each charts as chart}
+				{#each charts as chart (chart.id)}
 					{@const chartData = metricsData.get(chart.id) || []}
 					<div
 						class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800"

@@ -11,8 +11,8 @@
 
 	let { value = '', readonly = false, onChange, height = '400px' }: Props = $props();
 
-	let highlighter: any = $state(null);
-	let yamlModule: any = $state(null);
+	let highlighter: import('shiki').Highlighter | null = $state(null);
+	let yamlModule: typeof import('js-yaml') | null = $state(null);
 	let highlightedHtml = $state('');
 	let error = $state<{ message: string; line?: number } | null>(null);
 	let textareaRef = $state<HTMLTextAreaElement | null>(null);
@@ -77,7 +77,8 @@
 			yamlModule.loadAll(content);
 			error = null;
 			return true;
-		} catch (err: any) {
+		} catch (e) {
+			const err = e as { name?: string; message: string; mark?: { line?: number } };
 			if (err?.name === 'YAMLException') {
 				error = {
 					message: err.message,
@@ -195,7 +196,7 @@
 		<div
 			class="line-numbers flex-shrink-0 overflow-hidden border-r border-gray-800 bg-gray-900 py-3 pr-3 pl-3 text-right text-gray-600 select-none"
 		>
-			{#each lineNumbers as num}
+			{#each lineNumbers as num (num)}
 				<div
 					class="font-mono text-xs leading-6 {error?.line === num
 						? 'bg-red-900/30 text-red-400'

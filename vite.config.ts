@@ -24,7 +24,7 @@ function webSocketPlugin(): Plugin {
 						}
 					});
 
-					console.log('[Vite] WebSocket server configured for /api/pods/.../exec');
+					console.info('[Vite] WebSocket server configured for /api/pods/.../exec');
 				})
 				.catch((err) => {
 					console.error('[Vite] Failed to load WebSocket module:', err);

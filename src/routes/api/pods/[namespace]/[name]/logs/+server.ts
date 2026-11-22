@@ -31,9 +31,18 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 	const log = new Log(kc);
 
 	// Create a readable stream for SSE
+	let logRequest: AbortController | undefined;
 	const stream = new ReadableStream({
 		async start(controller) {
 			const encoder = new TextEncoder();
+			// Callbacks can fire after the client cancelled; closing twice throws and would crash the server
+			const close = () => {
+				try {
+					controller.close();
+				} catch {
+					// already closed or cancelled
+				}
+			};
 
 			const sendEvent = (data: string, event?: string) => {
 				let message = '';
@@ -74,20 +83,20 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 							sendEvent(buffer, 'log');
 						}
 						sendEvent('Log stream ended', 'end');
-						controller.close();
+						close();
 						callback();
 					}
 				});
 
 				logStream.on('error', (err) => {
 					sendEvent(`Error: ${err.message}`, 'error');
-					controller.close();
+					close();
 				});
 
 				// Start streaming logs
 				// Container is required, use first container if not specified
 				const containerName = container || 'main';
-				await log.log(namespace, name, containerName, logStream, {
+				logRequest = await log.log(namespace, name, containerName, logStream, {
 					follow,
 					tailLines,
 					timestamps,
@@ -103,13 +112,14 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 			} catch (error) {
 				const message = error instanceof Error ? error.message : 'Unknown error';
 				sendEvent(`Failed to stream logs: ${message}`, 'error');
-				controller.close();
+				close();
 			}
 		},
 
 		cancel() {
-			// Cleanup when client disconnects
-			console.log('Client disconnected from log stream');
+			// Stop the upstream (possibly follow-mode) log request when the client disconnects
+			logRequest?.abort();
+			console.info('Client disconnected from log stream');
 		}
 	});
 

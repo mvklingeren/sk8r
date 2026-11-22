@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { openEventStream } from '$lib/utils/eventStream';
 	import { X, Download, Trash2, RefreshCw, Pause, Play, ChevronDown } from 'lucide-svelte';
 
 	interface Props {
@@ -21,7 +22,7 @@
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
 
-	let eventSource: EventSource | null = null;
+	let closeStream: (() => void) | null = null;
 	let logContainer: HTMLDivElement;
 
 	const tailOptions = [
@@ -48,61 +49,52 @@
 		error = null;
 		logs = [];
 
-		const url = buildLogUrl();
-		eventSource = new EventSource(url);
+		closeStream = openEventStream(
+			buildLogUrl(),
+			{
+				connected: () => {
+					isConnected = true;
+					isLoading = false;
+				},
+				log: (data) => {
+					try {
+						const logLine = JSON.parse(data);
+						logs = [...logs, logLine];
 
-		eventSource.addEventListener('connected', () => {
-			isConnected = true;
-			isLoading = false;
-		});
-
-		eventSource.addEventListener('log', (e) => {
-			try {
-				const logLine = JSON.parse(e.data);
-				logs = [...logs, logLine];
-
-				if (autoScroll && logContainer) {
-					requestAnimationFrame(() => {
-						logContainer.scrollTop = logContainer.scrollHeight;
-					});
+						if (autoScroll && logContainer) {
+							requestAnimationFrame(() => {
+								logContainer.scrollTop = logContainer.scrollHeight;
+							});
+						}
+					} catch (err) {
+						console.error('Failed to parse log line:', err);
+					}
+				},
+				error: (data) => {
+					try {
+						error = JSON.parse(data);
+					} catch {
+						error = 'Connection error';
+					}
+					isConnected = false;
+					isLoading = false;
+				},
+				end: () => {
+					isConnected = false;
+					isLoading = false;
 				}
-			} catch (err) {
-				console.error('Failed to parse log line:', err);
-			}
-		});
-
-		eventSource.addEventListener('error', (e) => {
-			if (e instanceof MessageEvent) {
-				try {
-					error = JSON.parse(e.data);
-				} catch {
-					error = 'Connection error';
-				}
-			} else {
-				error = 'Connection lost';
-			}
-			isConnected = false;
-			isLoading = false;
-		});
-
-		eventSource.addEventListener('end', () => {
-			isConnected = false;
-			isLoading = false;
-		});
-
-		eventSource.onerror = () => {
-			if (eventSource?.readyState === EventSource.CLOSED) {
+			},
+			(err) => {
+				if (err) error = 'Connection lost';
 				isConnected = false;
 				isLoading = false;
 			}
-		};
+		);
 	}
 
 	function disconnect() {
-		if (eventSource) {
-			eventSource.close();
-			eventSource = null;
-		}
+		closeStream?.();
+		closeStream = null;
 		isConnected = false;
 	}
 
@@ -189,7 +181,7 @@
 						onchange={handleContainerChange}
 						class="appearance-none rounded border border-gray-600 bg-gray-700 px-3 py-1.5 pr-8 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
 					>
-						{#each containers as container}
+						{#each containers as container (container)}
 							<option value={container}>{container}</option>
 						{/each}
 					</select>
@@ -210,7 +202,7 @@
 				onchange={handleTailLinesChange}
 				class="appearance-none rounded border border-gray-600 bg-gray-700 px-3 py-1.5 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
 			>
-				{#each tailOptions as option}
+				{#each tailOptions as option (option.value)}
 					<option value={option.value}>{option.label}</option>
 				{/each}
 			</select>
@@ -298,7 +290,7 @@
 		{:else if logs.length === 0}
 			<div class="flex h-full items-center justify-center text-gray-500">No logs available</div>
 		{:else}
-			{#each logs as line, i}
+			{#each logs as line, i (i)}
 				<div class="log-line -mx-2 rounded px-2 hover:bg-gray-800/50">
 					<span class="mr-4 text-gray-600 select-none">{String(i + 1).padStart(4, ' ')}</span>
 					<span class="break-all whitespace-pre-wrap text-gray-200">{line}</span>

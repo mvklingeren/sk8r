@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { navigation } from '$lib/stores/navigation';
 	import { apiClient } from '$lib/utils/apiClient';
+	import type { K8sResource } from '$lib/types/k8s';
 
 	interface SearchResult {
 		name: string;
@@ -85,7 +86,7 @@
 					);
 					if (response.ok) {
 						const data = await response.json();
-						return data.items.map((item: any) => ({
+						return data.items.map((item: K8sResource) => ({
 							name: item.metadata.name,
 							namespace: item.metadata.namespace || 'N/A',
 							resourceType,
@@ -201,7 +202,7 @@
 			</div>
 		{:else if results.length > 0}
 			<div class="max-h-96 overflow-y-auto">
-				{#each results as result, index}
+				{#each results as result, index (`${result.resourceType}/${result.namespace}/${result.name}`)}
 					<button
 						onclick={() => selectResult(result)}
 						class="flex w-full items-center justify-between border-b border-gray-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-gray-50"

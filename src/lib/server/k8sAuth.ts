@@ -28,11 +28,30 @@ export function getK8sCredentials(request: Request): K8sCredentials | null {
 
 	// Remove trailing slash from server URL
 	const cleanServer = server.replace(/\/+$/, '');
+	if (!isServerAllowed(cleanServer)) {
+		return null;
+	}
 
-	// Parse skipTLSVerify header (default to true for backward compatibility)
-	const skipTLSVerify = skipTLSHeader !== 'false';
+	// Verify TLS unless the client explicitly opts out (the UI always sends this header)
+	const skipTLSVerify = skipTLSHeader === 'true';
 
 	return { server: cleanServer, token, skipTLSVerify };
+}
+
+/**
+ * The backend connects to whatever API server the client names. When
+ * K8S_ALLOWED_SERVERS (comma-separated URLs) is set, only those are accepted,
+ * so an exposed sk8r can't be used to reach arbitrary internal hosts.
+ */
+export function isServerAllowed(server: string): boolean {
+	const allowed = process.env.K8S_ALLOWED_SERVERS;
+	if (!allowed) return true;
+	const ok = allowed
+		.split(',')
+		.map((s) => s.trim().replace(/\/+$/, ''))
+		.includes(server.trim().replace(/\/+$/, ''));
+	if (!ok) console.warn(`[k8sAuth] Rejected server not in K8S_ALLOWED_SERVERS: ${server}`);
+	return ok;
 }
 
 /**
@@ -48,7 +67,7 @@ export function unauthorizedResponse(message = 'Missing or invalid Kubernetes cr
 export function createKubeConfig(
 	server: string,
 	token: string,
-	skipTLSVerify: boolean = true
+	skipTLSVerify: boolean
 ): KubeConfig {
 	const kc = new KubeConfig();
 	kc.loadFromOptions({

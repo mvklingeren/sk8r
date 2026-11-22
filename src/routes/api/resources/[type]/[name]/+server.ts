@@ -13,7 +13,11 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
 	const namespace = url.searchParams.get('namespace') || 'default';
 
 	try {
-		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
+		const k8sApi = new K8sApiServiceSimple(
+			credentials.server,
+			credentials.token,
+			credentials.skipTLSVerify
+		);
 		const resource = await k8sApi.getResource(type, name, namespace);
 		return json(resource);
 	} catch (error) {
@@ -36,7 +40,11 @@ export const DELETE: RequestHandler = async ({ params, request }) => {
 	const namespace = body.namespace || 'default';
 
 	try {
-		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
+		const k8sApi = new K8sApiServiceSimple(
+			credentials.server,
+			credentials.token,
+			credentials.skipTLSVerify
+		);
 		await k8sApi.deleteResource(type, name, namespace);
 
 		return json({ success: true });

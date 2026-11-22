@@ -34,7 +34,7 @@
 		</button>
 		{#if !collapsed}
 			<div class="branch" transition:slide={{ duration: 300, easing: quintOut }}>
-				{#each entries as [key, value]}
+				{#each entries as [key, value] (key)}
 					<div class="entry">
 						<span class="key">{key}:</span>
 						<svelte:self data={value} level={level + 1} />

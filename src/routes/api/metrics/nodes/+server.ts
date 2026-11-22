@@ -11,18 +11,20 @@ export const GET: RequestHandler = async ({ request }) => {
 	}
 
 	try {
-		console.log('--- Metrics API Request Received ---');
-
 		// Initialize services with credentials
-		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
+		const k8sApi = new K8sApiServiceSimple(
+			credentials.server,
+			credentials.token,
+			credentials.skipTLSVerify
+		);
 		const metricsService = new MetricsService(k8sApi.kubeConfig);
 
 		// Fetch and process node metrics
 		const nodeMetrics = await metricsService.processNodeMetrics();
-		console.log('Successfully fetched and processed metrics.');
 
 		// Get historical data for charts
-		const historicalData: any[] = [];
+		const historicalData: Array<{ node: string; timestamp: Date; cpu: number; memory: number }> =
+			[];
 
 		// Get all nodes to ensure we have data for each
 		const nodesResponse = await k8sApi.listResources('nodes', { namespace: '*' });

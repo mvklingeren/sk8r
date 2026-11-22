@@ -123,12 +123,10 @@
 		error = null;
 
 		const url = buildExecUrl();
-		console.log('[PodTerminal] Connecting to:', url);
 
 		ws = new WebSocket(url);
 
 		ws.onopen = () => {
-			console.log('[PodTerminal] WebSocket connected');
 			isConnected = true;
 			isConnecting = false;
 			terminal?.focus();
@@ -149,7 +147,6 @@
 		};
 
 		ws.onclose = (event) => {
-			console.log('[PodTerminal] WebSocket closed:', event.code, event.reason);
 			isConnected = false;
 			isConnecting = false;
 
@@ -259,7 +256,7 @@
 						onchange={handleContainerChange}
 						class="appearance-none rounded border border-gray-600 bg-gray-700 px-3 py-1.5 pr-8 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
 					>
-						{#each containers as container}
+						{#each containers as container (container)}
 							<option value={container}>{container}</option>
 						{/each}
 					</select>

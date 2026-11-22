@@ -27,24 +27,24 @@ app.use(handler);
 
 const port = process.env.PORT || 3000;
 server.listen(port, () => {
-	console.log(`Server listening on port ${port}`);
+	console.info(`Server listening on port ${port}`);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-	console.log('SIGTERM received, shutting down...');
+	console.info('SIGTERM received, shutting down...');
 	cleanupAllConnections();
 	server.close(() => {
-		console.log('Server closed');
+		console.info('Server closed');
 		process.exit(0);
 	});
 });
 
 process.on('SIGINT', () => {
-	console.log('SIGINT received, shutting down...');
+	console.info('SIGINT received, shutting down...');
 	cleanupAllConnections();
 	server.close(() => {
-		console.log('Server closed');
+		console.info('Server closed');
 		process.exit(0);
 	});
 });

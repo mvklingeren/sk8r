@@ -1,22 +1,37 @@
+import type {
+	V1Condition,
+	V1ContainerStatus,
+	V1IngressLoadBalancerIngress,
+	V1IngressRule,
+	V1LoadBalancerIngress,
+	V1NodeCondition,
+	V1ObjectReference,
+	V1ServicePort
+} from '@kubernetes/client-node';
 import type { K8sResource } from '$lib/types/k8s';
 
 // Utility function to get nested property value using dot notation
-function getNestedValue(obj: any, path: string): any {
-	return path.split('.').reduce((current, key) => current?.[key], obj);
+function getNestedValue(obj: unknown, path: string): unknown {
+	return path
+		.split('.')
+		.reduce<unknown>(
+			(current, key) => (current as Record<string, unknown> | undefined)?.[key],
+			obj
+		);
 }
 
 export const columnFormatters = {
 	// Pod specific formatters
 	podReady(resource: K8sResource): string {
 		const containerStatuses = resource.status?.containerStatuses || [];
-		const readyCount = containerStatuses.filter((status: any) => status.ready).length;
+		const readyCount = containerStatuses.filter((status: V1ContainerStatus) => status.ready).length;
 		const totalCount = containerStatuses.length;
 		return `${readyCount}/${totalCount}`;
 	},
 
 	podRestarts(resource: K8sResource): string {
 		const containerStatuses = resource.status?.containerStatuses || [];
-		const totalRestarts = containerStatuses.reduce((sum: number, status: any) => {
+		const totalRestarts = containerStatuses.reduce((sum: number, status: V1ContainerStatus) => {
 			return sum + (status.restartCount || 0);
 		}, 0);
 		return totalRestarts.toString();
@@ -34,7 +49,7 @@ export const columnFormatters = {
 		if (resource.spec?.type === 'LoadBalancer') {
 			const ingress = resource.status?.loadBalancer?.ingress;
 			if (ingress && ingress.length > 0) {
-				return ingress.map((ing: any) => ing.ip || ing.hostname).join(', ');
+				return ingress.map((ing: V1LoadBalancerIngress) => ing.ip || ing.hostname).join(', ');
 			}
 			return '<pending>';
 		}
@@ -47,7 +62,7 @@ export const columnFormatters = {
 	servicePorts(resource: K8sResource): string {
 		const ports = resource.spec?.ports || [];
 		return ports
-			.map((port: any) => {
+			.map((port: V1ServicePort) => {
 				const protocol = port.protocol ? `/${port.protocol}` : '';
 				if (port.nodePort) {
 					return `${port.port}:${port.nodePort}${protocol}`;
@@ -60,14 +75,14 @@ export const columnFormatters = {
 	// Ingress specific formatters
 	ingressHosts(resource: K8sResource): string {
 		const rules = resource.spec?.rules || [];
-		const hosts = rules.map((rule: any) => rule.host || '*').filter(Boolean);
+		const hosts = rules.map((rule: V1IngressRule) => rule.host || '*').filter(Boolean);
 		return hosts.join(', ') || '*';
 	},
 
 	ingressAddresses(resource: K8sResource): string {
 		const ingress = resource.status?.loadBalancer?.ingress || [];
 		if (ingress.length === 0) return '';
-		return ingress.map((ing: any) => ing.ip || ing.hostname).join(', ');
+		return ingress.map((ing: V1IngressLoadBalancerIngress) => ing.ip || ing.hostname).join(', ');
 	},
 
 	ingressPorts(resource: K8sResource): string {
@@ -82,7 +97,7 @@ export const columnFormatters = {
 	// Node specific formatters
 	nodeStatus(resource: K8sResource): string {
 		const conditions = resource.status?.conditions || [];
-		const readyCondition = conditions.find((c: any) => c.type === 'Ready');
+		const readyCondition = conditions.find((c: V1NodeCondition) => c.type === 'Ready');
 		return readyCondition?.status === 'True' ? 'Ready' : 'NotReady';
 	},
 
@@ -121,7 +136,7 @@ export const columnFormatters = {
 	// Certificate specific formatters
 	certificateReady(resource: K8sResource): string {
 		const conditions = resource.status?.conditions || [];
-		const readyCondition = conditions.find((c: any) => c.type === 'Ready');
+		const readyCondition = conditions.find((c: V1Condition) => c.type === 'Ready');
 		return readyCondition?.status || 'Unknown';
 	},
 
@@ -130,7 +145,7 @@ export const columnFormatters = {
 		const routes = resource.spec?.routes || [];
 		const hosts: string[] = [];
 
-		routes.forEach((route: any) => {
+		routes.forEach((route: { match?: string }) => {
 			if (route.match) {
 				// Extract Host() rules from match
 				const hostMatches = route.match.match(/Host\(`([^`]+)`\)/g);
@@ -154,7 +169,7 @@ export const columnFormatters = {
 		if (Array.isArray(value)) {
 			return value.join(', ');
 		}
-		return value || '';
+		return (value || '') as string;
 	},
 
 	objectKeys(resource: K8sResource, path: string): string {
@@ -211,7 +226,8 @@ export const columnFormatters = {
 
 	// Event specific formatters
 	eventObject(resource: K8sResource): string {
-		const involvedObject = (resource as any).involvedObject;
+		const involvedObject = (resource as K8sResource & { involvedObject?: V1ObjectReference })
+			.involvedObject;
 		if (!involvedObject) return '';
 		const kind = involvedObject.kind || '';
 		const name = involvedObject.name || '';
@@ -235,9 +251,11 @@ export const columnFormatters = {
 };
 
 // Helper function to extract value from resource using path and formatter
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- ResourceList.svelte passes the result straight to getAge()/new Date()
 export function extractColumnValue(resource: K8sResource, path: string, formatter?: string): any {
 	if (formatter && columnFormatters[formatter as keyof typeof columnFormatters]) {
-		const formatterFn = columnFormatters[formatter as keyof typeof columnFormatters] as any;
+		const formatterFn: (resource: K8sResource, path: string) => unknown =
+			columnFormatters[formatter as keyof typeof columnFormatters];
 		return formatterFn(resource, path);
 	}
 

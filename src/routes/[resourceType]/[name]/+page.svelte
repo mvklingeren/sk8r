@@ -10,7 +10,8 @@
 	import { get } from 'svelte/store';
 
 	// Lazy load ResourceCreator to avoid SSR issues with shiki/js-yaml
-	let ResourceCreator: any = $state(null);
+	let ResourceCreator: typeof import('$lib/components/ResourceCreator.svelte').default | null =
+		$state(null);
 
 	interface Props {
 		data: {
@@ -324,7 +325,7 @@
 						<div class="mt-6">
 							<h3 class="mb-2 text-sm font-medium text-gray-500 dark:text-slate-400">Labels</h3>
 							<div class="space-y-1">
-								{#each Object.entries(resource.metadata.labels) as [key, value]}
+								{#each Object.entries(resource.metadata.labels) as [key, value] (key)}
 									<div class="flex items-center gap-2">
 										<span
 											class="rounded bg-blue-100 px-2 py-1 font-mono text-xs text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
@@ -343,7 +344,7 @@
 								Annotations
 							</h3>
 							<div class="max-h-40 space-y-1 overflow-y-auto">
-								{#each Object.entries(resource.metadata.annotations) as [key, value]}
+								{#each Object.entries(resource.metadata.annotations) as [key, value] (key)}
 									<div class="text-xs">
 										<div class="font-medium text-gray-600 dark:text-slate-300">{key}</div>
 										<div class="font-mono break-all text-gray-500 dark:text-slate-400">{value}</div>
@@ -407,8 +408,7 @@
 
 <!-- Resource Editor Modal (lazy loaded) -->
 {#if ResourceCreator}
-	<svelte:component
-		this={ResourceCreator}
+	<ResourceCreator
 		isOpen={showEditor}
 		onClose={() => (showEditor = false)}
 		onSuccess={handleEditSuccess}

@@ -18,7 +18,11 @@ export const GET: RequestHandler = async ({ url, request }) => {
 	}
 
 	try {
-		const k8sApi = new K8sApiServiceSimple(credentials.server, credentials.token);
+		const k8sApi = new K8sApiServiceSimple(
+			credentials.server,
+			credentials.token,
+			credentials.skipTLSVerify
+		);
 		const response = await k8sApi.listResources(resourceType, { namespace });
 
 		// Filter results by search query (name contains query)

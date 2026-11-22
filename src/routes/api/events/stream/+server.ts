@@ -1,5 +1,5 @@
 import type { RequestHandler } from './$types';
-import { Watch, CoreV1Api } from '@kubernetes/client-node';
+import { Watch, CoreV1Api, type CoreV1Event } from '@kubernetes/client-node';
 import { getK8sCredentials, createKubeConfig } from '$lib/server/k8sAuth';
 
 export const GET: RequestHandler = async ({ url, request }) => {
@@ -39,12 +39,22 @@ export const GET: RequestHandler = async ({ url, request }) => {
 	const coreApi = kc.makeApiClient(CoreV1Api);
 
 	// Create a readable stream for SSE
+	let watchRequest: AbortController | undefined;
 	const stream = new ReadableStream({
 		async start(controller) {
 			const encoder = new TextEncoder();
-			let abortController: AbortController | null = null;
+			// Callbacks can fire after the client cancelled; closing twice throws and would crash the server
+			const close = () => {
+				try {
+					controller.close();
+				} catch {
+					// already closed or cancelled
+				}
+			};
+			// Watch from the list's version so existing events aren't replayed as ADDED
+			let listResourceVersion: string | undefined;
 
-			const sendEvent = (data: any, event?: string) => {
+			const sendEvent = (data: unknown, event?: string) => {
 				try {
 					let message = '';
 					if (event) {
@@ -72,10 +82,12 @@ export const GET: RequestHandler = async ({ url, request }) => {
 								fieldSelector: effectiveFieldSelector || undefined
 							});
 
+					listResourceVersion = existingEvents.metadata?.resourceVersion;
+
 					// Send existing events (last 50)
-					const events = (existingEvents as any).items || [];
+					const events = existingEvents.items || [];
 					const recentEvents = events
-						.sort((a: any, b: any) => {
+						.sort((a, b) => {
 							const aTime = new Date(
 								a.lastTimestamp || a.metadata?.creationTimestamp || 0
 							).getTime();
@@ -101,9 +113,12 @@ export const GET: RequestHandler = async ({ url, request }) => {
 				if (effectiveFieldSelector) {
 					queryParams.fieldSelector = effectiveFieldSelector;
 				}
+				if (listResourceVersion) {
+					queryParams.resourceVersion = listResourceVersion;
+				}
 
 				// Start watching for new events
-				const req = await watch.watch(
+				watchRequest = await watch.watch(
 					watchPath,
 					queryParams,
 					(type, apiObj) => {
@@ -114,24 +129,19 @@ export const GET: RequestHandler = async ({ url, request }) => {
 							sendEvent({ message: `Watch error: ${err.message}` }, 'error');
 						}
 						sendEvent({ message: 'Watch ended' }, 'end');
-						controller.close();
+						close();
 					}
 				);
-
-				// Store abort controller for cleanup
-				abortController = new AbortController();
-				abortController.signal.addEventListener('abort', () => {
-					req.abort();
-				});
 			} catch (error) {
 				const message = error instanceof Error ? error.message : 'Unknown error';
 				sendEvent({ message: `Failed to start events stream: ${message}` }, 'error');
-				controller.close();
+				close();
 			}
 		},
 
 		cancel() {
-			console.log('Client disconnected from events stream');
+			watchRequest?.abort();
+			console.info('Client disconnected from events stream');
 		}
 	});
 
@@ -145,7 +155,7 @@ export const GET: RequestHandler = async ({ url, request }) => {
 	});
 };
 
-function formatEvent(event: any, watchType: string): any {
+function formatEvent(event: CoreV1Event, watchType: string) {
 	return {
 		watchType,
 		type: event.type || 'Normal',
