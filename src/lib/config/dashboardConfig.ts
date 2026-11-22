@@ -20,6 +20,10 @@ export interface DashboardConfig {
 	charts: MetricChartConfig[];
 }
 
+// Virtual/tunnel devices, plus bonds (their member NICs already carry the same bytes)
+const virtualNetDevices =
+	'lo|veth.*|cni.*|flannel.*|cali.*|cilium.*|lxc.*|docker.*|br-.*|virbr.*|tunl.*|vxlan.*|kube-.*|dummy.*|sit.*|ip6tnl.*|teql.*|wpan.*|bond.*';
+
 export const dashboardConfig: DashboardConfig = {
 	cards: [
 		{
@@ -39,7 +43,7 @@ export const dashboardConfig: DashboardConfig = {
 			color: 'green',
 			query: 'count(kube_pod_info)',
 			format: 'number',
-			statusQuery: 'count(kube_pod_status_phase{phase="Running"})',
+			statusQuery: 'sum(kube_pod_status_phase{phase="Running"})',
 			link: '/?resource=pods'
 		},
 		{
@@ -77,7 +81,7 @@ export const dashboardConfig: DashboardConfig = {
 			color: 'yellow',
 			query: 'count(kube_persistentvolumeclaim_info)',
 			format: 'number',
-			statusQuery: 'count(kube_persistentvolumeclaim_status_phase{phase="Bound"})',
+			statusQuery: 'sum(kube_persistentvolumeclaim_status_phase{phase="Bound"})',
 			link: '/?resource=persistentvolumeclaims'
 		}
 	],
@@ -117,15 +121,17 @@ export const dashboardConfig: DashboardConfig = {
 			type: 'line',
 			title: 'Network I/O',
 			height: 200,
+			// Node NICs, not cadvisor: every hostNetwork pod re-reports its node's interfaces,
+			// and veth/bridge/overlay devices carry the same bytes again
 			queries: [
 				{
 					label: 'rx',
-					query: 'sum(rate(container_network_receive_bytes_total[5m]))',
+					query: `sum(rate(node_network_receive_bytes_total{device!~"${virtualNetDevices}"}[5m]))`,
 					color: 'rgb(34, 197, 94)' // green-500
 				},
 				{
 					label: 'tx',
-					query: 'sum(rate(container_network_transmit_bytes_total[5m]))',
+					query: `sum(rate(node_network_transmit_bytes_total{device!~"${virtualNetDevices}"}[5m]))`,
 					color: 'rgb(239, 68, 68)' // red-500
 				}
 			],
@@ -143,12 +149,12 @@ export const dashboardConfig: DashboardConfig = {
 			queries: [
 				{
 					label: 'Read',
-					query: 'sum(rate(container_fs_reads_bytes_total[5m]))',
+					query: 'sum(rate(container_fs_reads_bytes_total{container!=""}[5m]))',
 					color: 'rgb(59, 130, 246)' // blue-500
 				},
 				{
 					label: 'Write',
-					query: 'sum(rate(container_fs_writes_bytes_total[5m]))',
+					query: 'sum(rate(container_fs_writes_bytes_total{container!=""}[5m]))',
 					color: 'rgb(249, 115, 22)' // orange-500
 				}
 			],
