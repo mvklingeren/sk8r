@@ -145,7 +145,7 @@
 <div class="time-range-dropdown relative">
 	<button
 		onclick={() => (dropdownOpen = !dropdownOpen)}
-		class="flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-white transition-colors hover:bg-gray-800 dark:bg-slate-600 dark:hover:bg-slate-500"
+		class="flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-white transition-colors hover:bg-gray-800 dark:bg-neutral-600 dark:hover:bg-neutral-500"
 	>
 		<Clock size={16} />
 		<span class="text-sm font-medium">{label}</span>
@@ -153,16 +153,16 @@
 	</button>
 	{#if dropdownOpen}
 		<div
-			class="absolute right-0 z-50 mt-1 w-32 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800"
+			class="absolute right-0 z-50 mt-1 w-32 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-neutral-600 dark:bg-neutral-800"
 		>
 			{#each timeRangeOptions as option (option.value)}
 				{@const selected =
 					option.value === 0 ? isCustom : !isCustom && range.minutes === option.value}
 				<button
 					onclick={() => selectTimeRange(option.value)}
-					class="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-slate-700 {selected
-						? 'bg-gray-100 font-medium text-blue-600 dark:bg-slate-700 dark:text-blue-400'
-						: 'text-gray-700 dark:text-slate-300'}"
+					class="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-neutral-700 {selected
+						? 'bg-gray-100 font-medium text-blue-600 dark:bg-neutral-700 dark:text-blue-400'
+						: 'text-gray-700 dark:text-neutral-300'}"
 				>
 					{option.label}
 				</button>
@@ -178,9 +178,9 @@
 		aria-modal="true"
 	>
 		<div
-			class="mx-4 w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-slate-600 dark:bg-slate-800"
+			class="mx-4 w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-neutral-600 dark:bg-neutral-800"
 		>
-			<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
+			<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-neutral-100">
 				Custom Time Range
 			</h2>
 
@@ -188,7 +188,7 @@
 				<div>
 					<label
 						for="custom-start"
-						class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
+						class="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300"
 					>
 						Start Date & Time
 					</label>
@@ -196,14 +196,14 @@
 						id="custom-start"
 						type="datetime-local"
 						bind:value={customStartDate}
-						class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 transition-colors outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+						class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 transition-colors outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
 					/>
 				</div>
 
 				<div>
 					<label
 						for="custom-end"
-						class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
+						class="mb-1 block text-sm font-medium text-gray-700 dark:text-neutral-300"
 					>
 						End Date & Time
 					</label>
@@ -212,7 +212,7 @@
 						type="datetime-local"
 						bind:value={customEndDate}
 						disabled={useCurrentEndTime}
-						class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 transition-colors outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:disabled:bg-slate-800"
+						class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 transition-colors outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-50 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 dark:disabled:bg-neutral-800"
 					/>
 				</div>
 
@@ -221,11 +221,11 @@
 						id="use-current-time"
 						type="checkbox"
 						bind:checked={useCurrentEndTime}
-						class="h-4 w-4 cursor-pointer rounded border-gray-300 bg-white text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
+						class="h-4 w-4 cursor-pointer rounded border-gray-300 bg-white text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-neutral-600 dark:bg-neutral-700"
 					/>
 					<label
 						for="use-current-time"
-						class="cursor-pointer text-sm text-gray-700 select-none dark:text-slate-300"
+						class="cursor-pointer text-sm text-gray-700 select-none dark:text-neutral-300"
 					>
 						Use current date and time
 					</label>
@@ -235,7 +235,7 @@
 			<div class="mt-6 flex justify-end gap-3">
 				<button
 					onclick={() => (showCustomRangeModal = false)}
-					class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+					class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
 				>
 					Cancel
 				</button>

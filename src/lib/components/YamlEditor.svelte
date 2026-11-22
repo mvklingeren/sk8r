@@ -157,13 +157,13 @@
 </script>
 
 <div
-	class="yaml-editor overflow-hidden rounded-lg border border-gray-700 bg-gray-900"
+	class="yaml-editor overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900"
 	style="height: {height}"
 >
 	<!-- Toolbar -->
-	<div class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-3 py-2">
+	<div class="flex items-center justify-between border-b border-neutral-700 bg-neutral-800 px-3 py-2">
 		<div class="flex items-center gap-2">
-			<span class="font-mono text-xs text-gray-400">YAML</span>
+			<span class="font-mono text-xs text-neutral-400">YAML</span>
 			{#if error}
 				<div class="flex items-center gap-1 text-xs text-red-400">
 					<AlertCircle size={12} />
@@ -179,7 +179,7 @@
 
 		<button
 			onclick={copyToClipboard}
-			class="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-700 hover:text-gray-200"
+			class="rounded p-1.5 text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-neutral-200"
 			title="Copy to clipboard"
 		>
 			{#if copied}
@@ -194,7 +194,7 @@
 	<div class="editor-container relative flex" style="height: calc(100% - 40px)">
 		<!-- Line numbers -->
 		<div
-			class="line-numbers flex-shrink-0 overflow-hidden border-r border-gray-800 bg-gray-900 py-3 pr-3 pl-3 text-right text-gray-600 select-none"
+			class="line-numbers flex-shrink-0 overflow-hidden border-r border-neutral-800 bg-neutral-900 py-3 pr-3 pl-3 text-right text-neutral-600 select-none"
 		>
 			{#each lineNumbers as num (num)}
 				<div
@@ -217,7 +217,7 @@
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -- shiki output, which escapes the source text -->
 					{@html highlightedHtml}
 				{:else}
-					<code class="text-gray-300">{value}</code>
+					<code class="text-neutral-300">{value}</code>
 				{/if}
 			</pre>
 

@@ -95,9 +95,9 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div class="flex h-screen bg-gray-50 transition-colors duration-200 dark:bg-slate-900">
+<div class="flex h-screen bg-gray-50 transition-colors duration-200 dark:bg-neutral-950">
 	<Sidebar />
-	<main class="flex-1 overflow-auto dark:text-slate-100">
+	<main class="flex-1 overflow-auto dark:text-neutral-100">
 		<div class={isPatternPage ? '' : 'p-6'}>
 			{@render children()}
 		</div>

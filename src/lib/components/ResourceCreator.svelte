@@ -209,11 +209,11 @@
 
 	<!-- Modal -->
 	<div
-		class="fixed inset-4 z-50 flex flex-col overflow-hidden rounded-xl bg-white shadow-2xl md:inset-8 lg:inset-16 dark:bg-gray-900"
+		class="fixed inset-4 z-50 flex flex-col overflow-hidden rounded-xl bg-white shadow-2xl md:inset-8 lg:inset-16 dark:bg-neutral-900"
 	>
 		<!-- Header -->
 		<div
-			class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700"
+			class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-neutral-700"
 		>
 			<div class="flex items-center gap-3">
 				<div class="rounded-lg bg-blue-100 p-2 dark:bg-blue-900">
@@ -227,7 +227,7 @@
 					<h2 class="text-lg font-semibold text-gray-900 dark:text-white">
 						{mode === 'edit' ? 'Edit Resource' : 'Create Resource'}
 					</h2>
-					<p class="text-sm text-gray-500 dark:text-gray-400">
+					<p class="text-sm text-gray-500 dark:text-neutral-400">
 						{mode === 'edit'
 							? 'Modify the YAML and apply changes'
 							: 'Choose a template or write YAML from scratch'}
@@ -238,7 +238,7 @@
 			<button
 				onclick={onClose}
 				disabled={isSubmitting}
-				class="rounded-lg p-2 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-gray-800"
+				class="rounded-lg p-2 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-neutral-800"
 				title="Close (Esc)"
 			>
 				<X size={20} class="text-gray-500" />
@@ -250,11 +250,11 @@
 			<!-- Templates sidebar (only in create mode) -->
 			{#if mode === 'create'}
 				<div
-					class="flex w-64 flex-col border-r border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50"
+					class="flex w-64 flex-col border-r border-gray-200 bg-gray-50 dark:border-neutral-700 dark:bg-neutral-800/50"
 				>
 					<button
 						onclick={() => (showTemplates = !showTemplates)}
-						class="flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+						class="flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
 					>
 						<span>Templates</span>
 						<ChevronDown
@@ -269,7 +269,7 @@
 								{#if group.templates.length > 0}
 									<div class="px-3 py-2">
 										<div
-											class="mb-1 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400"
+											class="mb-1 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-neutral-400"
 										>
 											{group.name}
 										</div>
@@ -279,10 +279,10 @@
 												class="w-full rounded-md px-3 py-2 text-left text-sm transition-colors {selectedTemplate ===
 												template.name
 													? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-													: 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}"
+													: 'text-gray-700 hover:bg-gray-100 dark:text-neutral-300 dark:hover:bg-neutral-700'}"
 											>
 												<div class="font-medium">{template.name}</div>
-												<div class="truncate text-xs text-gray-500 dark:text-gray-400">
+												<div class="truncate text-xs text-gray-500 dark:text-neutral-400">
 													{template.description}
 												</div>
 											</button>
@@ -308,7 +308,7 @@
 
 		<!-- Footer -->
 		<div
-			class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800/50"
+			class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 dark:border-neutral-700 dark:bg-neutral-800/50"
 		>
 			<div class="flex-1">
 				{#if error}
@@ -328,7 +328,7 @@
 				<button
 					onclick={onClose}
 					disabled={isSubmitting}
-					class="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-700"
+					class="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-700"
 				>
 					Cancel
 				</button>
@@ -336,7 +336,7 @@
 				<button
 					onclick={handleDryRun}
 					disabled={isSubmitting || isDryRunning}
-					class="flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-300 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+					class="flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-300 disabled:opacity-50 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
 				>
 					{#if isDryRunning}
 						<Loader2 size={14} class="animate-spin" />

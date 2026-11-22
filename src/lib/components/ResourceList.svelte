@@ -207,7 +207,7 @@
 	}
 </script>
 
-<div class="relative max-w-full overflow-hidden rounded-lg bg-white shadow dark:bg-slate-800">
+<div class="relative max-w-full overflow-hidden rounded-lg bg-white shadow dark:bg-neutral-800">
 	<!-- Learning Panel (Jumbo) -->
 	{#if showLearningPanel && learning && $learningMode}
 		<div
@@ -245,9 +245,9 @@
 
 			<!-- CLI Commands -->
 			{#if learning.cliCommands && learning.cliCommands.length > 0}
-				<div class="mb-4 rounded-lg border border-gray-700 bg-gray-900 p-4">
+				<div class="mb-4 rounded-lg border border-neutral-700 bg-neutral-900 p-4">
 					<h4
-						class="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-gray-400 uppercase"
+						class="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-neutral-400 uppercase"
 					>
 						<span class="inline-block h-2 w-2 rounded-full bg-green-400"></span>
 						Common CLI Commands
@@ -255,9 +255,9 @@
 					<div class="custom-scrollbar max-h-48 space-y-2 overflow-y-auto pr-2">
 						{#each learning.cliCommands as cmd (cmd.command)}
 							<div class="group">
-								<div class="mb-0.5 text-xs text-gray-400"># {cmd.description}</div>
+								<div class="mb-0.5 text-xs text-neutral-400"># {cmd.description}</div>
 								<code
-									class="block cursor-pointer rounded border border-gray-700 bg-gray-800 px-2 py-1.5 font-mono text-xs text-green-400 transition-colors select-all group-hover:border-green-600"
+									class="block cursor-pointer rounded border border-neutral-700 bg-neutral-800 px-2 py-1.5 font-mono text-xs text-green-400 transition-colors select-all group-hover:border-green-600"
 								>
 									{cmd.command}
 								</code>
@@ -285,21 +285,21 @@
 		</div>
 	{/if}
 
-	<div class="relative border-b border-gray-200 px-4 py-3 dark:border-slate-700">
+	<div class="relative border-b border-gray-200 px-4 py-3 dark:border-neutral-700">
 		<div class="flex items-center justify-between">
-			<h2 class="text-xl font-semibold text-gray-800 capitalize dark:text-slate-100">
+			<h2 class="text-xl font-semibold text-gray-800 capitalize dark:text-neutral-100">
 				{resourceType}
 			</h2>
 			<div class="flex items-center gap-4">
 				<div class="relative">
 					<Search
-						class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-500"
+						class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-neutral-500"
 					/>
 					<input
 						type="text"
 						bind:value={searchQuery}
 						placeholder="Search resources..."
-						class="rounded-md border border-gray-300 py-2 pr-4 pl-9 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400"
+						class="rounded-md border border-gray-300 py-2 pr-4 pl-9 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 dark:placeholder-neutral-400"
 					/>
 				</div>
 
@@ -332,7 +332,7 @@
 						onclick={onToggleEvents}
 						class="flex h-10 w-10 items-center justify-center rounded-md transition-colors {hideTable
 							? 'bg-purple-500 text-white hover:bg-purple-600'
-							: 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-slate-600 dark:text-slate-300 dark:hover:bg-slate-500'}"
+							: 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-500'}"
 						title={hideTable ? 'Show Table' : 'Show Events Stream'}
 					>
 						{#if hideTable}
@@ -349,13 +349,13 @@
 	{#if !hideTable}
 		<div class="overflow-x-auto">
 			<table class="w-full" style="table-layout: fixed;">
-				<thead class="bg-gray-50 dark:bg-slate-700">
+				<thead class="bg-gray-50 dark:bg-neutral-700">
 					<tr>
 						{#each columnWidths.columns as column (column.key)}
 							<th
-								class="px-4 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-slate-400 {column.sortable !==
+								class="px-4 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-neutral-400 {column.sortable !==
 								false
-									? 'cursor-pointer transition-colors select-none hover:bg-gray-100 dark:hover:bg-slate-600'
+									? 'cursor-pointer transition-colors select-none hover:bg-gray-100 dark:hover:bg-neutral-600'
 									: ''}"
 								style="width: {column.width};"
 								onclick={() => column.sortable !== false && handleSort(column.key)}
@@ -374,7 +374,7 @@
 						{/each}
 						{#if showNamespaceColumn}
 							<th
-								class="cursor-pointer px-4 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors select-none hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-600"
+								class="cursor-pointer px-4 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase transition-colors select-none hover:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-600"
 								style="width: {columnWidths.namespaceWidth};"
 								onclick={() => handleSort('__namespace__')}
 							>
@@ -389,16 +389,16 @@
 							</th>
 						{/if}
 						<th
-							class="px-4 py-2 text-right text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-slate-400"
+							class="px-4 py-2 text-right text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-neutral-400"
 							style="width: {columnWidths.actionsWidth};"
 						>
 							Actions
 						</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-200 bg-white dark:divide-slate-700 dark:bg-slate-900">
+				<tbody class="divide-y divide-gray-200 bg-white dark:divide-neutral-700 dark:bg-neutral-900">
 					{#each filteredResources as resource (`${resource.metadata.namespace}/${resource.metadata.name}`)}
-						<tr class="transition-colors hover:bg-gray-50 dark:hover:bg-slate-700">
+						<tr class="transition-colors hover:bg-gray-50 dark:hover:bg-neutral-700">
 							{#each columnWidths.columns as column (column.key)}
 								<td
 									class="overflow-hidden px-4 py-1.5 text-sm text-ellipsis whitespace-nowrap"
@@ -429,7 +429,7 @@
 										<div class="flex gap-1 overflow-hidden">
 											{#each getLabels(resource) as label (label.key)}
 												<span
-													class="inline-flex rounded-md bg-gray-100 px-1.5 text-[11px] leading-4 font-medium text-gray-700 dark:bg-slate-600 dark:text-slate-200"
+													class="inline-flex rounded-md bg-gray-100 px-1.5 text-[11px] leading-4 font-medium text-gray-700 dark:bg-neutral-600 dark:text-neutral-200"
 													title="{label.key}={label.value}"
 												>
 													{label.key.split('/').pop()}={label.value.length > 20
@@ -442,11 +442,11 @@
 											{/if}
 										</div>
 									{:else if column.type === 'list'}
-										<span class="text-gray-900 dark:text-slate-200">
+										<span class="text-gray-900 dark:text-neutral-200">
 											{getColumnValue(resource, column)}
 										</span>
 									{:else}
-										<span class="text-gray-900 dark:text-slate-200">
+										<span class="text-gray-900 dark:text-neutral-200">
 											{getColumnValue(resource, column)}
 										</span>
 									{/if}
@@ -454,7 +454,7 @@
 							{/each}
 							{#if showNamespaceColumn}
 								<td
-									class="overflow-hidden px-4 py-1.5 text-sm whitespace-nowrap text-gray-500 dark:text-slate-400"
+									class="overflow-hidden px-4 py-1.5 text-sm whitespace-nowrap text-gray-500 dark:text-neutral-400"
 								>
 									<span
 										class="inline-block max-w-full truncate rounded-full bg-blue-100 px-1.5 text-[11px] leading-4 font-medium text-blue-800"
@@ -519,7 +519,7 @@
 			</table>
 
 			{#if filteredResources.length === 0}
-				<div class="py-12 text-center text-gray-500 dark:text-slate-400">
+				<div class="py-12 text-center text-gray-500 dark:text-neutral-400">
 					{#if searchQuery}
 						No resources found matching "{searchQuery}"
 					{:else}
@@ -536,18 +536,18 @@
 		width: 6px;
 	}
 	.custom-scrollbar::-webkit-scrollbar-track {
-		background: #1f2937;
+		background: #262626;
 		border-radius: 3px;
 	}
 	.custom-scrollbar::-webkit-scrollbar-thumb {
-		background: #4b5563;
+		background: #525252;
 		border-radius: 3px;
 	}
 	.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-		background: #6b7280;
+		background: #737373;
 	}
 	.custom-scrollbar {
 		scrollbar-width: thin;
-		scrollbar-color: #4b5563 #1f2937;
+		scrollbar-color: #525252 #262626;
 	}
 </style>

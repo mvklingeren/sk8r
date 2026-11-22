@@ -344,7 +344,7 @@
 		{#if isLoading}
 			<div class="flex items-center justify-center p-8">
 				<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
-				<span class="ml-3 text-gray-600 dark:text-gray-400">Loading resources...</span>
+				<span class="ml-3 text-gray-600 dark:text-neutral-400">Loading resources...</span>
 			</div>
 		{:else}
 			<ResourceList

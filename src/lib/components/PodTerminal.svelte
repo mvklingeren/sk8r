@@ -41,10 +41,10 @@
 			fontSize: 14,
 			fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace',
 			theme: {
-				background: '#1a1b26',
+				background: '#0a0a0a',
 				foreground: '#c0caf5',
 				cursor: '#c0caf5',
-				cursorAccent: '#1a1b26',
+				cursorAccent: '#0a0a0a',
 				selectionBackground: '#33467c',
 				black: '#15161e',
 				red: '#f7768e',
@@ -231,12 +231,12 @@
 
 <!-- Modal -->
 <div
-	class="fixed z-50 flex flex-col overflow-hidden rounded-xl bg-gray-900 shadow-2xl {isFullscreen
+	class="fixed z-50 flex flex-col overflow-hidden rounded-xl bg-neutral-900 shadow-2xl {isFullscreen
 		? 'inset-0'
 		: 'inset-4 md:inset-8 lg:inset-12'}"
 >
 	<!-- Header -->
-	<div class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3">
+	<div class="flex items-center justify-between border-b border-neutral-700 bg-neutral-800 px-4 py-3">
 		<div class="flex items-center gap-4">
 			<h2 class="flex items-center gap-2 text-lg font-semibold text-white">
 				<span
@@ -244,7 +244,7 @@
 						? 'bg-green-400'
 						: isConnecting
 							? 'animate-pulse bg-yellow-400'
-							: 'bg-gray-500'}"
+							: 'bg-neutral-500'}"
 				></span>
 				Terminal: {podName}
 			</h2>
@@ -254,7 +254,7 @@
 					<select
 						value={selectedContainer}
 						onchange={handleContainerChange}
-						class="appearance-none rounded border border-gray-600 bg-gray-700 px-3 py-1.5 pr-8 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
+						class="appearance-none rounded border border-neutral-600 bg-neutral-700 px-3 py-1.5 pr-8 text-sm text-neutral-200 focus:border-blue-500 focus:outline-none"
 					>
 						{#each containers as container (container)}
 							<option value={container}>{container}</option>
@@ -262,11 +262,11 @@
 					</select>
 					<ChevronDown
 						size={14}
-						class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-gray-400"
+						class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-neutral-400"
 					/>
 				</div>
 			{:else if selectedContainer}
-				<span class="text-sm text-gray-400">Container: {selectedContainer}</span>
+				<span class="text-sm text-neutral-400">Container: {selectedContainer}</span>
 			{/if}
 		</div>
 
@@ -274,7 +274,7 @@
 			<!-- Reconnect -->
 			<button
 				onclick={reconnect}
-				class="rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:bg-gray-600"
+				class="rounded border border-neutral-600 bg-neutral-700 p-1.5 text-neutral-300 transition-colors hover:bg-neutral-600"
 				title="Reconnect"
 				disabled={isConnecting}
 			>
@@ -284,7 +284,7 @@
 			<!-- Fullscreen toggle -->
 			<button
 				onclick={toggleFullscreen}
-				class="rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:bg-gray-600"
+				class="rounded border border-neutral-600 bg-neutral-700 p-1.5 text-neutral-300 transition-colors hover:bg-neutral-600"
 				title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
 			>
 				{#if isFullscreen}
@@ -297,7 +297,7 @@
 			<!-- Close -->
 			<button
 				onclick={onClose}
-				class="ml-2 rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:border-red-500 hover:bg-red-600"
+				class="ml-2 rounded border border-neutral-600 bg-neutral-700 p-1.5 text-neutral-300 transition-colors hover:border-red-500 hover:bg-red-600"
 				title="Close (Esc)"
 			>
 				<X size={16} />
@@ -306,9 +306,9 @@
 	</div>
 
 	<!-- Terminal content -->
-	<div class="relative flex-1 overflow-hidden bg-[#1a1b26]">
+	<div class="relative flex-1 overflow-hidden bg-[#0a0a0a]">
 		{#if error}
-			<div class="absolute inset-0 flex items-center justify-center bg-gray-900/80">
+			<div class="absolute inset-0 flex items-center justify-center bg-neutral-900/80">
 				<div class="rounded-lg bg-red-900/50 px-6 py-4 text-center">
 					<p class="text-red-400">{error}</p>
 					<button
@@ -323,7 +323,7 @@
 
 		{#if isConnecting && !terminal}
 			<div class="absolute inset-0 flex items-center justify-center">
-				<div class="flex items-center gap-2 text-gray-400">
+				<div class="flex items-center gap-2 text-neutral-400">
 					<RefreshCw size={20} class="animate-spin" />
 					<span>Connecting to pod...</span>
 				</div>
@@ -335,7 +335,7 @@
 
 	<!-- Footer status -->
 	<div
-		class="flex items-center justify-between border-t border-gray-700 bg-gray-800 px-4 py-2 text-xs text-gray-400"
+		class="flex items-center justify-between border-t border-neutral-700 bg-neutral-800 px-4 py-2 text-xs text-neutral-400"
 	>
 		<span>
 			{#if isConnected}
@@ -347,7 +347,7 @@
 			{/if}
 		</span>
 		<span>
-			Press <kbd class="rounded bg-gray-700 px-1.5 py-0.5 text-gray-300"
+			Press <kbd class="rounded bg-neutral-700 px-1.5 py-0.5 text-neutral-300"
 				>{isFullscreen ? 'Esc' : 'Esc'}</kbd
 			>
 			to {isFullscreen ? 'exit fullscreen' : 'close'}

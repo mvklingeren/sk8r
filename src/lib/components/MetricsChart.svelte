@@ -25,9 +25,9 @@
 	// Theme colors for Chart.js
 	function getThemeColors() {
 		return {
-			text: isDarkMode ? 'rgb(226, 232, 240)' : 'rgb(107, 114, 128)', // slate-200 / gray-500
+			text: isDarkMode ? 'rgb(229, 229, 229)' : 'rgb(107, 114, 128)', // neutral-200 / gray-500
 			gridLines: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-			tickColor: isDarkMode ? 'rgb(148, 163, 184)' : 'rgb(107, 114, 128)' // slate-400 / gray-500
+			tickColor: isDarkMode ? 'rgb(163, 163, 163)' : 'rgb(107, 114, 128)' // neutral-400 / gray-500
 		};
 	}
 
@@ -147,10 +147,10 @@
 						display: false
 					},
 					tooltip: {
-						backgroundColor: isDarkMode ? 'rgb(30, 41, 59)' : 'rgba(0, 0, 0, 0.8)', // slate-800
-						titleColor: isDarkMode ? 'rgb(226, 232, 240)' : 'rgb(255, 255, 255)', // slate-200
-						bodyColor: isDarkMode ? 'rgb(203, 213, 225)' : 'rgb(255, 255, 255)', // slate-300
-						borderColor: isDarkMode ? 'rgb(71, 85, 105)' : 'transparent', // slate-600
+						backgroundColor: isDarkMode ? 'rgb(38, 38, 38)' : 'rgba(0, 0, 0, 0.8)', // neutral-800
+						titleColor: isDarkMode ? 'rgb(229, 229, 229)' : 'rgb(255, 255, 255)', // neutral-200
+						bodyColor: isDarkMode ? 'rgb(212, 212, 212)' : 'rgb(255, 255, 255)', // neutral-300
+						borderColor: isDarkMode ? 'rgb(82, 82, 82)' : 'transparent', // neutral-600
 						borderWidth: isDarkMode ? 1 : 0,
 						callbacks: {
 							label: (context) => {
