@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
-import { createKubeConfig } from '$lib/server/k8sAuth';
-import type { K8sResource, K8sListResponse, ResourceFilter } from '$lib/types/k8s';
+import { createKubeConfig } from '#lib/server/k8sAuth.js';
+import type { K8sResource, K8sListResponse, ResourceFilter } from '#lib/types/k8s.js';
 import { CustomResourceService } from './customResourceService';
 
 // Client calls return the object itself (1.x) or wrap it in `.body` (pre-1.0)

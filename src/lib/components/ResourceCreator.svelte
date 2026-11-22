@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { X, Plus, FileCode, Check, AlertCircle, Loader2, ChevronDown } from 'lucide-svelte';
+	import { X, Plus, FileCode, Check, AlertCircle, Loader2, ChevronDown } from '@lucide/svelte';
 	import YamlEditor from './YamlEditor.svelte';
 	import {
 		resourceTemplates,
 		getEmptyTemplate,
 		type ResourceTemplate
-	} from '$lib/config/resourceTemplates';
-	import { apiClient } from '$lib/utils/apiClient';
+	} from '#lib/config/resourceTemplates.js';
+	import { apiClient } from '#lib/utils/apiClient.js';
 
 	interface Props {
 		isOpen: boolean;
@@ -19,6 +19,8 @@
 
 	let { isOpen, onClose, onSuccess, initialYaml, mode = 'create' }: Props = $props();
 
+	// Intentionally only seeds the editable buffer
+	// svelte-ignore state_referenced_locally
 	let yamlContent = $state(initialYaml || getEmptyTemplate());
 	let selectedTemplate = $state<string | null>(null);
 	let isSubmitting = $state(false);

@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
-import { createKubeConfig } from '$lib/server/k8sAuth';
-import type { K8sListResponse, K8sResource, ResourceFilter } from '$lib/types/k8s';
+import { createKubeConfig } from '#lib/server/k8sAuth.js';
+import type { K8sListResponse, K8sResource, ResourceFilter } from '#lib/types/k8s.js';
 
 // CRD definitions for known custom resources
 const crdDefinitions: Record<

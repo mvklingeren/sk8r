@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Server, RefreshCw, AlertCircle, Plus, Edit2, X, Trash2 } from 'lucide-svelte';
-	import { clusterStore, type CustomCluster } from '$lib/stores/cluster';
-	import { authToken } from '$lib/stores/auth';
-	import { normalizeServerUrl } from '$lib/utils/serverUrl';
+	import { Server, RefreshCw, AlertCircle, Plus, Edit2, X, Trash2 } from '@lucide/svelte';
+	import { clusterStore, type CustomCluster } from '#lib/stores/cluster.js';
+	import { authToken } from '#lib/stores/auth.js';
+	import { normalizeServerUrl } from '#lib/utils/serverUrl.js';
 
 	let clusterSwitching = $state(false);
 	let showClusterModal = $state(false);

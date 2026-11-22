@@ -1,26 +1,26 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { navigation } from '$lib/stores/navigation';
-	import ResourceList from '$lib/components/ResourceList.svelte';
-	import MetricsPanel from '$lib/components/MetricsPanel.svelte';
-	import ClusterDashboard from '$lib/components/ClusterDashboard.svelte';
-	import EventsPanel from '$lib/components/EventsPanel.svelte';
-	import type { K8sResource } from '$lib/types/k8s';
-	import type { MetricChartConfig, MetricSeries } from '$lib/types/metricsTypes';
+	import { navigation } from '#lib/stores/navigation.js';
+	import ResourceList from '#lib/components/ResourceList.svelte';
+	import MetricsPanel from '#lib/components/MetricsPanel.svelte';
+	import ClusterDashboard from '#lib/components/ClusterDashboard.svelte';
+	import EventsPanel from '#lib/components/EventsPanel.svelte';
+	import type { K8sResource } from '#lib/types/k8s.js';
+	import type { MetricChartConfig, MetricSeries } from '#lib/types/metricsTypes.js';
 	import { goto } from '$app/navigation';
-	import { apiClient } from '$lib/utils/apiClient';
-	import { browser } from '$app/environment';
-	import { dashboardConfig } from '$lib/config/dashboardConfig';
-	import { resourceCreator } from '$lib/stores/resourceCreator';
-	import { clusterStore } from '$lib/stores/cluster';
+	import { apiClient } from '#lib/utils/apiClient.js';
+	import { browser } from '$app/env';
+	import { dashboardConfig } from '#lib/config/dashboardConfig.js';
+	import { resourceCreator } from '#lib/stores/resourceCreator.js';
+	import { clusterStore } from '#lib/stores/cluster.js';
 	import { get } from 'svelte/store';
 
 	// Lazy load components to avoid SSR issues with shiki/js-yaml
-	let ResourceCreator: typeof import('$lib/components/ResourceCreator.svelte').default | null =
+	let ResourceCreator: typeof import('#lib/components/ResourceCreator.svelte').default | null =
 		$state(null);
-	let PodLogsViewer: typeof import('$lib/components/PodLogsViewer.svelte').default | null =
+	let PodLogsViewer: typeof import('#lib/components/PodLogsViewer.svelte').default | null =
 		$state(null);
-	let PodTerminal: typeof import('$lib/components/PodTerminal.svelte').default | null =
+	let PodTerminal: typeof import('#lib/components/PodTerminal.svelte').default | null =
 		$state(null);
 
 	interface Props {
@@ -143,7 +143,7 @@
 			}
 
 			const queryString = params.toString();
-			goto(queryString ? `/?${queryString}` : '/', { replaceState: true });
+			goto(queryString ? `/?${queryString}` : '/', { replace: true });
 		}
 	});
 
@@ -161,9 +161,9 @@
 
 		// Lazy load components (not awaited: an async onMount's cleanup is ignored)
 		Promise.all([
-			import('$lib/components/ResourceCreator.svelte'),
-			import('$lib/components/PodLogsViewer.svelte'),
-			import('$lib/components/PodTerminal.svelte')
+			import('#lib/components/ResourceCreator.svelte'),
+			import('#lib/components/PodLogsViewer.svelte'),
+			import('#lib/components/PodTerminal.svelte')
 		]).then(([creatorModule, logsModule, terminalModule]) => {
 			ResourceCreator = creatorModule.default;
 			PodLogsViewer = logsModule.default;

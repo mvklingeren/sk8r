@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { Watch, CoreV1Api, type CoreV1Event } from '@kubernetes/client-node';
-import { getK8sCredentials, createKubeConfig } from '$lib/server/k8sAuth';
+import { getK8sCredentials, createKubeConfig } from '#lib/server/k8sAuth.js';
 
 export const GET: RequestHandler = async ({ url, request }) => {
 	const credentials = getK8sCredentials(request);

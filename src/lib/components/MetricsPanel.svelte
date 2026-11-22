@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import MetricsChart from './MetricsChart.svelte';
-	import type { MetricChartConfig, MetricSeries } from '$lib/types/metricsTypes';
-	import { LoaderCircle } from 'lucide-svelte';
+	import type { MetricChartConfig, MetricSeries } from '#lib/types/metricsTypes.js';
+	import { LoaderCircle } from '@lucide/svelte';
 
 	interface Props {
 		charts: MetricChartConfig[];
@@ -85,9 +85,10 @@
 						<p class="mt-2 text-xs text-yellow-700 dark:text-yellow-300">
 							Ensure metrics-server is installed: <code
 								class="bg-yellow-100 px-1 dark:bg-yellow-800"
-								>kubectl apply -f
-								https://github.com/kubernetes-metrics/metrics-server/releases/latest/download/components.yaml</code
 							>
+								kubectl apply -f
+								https://github.com/kubernetes-metrics/metrics-server/releases/latest/download/components.yaml
+							</code>
 						</p>
 					{/if}
 				</div>

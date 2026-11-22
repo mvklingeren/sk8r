@@ -1,4 +1,4 @@
-import type { ResourceColumnConfigs } from '$lib/types/columnConfig';
+import type { ResourceColumnConfigs } from '#lib/types/columnConfig.js';
 
 export const resourceColumnConfigs: ResourceColumnConfigs = {
 	pods: {

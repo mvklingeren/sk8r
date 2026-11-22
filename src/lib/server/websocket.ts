@@ -3,7 +3,7 @@ import type { IncomingMessage } from 'http';
 import type { Duplex } from 'stream';
 import { Exec } from '@kubernetes/client-node';
 import * as stream from 'stream';
-import { createKubeConfig, isServerAllowed } from './k8sAuth';
+import { createKubeConfig, isServerAllowed } from './k8sAuth.js';
 
 // Store active connections for cleanup
 const activeConnections = new Map<string, { ws: WebSocket; cleanup: () => void }>();

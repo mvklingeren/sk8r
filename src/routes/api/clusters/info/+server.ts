@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { CoreV1Api } from '@kubernetes/client-node';
-import { createKubeConfig, isServerAllowed } from '$lib/server/k8sAuth';
-import { k8sErrorMessage, k8sErrorStatus } from '$lib/types/k8s';
+import { createKubeConfig, isServerAllowed } from '#lib/server/k8sAuth.js';
+import { k8sErrorMessage, k8sErrorStatus } from '#lib/types/k8s.js';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {

@@ -1,9 +1,11 @@
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
+import adapter from '@sveltejs/adapter-node';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { sveltekit } from '@sveltejs/kit/vite';
 import type { Plugin } from 'vite';
-import { version } from './package.json';
+import pkg from './package.json' with { type: 'json' };
 
 // WebSocket plugin for development server
 function webSocketPlugin(): Plugin {
@@ -35,11 +37,15 @@ function webSocketPlugin(): Plugin {
 
 export default defineConfig({
 	define: {
-		__APP_VERSION__: JSON.stringify(version)
+		__APP_VERSION__: JSON.stringify(pkg.version)
 	},
-	plugins: [tailwindcss(), sveltekit(), webSocketPlugin()],
+	plugins: [
+		tailwindcss(),
+		sveltekit({ adapter: adapter(), preprocess: vitePreprocess() }),
+		webSocketPlugin()
+	],
 	ssr: {
-		noExternal: ['lucide-svelte']
+		noExternal: ['@lucide/svelte']
 	},
 	test: {
 		expect: { requireAssertions: true },

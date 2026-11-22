@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { Activity, LoaderCircle, RefreshCw } from 'lucide-svelte';
+	import { Activity, LoaderCircle, RefreshCw } from '@lucide/svelte';
 	import MetricsChart from './MetricsChart.svelte';
 	import DashboardCard, { type CardValue } from './DashboardCard.svelte';
 	import TimeRangePicker, { loadStoredRange, type TimeRange } from './TimeRangePicker.svelte';
-	import type { DashboardCardConfig, DashboardConfig } from '$lib/config/dashboardConfig';
-	import type { MetricSeries } from '$lib/types/metricsTypes';
-	import { apiClient } from '$lib/utils/apiClient';
-	import { dataSource as dataSourceStore } from '$lib/stores/dataSource';
+	import type { DashboardCardConfig, DashboardConfig } from '#lib/config/dashboardConfig.js';
+	import type { MetricSeries } from '#lib/types/metricsTypes.js';
+	import { apiClient } from '#lib/utils/apiClient.js';
+	import { dataSource as dataSourceStore } from '#lib/stores/dataSource.js';
 
 	interface Props {
 		config: DashboardConfig;

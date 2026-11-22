@@ -11,14 +11,14 @@
 		Activity,
 		Table,
 		Terminal
-	} from 'lucide-svelte';
-	import type { K8sResource } from '$lib/types/k8s';
-	import type { ColumnConfig } from '$lib/types/columnConfig';
-	import { resourceColumnConfigs, defaultColumnConfig } from '$lib/config/resourceColumns';
-	import { extractColumnValue, getAge } from '$lib/utils/columnFormatters';
-	import { learningContent } from '$lib/config/navigationConfig';
-	import { learningMode } from '$lib/stores/learningMode';
-	import type { LearningContent } from '$lib/types/navigationConfig';
+	} from '@lucide/svelte';
+	import type { K8sResource } from '#lib/types/k8s.js';
+	import type { ColumnConfig } from '#lib/types/columnConfig.js';
+	import { resourceColumnConfigs, defaultColumnConfig } from '#lib/config/resourceColumns.js';
+	import { extractColumnValue, getAge } from '#lib/utils/columnFormatters.js';
+	import { learningContent } from '#lib/config/navigationConfig.js';
+	import { learningMode } from '#lib/stores/learningMode.js';
+	import type { LearningContent } from '#lib/types/navigationConfig.js';
 
 	interface Props {
 		resourceType: string;

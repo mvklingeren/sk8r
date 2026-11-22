@@ -1,5 +1,5 @@
 import { writable, get } from 'svelte/store';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { clusterStore } from './cluster';
 
 // Create a writable store with an initial value of null

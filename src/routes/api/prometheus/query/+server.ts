@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { env } from '$env/dynamic/private';
-import { PrometheusService } from '$lib/services/prometheusService';
-import { dashboardConfig } from '$lib/config/dashboardConfig';
-import { resourceMetricsConfig } from '$lib/config/metricsConfig';
+import { PROMETHEUS_URL } from '$app/env/private';
+import { PrometheusService } from '#lib/services/prometheusService.js';
+import { dashboardConfig } from '#lib/config/dashboardConfig.js';
+import { resourceMetricsConfig } from '#lib/config/metricsConfig.js';
 
 // Only proxy the PromQL the UI itself sends; otherwise any caller could run arbitrary
 // (or arbitrarily expensive) queries against an otherwise cluster-internal Prometheus.
@@ -54,7 +54,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		}
 	}
 
-	if (!env.PROMETHEUS_URL) {
+	if (!PROMETHEUS_URL) {
 		return json({ error: 'Prometheus is not configured (PROMETHEUS_URL).' }, { status: 503 });
 	}
 

@@ -23,7 +23,9 @@ export function normalizeServerUrl(input: string): string {
 			// Return without trailing slash (url.toString() adds one)
 			return url.toString().replace(/\/+$/, '');
 		} catch (e) {
-			throw new Error(`Invalid URL format: ${e instanceof Error ? e.message : 'Unknown error'}`);
+			throw new Error(`Invalid URL format: ${e instanceof Error ? e.message : 'Unknown error'}`, {
+				cause: e
+			});
 		}
 	}
 

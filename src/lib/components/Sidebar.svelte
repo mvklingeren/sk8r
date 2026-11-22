@@ -14,17 +14,17 @@
 		AlertCircle,
 		Folder,
 		Plus
-	} from 'lucide-svelte';
-	import { navigationConfig } from '$lib/config/navigationConfig';
-	import { getIcon } from '$lib/utils/iconMapping';
-	import { navigation } from '$lib/stores/navigation';
-	import { dataSource } from '$lib/stores/dataSource';
-	import { learningMode } from '$lib/stores/learningMode';
-	import { darkMode } from '$lib/stores/darkMode';
-	import { clusterStore } from '$lib/stores/cluster';
+	} from '@lucide/svelte';
+	import { navigationConfig } from '#lib/config/navigationConfig.js';
+	import { getIcon } from '#lib/utils/iconMapping.js';
+	import { navigation } from '#lib/stores/navigation.js';
+	import { dataSource } from '#lib/stores/dataSource.js';
+	import { learningMode } from '#lib/stores/learningMode.js';
+	import { darkMode } from '#lib/stores/darkMode.js';
+	import { clusterStore } from '#lib/stores/cluster.js';
 	import ClusterSelector from './ClusterSelector.svelte';
-	import { namespaceStore } from '$lib/stores/namespaces';
-	import { resourceCreator } from '$lib/stores/resourceCreator';
+	import { namespaceStore } from '#lib/stores/namespaces.js';
+	import { resourceCreator } from '#lib/stores/resourceCreator.js';
 
 	// Design patterns configuration
 	const designPatterns = [
@@ -90,12 +90,12 @@
 
 		<!-- Search hint -->
 		<div class="mt-3 flex items-center gap-2 text-xs text-neutral-500">
-			<kbd class="rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-neutral-400"
-				>Ctrl</kbd
-			>
-			<kbd class="rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-neutral-400"
-				>K</kbd
-			>
+			<kbd class="rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-neutral-400">
+				Ctrl
+			</kbd>
+			<kbd class="rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-neutral-400">
+				K
+			</kbd>
 			<span>to search</span>
 		</div>
 	</div>
@@ -278,9 +278,9 @@
 				title="Toggle learning mode to show explanations for Kubernetes resources"
 			>
 				<GraduationCap size={16} class={$learningMode ? 'text-amber-400' : 'text-neutral-400'} />
-				<span class="text-xs {$learningMode ? 'text-amber-300' : 'text-neutral-400'}"
-					>Learning Mode</span
-				>
+				<span class="text-xs {$learningMode ? 'text-amber-300' : 'text-neutral-400'}">
+					Learning Mode
+				</span>
 				<div class="ml-auto">
 					<div
 						class="h-4 w-8 rounded-full transition-colors {$learningMode

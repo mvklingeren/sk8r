@@ -1,8 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { dashboardConfig } from '$lib/config/dashboardConfig';
+import { dashboardConfig } from '#lib/config/dashboardConfig.js';
 
 const env = vi.hoisted(() => ({ PROMETHEUS_URL: undefined as string | undefined }));
-vi.mock('$env/dynamic/private', () => ({ env }));
+vi.mock('$app/env/private', () => ({
+	get PROMETHEUS_URL() {
+		return env.PROMETHEUS_URL;
+	}
+}));
 
 const { GET } = await import('./+server');
 

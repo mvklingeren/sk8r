@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { resourceMetricsConfig } from '$lib/config/metricsConfig';
+import { resourceMetricsConfig } from '#lib/config/metricsConfig.js';
 
 // Data is now loaded client-side since credentials are stored in localStorage
 // This server load just passes through the query params

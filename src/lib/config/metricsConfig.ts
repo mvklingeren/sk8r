@@ -1,4 +1,4 @@
-import type { ResourceMetricsConfig } from '$lib/types/metricsTypes';
+import type { ResourceMetricsConfig } from '#lib/types/metricsTypes.js';
 
 export const resourceMetricsConfig: ResourceMetricsConfig = {
 	nodes: {

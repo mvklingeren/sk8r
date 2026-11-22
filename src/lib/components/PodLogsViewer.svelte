@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { openEventStream } from '$lib/utils/eventStream';
-	import { X, Download, Trash2, RefreshCw, Pause, Play, ChevronDown } from 'lucide-svelte';
+	import { openEventStream } from '#lib/utils/eventStream.js';
+	import { X, Download, Trash2, RefreshCw, Pause, Play, ChevronDown } from '@lucide/svelte';
 
 	interface Props {
 		podName: string;
@@ -13,6 +13,8 @@
 	let { podName, namespace, containers, onClose }: Props = $props();
 
 	let logs = $state<string[]>([]);
+	// Intentionally only seeds the user's selection
+	// svelte-ignore state_referenced_locally
 	let selectedContainer = $state(containers[0] || '');
 	let tailLines = $state(100);
 	let follow = $state(true);
