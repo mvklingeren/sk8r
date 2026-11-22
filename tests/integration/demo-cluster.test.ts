@@ -2,9 +2,9 @@
 // Run with `npm run test:integration`, which starts both and sets the env vars below.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { chromium, type Browser } from 'playwright';
-import { navigationConfig } from '$lib/config/navigationConfig';
-import { dashboardConfig } from '$lib/config/dashboardConfig';
-import { resourceMetricsConfig } from '$lib/config/metricsConfig';
+import { navigationConfig } from '#lib/config/navigationConfig.js';
+import { dashboardConfig } from '#lib/config/dashboardConfig.js';
+import { resourceMetricsConfig } from '#lib/config/metricsConfig.js';
 
 const BASE = process.env.SK8R_TEST_URL ?? 'http://127.0.0.1:4173';
 const SERVER = process.env.SK8R_DEMO_SERVER ?? 'https://demo.localhost:16443';
