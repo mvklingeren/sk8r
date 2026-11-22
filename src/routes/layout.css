@@ -15,15 +15,15 @@
 }
 
 .dark {
-	/* Dark mode colors - rich deep palette */
-	--color-bg-primary: #0f172a;
-	--color-bg-secondary: #1e293b;
-	--color-bg-tertiary: #334155;
-	--color-text-primary: #f1f5f9;
-	--color-text-secondary: #cbd5e1;
-	--color-text-muted: #64748b;
-	--color-border: #334155;
-	--color-border-strong: #475569;
+	/* Dark mode colors - neutral near-black palette */
+	--color-bg-primary: #0a0a0a;
+	--color-bg-secondary: #171717;
+	--color-bg-tertiary: #262626;
+	--color-text-primary: #f5f5f5;
+	--color-text-secondary: #d4d4d4;
+	--color-text-muted: #737373;
+	--color-border: #262626;
+	--color-border-strong: #404040;
 }
 
 /* Apply theme colors */

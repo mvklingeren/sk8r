@@ -192,7 +192,7 @@
 {#if isLoading}
 	<div class="flex items-center justify-center p-8">
 		<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
-		<span class="ml-3 text-gray-600 dark:text-gray-400">Loading resource...</span>
+		<span class="ml-3 text-gray-600 dark:text-neutral-400">Loading resource...</span>
 	</div>
 {:else if clientError}
 	<div class="mx-auto max-w-6xl p-6">
@@ -202,7 +202,7 @@
 			<p class="text-red-800 dark:text-red-300">Error: {clientError}</p>
 			<button
 				onclick={goBack}
-				class="mt-4 flex items-center gap-2 text-gray-600 transition-colors hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
+				class="mt-4 flex items-center gap-2 text-gray-600 transition-colors hover:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200"
 			>
 				<ArrowLeft size={20} />
 				Back to {data.resourceType}
@@ -217,7 +217,7 @@
 			<p class="text-yellow-800 dark:text-yellow-300">Resource not found</p>
 			<button
 				onclick={goBack}
-				class="mt-4 flex items-center gap-2 text-gray-600 transition-colors hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
+				class="mt-4 flex items-center gap-2 text-gray-600 transition-colors hover:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200"
 			>
 				<ArrowLeft size={20} />
 				Back to {data.resourceType}
@@ -231,17 +231,17 @@
 			<div class="flex items-center gap-4">
 				<button
 					onclick={goBack}
-					class="flex items-center gap-2 text-gray-600 transition-colors hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
+					class="flex items-center gap-2 text-gray-600 transition-colors hover:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200"
 				>
 					<ArrowLeft size={20} />
 					Back to {data.resourceType}
 				</button>
 
-				<div class="text-sm text-gray-500 dark:text-slate-500">/</div>
+				<div class="text-sm text-gray-500 dark:text-neutral-500">/</div>
 
 				<div>
-					<h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">{data.name}</h1>
-					<p class="text-sm text-gray-600 capitalize dark:text-slate-400">
+					<h1 class="text-2xl font-bold text-gray-900 dark:text-neutral-100">{data.name}</h1>
+					<p class="text-sm text-gray-600 capitalize dark:text-neutral-400">
 						{resource.kind} in {data.namespace}
 					</p>
 				</div>
@@ -251,7 +251,7 @@
 				{#if isPod}
 					<button
 						onclick={openLogs}
-						class="flex items-center gap-2 rounded-md bg-gray-800 px-4 py-2 text-white transition-colors hover:bg-gray-900"
+						class="flex items-center gap-2 rounded-md bg-neutral-800 px-4 py-2 text-white transition-colors hover:bg-neutral-900"
 					>
 						<ScrollText size={16} />
 						Logs
@@ -278,43 +278,43 @@
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 			<!-- Metadata Panel -->
 			<div class="lg:col-span-1">
-				<div class="rounded-lg bg-white p-6 shadow dark:bg-slate-800">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Metadata</h2>
+				<div class="rounded-lg bg-white p-6 shadow dark:bg-neutral-800">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-neutral-100">Metadata</h2>
 
 					<dl class="space-y-3">
 						<div>
-							<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">Name</dt>
-							<dd class="text-sm text-gray-900 dark:text-slate-200">{resource.metadata.name}</dd>
+							<dt class="text-sm font-medium text-gray-500 dark:text-neutral-400">Name</dt>
+							<dd class="text-sm text-gray-900 dark:text-neutral-200">{resource.metadata.name}</dd>
 						</div>
 
 						<div>
-							<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">Namespace</dt>
-							<dd class="text-sm text-gray-900 dark:text-slate-200">
+							<dt class="text-sm font-medium text-gray-500 dark:text-neutral-400">Namespace</dt>
+							<dd class="text-sm text-gray-900 dark:text-neutral-200">
 								{resource.metadata.namespace || 'N/A'}
 							</dd>
 						</div>
 
 						<div>
-							<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">Kind</dt>
-							<dd class="text-sm text-gray-900 dark:text-slate-200">{resource.kind}</dd>
+							<dt class="text-sm font-medium text-gray-500 dark:text-neutral-400">Kind</dt>
+							<dd class="text-sm text-gray-900 dark:text-neutral-200">{resource.kind}</dd>
 						</div>
 
 						<div>
-							<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">API Version</dt>
-							<dd class="text-sm text-gray-900 dark:text-slate-200">{resource.apiVersion}</dd>
+							<dt class="text-sm font-medium text-gray-500 dark:text-neutral-400">API Version</dt>
+							<dd class="text-sm text-gray-900 dark:text-neutral-200">{resource.apiVersion}</dd>
 						</div>
 
 						<div>
-							<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">Created</dt>
-							<dd class="text-sm text-gray-900 dark:text-slate-200">
+							<dt class="text-sm font-medium text-gray-500 dark:text-neutral-400">Created</dt>
+							<dd class="text-sm text-gray-900 dark:text-neutral-200">
 								{getAge(resource.metadata.creationTimestamp)} ago
 							</dd>
 						</div>
 
 						{#if resource.metadata.uid}
 							<div>
-								<dt class="text-sm font-medium text-gray-500 dark:text-slate-400">UID</dt>
-								<dd class="font-mono text-xs break-all text-gray-900 dark:text-slate-200">
+								<dt class="text-sm font-medium text-gray-500 dark:text-neutral-400">UID</dt>
+								<dd class="font-mono text-xs break-all text-gray-900 dark:text-neutral-200">
 									{resource.metadata.uid}
 								</dd>
 							</div>
@@ -323,7 +323,7 @@
 
 					{#if resource.metadata.labels && Object.keys(resource.metadata.labels).length > 0}
 						<div class="mt-6">
-							<h3 class="mb-2 text-sm font-medium text-gray-500 dark:text-slate-400">Labels</h3>
+							<h3 class="mb-2 text-sm font-medium text-gray-500 dark:text-neutral-400">Labels</h3>
 							<div class="space-y-1">
 								{#each Object.entries(resource.metadata.labels) as [key, value] (key)}
 									<div class="flex items-center gap-2">
@@ -340,14 +340,14 @@
 
 					{#if resource.metadata.annotations && Object.keys(resource.metadata.annotations).length > 0}
 						<div class="mt-6">
-							<h3 class="mb-2 text-sm font-medium text-gray-500 dark:text-slate-400">
+							<h3 class="mb-2 text-sm font-medium text-gray-500 dark:text-neutral-400">
 								Annotations
 							</h3>
 							<div class="max-h-40 space-y-1 overflow-y-auto">
 								{#each Object.entries(resource.metadata.annotations) as [key, value] (key)}
 									<div class="text-xs">
-										<div class="font-medium text-gray-600 dark:text-slate-300">{key}</div>
-										<div class="font-mono break-all text-gray-500 dark:text-slate-400">{value}</div>
+										<div class="font-medium text-gray-600 dark:text-neutral-300">{key}</div>
+										<div class="font-mono break-all text-gray-500 dark:text-neutral-400">{value}</div>
 									</div>
 								{/each}
 							</div>
@@ -360,10 +360,10 @@
 			<div class="space-y-6 lg:col-span-2">
 				<!-- Status Panel (if exists) -->
 				{#if resource.status}
-					<div class="rounded-lg bg-white p-6 shadow dark:bg-slate-800">
-						<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Status</h2>
+					<div class="rounded-lg bg-white p-6 shadow dark:bg-neutral-800">
+						<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-neutral-100">Status</h2>
 						<pre
-							class="max-h-60 overflow-auto rounded bg-gray-50 p-4 text-sm dark:bg-slate-900 dark:text-slate-300">{JSON.stringify(
+							class="max-h-60 overflow-auto rounded bg-gray-50 p-4 text-sm dark:bg-neutral-900 dark:text-neutral-300">{JSON.stringify(
 								resource.status,
 								null,
 								2
@@ -373,12 +373,12 @@
 
 				<!-- Spec Panel (if exists) -->
 				{#if resource.spec}
-					<div class="rounded-lg bg-white p-6 shadow dark:bg-slate-800">
-						<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
+					<div class="rounded-lg bg-white p-6 shadow dark:bg-neutral-800">
+						<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-neutral-100">
 							Specification
 						</h2>
 						<pre
-							class="max-h-80 overflow-auto rounded bg-gray-50 p-4 text-sm dark:bg-slate-900 dark:text-slate-300">{JSON.stringify(
+							class="max-h-80 overflow-auto rounded bg-gray-50 p-4 text-sm dark:bg-neutral-900 dark:text-neutral-300">{JSON.stringify(
 								resource.spec,
 								null,
 								2
@@ -387,10 +387,10 @@
 				{/if}
 
 				<!-- Raw YAML -->
-				<div class="rounded-lg bg-white p-6 shadow dark:bg-slate-800">
-					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Raw YAML</h2>
+				<div class="rounded-lg bg-white p-6 shadow dark:bg-neutral-800">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-neutral-100">Raw YAML</h2>
 					<pre
-						class="max-h-96 overflow-auto rounded bg-gray-900 p-4 text-sm text-green-400">{JSON.stringify(
+						class="max-h-96 overflow-auto rounded bg-neutral-900 p-4 text-sm text-green-400">{JSON.stringify(
 							resource,
 							null,
 							2

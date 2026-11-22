@@ -181,28 +181,28 @@
 
 <div class="mb-3">
 	<div class="mb-1 flex items-center justify-between">
-		<label for="cluster-select" class="flex items-center gap-1.5 text-xs text-gray-400">
+		<label for="cluster-select" class="flex items-center gap-1.5 text-xs text-neutral-400">
 			<Server size={12} class="text-cyan-400" />
 			Cluster:
 		</label>
 		<div class="flex items-center gap-1">
 			<button
 				onclick={refreshClusters}
-				class="rounded p-1 transition-colors hover:bg-gray-700"
+				class="rounded p-1 transition-colors hover:bg-neutral-700"
 				title="Refresh cluster list"
 				disabled={$clusterStore.loading}
 			>
 				<RefreshCw
 					size={12}
-					class="text-gray-500 hover:text-gray-300 {$clusterStore.loading ? 'animate-spin' : ''}"
+					class="text-neutral-500 hover:text-neutral-300 {$clusterStore.loading ? 'animate-spin' : ''}"
 				/>
 			</button>
 			<button
 				onclick={openAddClusterModal}
-				class="rounded p-1 transition-colors hover:bg-gray-700"
+				class="rounded p-1 transition-colors hover:bg-neutral-700"
 				title="Add cluster"
 			>
-				<Plus size={12} class="text-gray-500 hover:text-gray-300" />
+				<Plus size={12} class="text-neutral-500 hover:text-neutral-300" />
 			</button>
 		</div>
 	</div>
@@ -222,7 +222,7 @@
 				value={getCurrentClusterId()}
 				onchange={handleClusterChange}
 				disabled={clusterSwitching || $clusterStore.loading}
-				class="w-full rounded border border-gray-600 bg-gray-800 px-2 py-1.5 text-xs text-gray-300 focus:border-cyan-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+				class="w-full rounded border border-neutral-600 bg-neutral-800 px-2 py-1.5 text-xs text-neutral-300 focus:border-cyan-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				{#each allClusters as cluster (cluster.id)}
 					<option value={cluster.id}>
@@ -241,11 +241,11 @@
 				<div class="mt-1 flex flex-wrap gap-1">
 					{#each $clusterStore.customClusters as customCluster (customCluster.id)}
 						<div
-							class="flex items-center overflow-hidden rounded border border-gray-600 bg-gray-800"
+							class="flex items-center overflow-hidden rounded border border-neutral-600 bg-neutral-800"
 						>
 							<button
 								onclick={() => openEditClusterModal(customCluster)}
-								class="flex items-center gap-1 px-2 py-0.5 text-xs transition-colors hover:bg-gray-700"
+								class="flex items-center gap-1 px-2 py-0.5 text-xs transition-colors hover:bg-neutral-700"
 								title="Edit {customCluster.name}"
 							>
 								<Edit2 size={10} />
@@ -253,7 +253,7 @@
 							</button>
 							<button
 								onclick={() => deleteCluster(customCluster)}
-								class="border-l border-gray-600 px-1.5 py-0.5 text-xs text-gray-400 transition-colors hover:bg-red-900/50 hover:text-red-400"
+								class="border-l border-neutral-600 px-1.5 py-0.5 text-xs text-neutral-400 transition-colors hover:bg-red-900/50 hover:text-red-400"
 								title="Delete {customCluster.name}"
 							>
 								<Trash2 size={10} />
@@ -264,12 +264,12 @@
 			{/if}
 		</div>
 	{:else if $clusterStore.loading}
-		<div class="flex items-center gap-1.5 py-1 text-xs text-gray-500">
+		<div class="flex items-center gap-1.5 py-1 text-xs text-neutral-500">
 			<RefreshCw size={12} class="animate-spin" />
 			Loading clusters...
 		</div>
 	{:else}
-		<div class="mb-1 py-1 text-xs text-gray-500">No clusters found</div>
+		<div class="mb-1 py-1 text-xs text-neutral-500">No clusters found</div>
 		<button
 			onclick={openAddClusterModal}
 			class="flex w-full items-center justify-center gap-1 rounded bg-cyan-600 px-2 py-1.5 text-xs text-white transition-colors hover:bg-cyan-700"
@@ -291,7 +291,7 @@
 		onkeydown={(e) => e.key === 'Escape' && closeClusterModal()}
 	>
 		<div
-			class="mx-4 w-full max-w-md rounded-lg border border-gray-600 bg-gray-800 p-6 text-gray-100 shadow-xl"
+			class="mx-4 w-full max-w-md rounded-lg border border-neutral-600 bg-neutral-800 p-6 text-neutral-100 shadow-xl"
 		>
 			<div class="mb-4 flex items-center justify-between">
 				<h2 class="text-lg font-semibold">
@@ -299,7 +299,7 @@
 				</h2>
 				<button
 					onclick={closeClusterModal}
-					class="rounded p-1 transition-colors hover:bg-gray-700"
+					class="rounded p-1 transition-colors hover:bg-neutral-700"
 					title="Close"
 				>
 					<X size={18} />
@@ -323,7 +323,7 @@
 				class="space-y-4"
 			>
 				<div>
-					<label for="cluster-server" class="mb-1 block text-xs text-gray-400">
+					<label for="cluster-server" class="mb-1 block text-xs text-neutral-400">
 						Server Address:
 					</label>
 					<input
@@ -332,16 +332,16 @@
 						bind:value={clusterServer}
 						placeholder="kubernetes.example.com or https://kubernetes.example.com:6443"
 						disabled={clusterModalLoading}
-						class="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-gray-100 focus:border-cyan-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						class="w-full rounded border border-neutral-600 bg-neutral-700 px-3 py-2 text-sm text-neutral-100 focus:border-cyan-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 						required
 					/>
-					<p class="mt-1 text-xs text-gray-500">
+					<p class="mt-1 text-xs text-neutral-500">
 						Enter hostname/IP (defaults to port 6443) or paste full URL from kubeconfig
 					</p>
 				</div>
 
 				<div>
-					<label for="cluster-token" class="mb-1 block text-xs text-gray-400">
+					<label for="cluster-token" class="mb-1 block text-xs text-neutral-400">
 						Bearer Token:
 					</label>
 					<input
@@ -350,7 +350,7 @@
 						bind:value={clusterToken}
 						placeholder="Enter your Kubernetes bearer token"
 						disabled={clusterModalLoading}
-						class="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-gray-100 focus:border-cyan-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						class="w-full rounded border border-neutral-600 bg-neutral-700 px-3 py-2 text-sm text-neutral-100 focus:border-cyan-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 						required
 					/>
 				</div>
@@ -361,9 +361,9 @@
 						type="checkbox"
 						bind:checked={clusterSkipTLS}
 						disabled={clusterModalLoading}
-						class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+						class="h-4 w-4 rounded border-neutral-600 bg-neutral-700 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
 					/>
-					<label for="cluster-skip-tls" class="text-xs text-gray-400">
+					<label for="cluster-skip-tls" class="text-xs text-neutral-400">
 						Skip TLS certificate verification
 					</label>
 				</div>
@@ -385,7 +385,7 @@
 						type="button"
 						onclick={closeClusterModal}
 						disabled={clusterModalLoading}
-						class="rounded bg-gray-700 px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+						class="rounded bg-neutral-700 px-4 py-2 text-sm text-neutral-300 transition-colors hover:bg-neutral-600 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						Cancel
 					</button>

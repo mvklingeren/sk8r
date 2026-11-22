@@ -68,10 +68,10 @@
 	<div class="metrics-panel {className}">
 		{#if loading}
 			<div
-				class="flex items-center justify-center gap-4 rounded-lg bg-gray-50 p-12 dark:bg-slate-800"
+				class="flex items-center justify-center gap-4 rounded-lg bg-gray-50 p-12 dark:bg-neutral-800"
 			>
 				<LoaderCircle class="animate-spin text-blue-500" size={32} />
-				<span class="text-gray-600 dark:text-slate-300">Loading metrics...</span>
+				<span class="text-gray-600 dark:text-neutral-300">Loading metrics...</span>
 			</div>
 		{:else if error}
 			<div class="my-4">
@@ -97,7 +97,7 @@
 				{#each charts as chart (chart.id)}
 					{@const chartData = metricsData.get(chart.id) || []}
 					<div
-						class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+						class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800"
 					>
 						<MetricsChart config={chart} data={chartData} />
 					</div>

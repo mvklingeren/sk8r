@@ -272,8 +272,8 @@
 	<!-- Header -->
 	<div class="mb-6 flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">Cluster Dashboard</h1>
-			<p class="mt-1 text-sm text-gray-500 dark:text-slate-400">
+			<h1 class="text-2xl font-bold text-gray-900 dark:text-neutral-100">Cluster Dashboard</h1>
+			<p class="mt-1 text-sm text-gray-500 dark:text-neutral-400">
 				Last updated: {lastRefresh.toLocaleTimeString()} · (refreshing in {countdownSeconds}s)
 			</p>
 		</div>
@@ -282,7 +282,7 @@
 			<!-- Refresh Button -->
 			<button
 				onclick={() => refreshAll()}
-				class="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-white transition-colors hover:bg-gray-800 dark:bg-slate-600 dark:hover:bg-slate-500"
+				class="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-white transition-colors hover:bg-gray-800 dark:bg-neutral-600 dark:hover:bg-neutral-500"
 			>
 				<RefreshCw size={16} />
 			</button>
@@ -301,15 +301,15 @@
 		{#each config.charts as chart (chart.id)}
 			{@const data = chartData.get(chart.id) || []}
 			<div
-				class="chart-card rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+				class="chart-card rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800"
 			>
 				{#if chartsLoading && data.length === 0}
 					<div class="flex h-[200px] items-center justify-center">
-						<LoaderCircle size={32} class="animate-spin text-gray-400 dark:text-slate-500" />
+						<LoaderCircle size={32} class="animate-spin text-gray-400 dark:text-neutral-500" />
 					</div>
 				{:else if data.length === 0}
 					<div
-						class="flex h-[200px] flex-col items-center justify-center text-gray-400 dark:text-slate-500"
+						class="flex h-[200px] flex-col items-center justify-center text-gray-400 dark:text-neutral-500"
 					>
 						<Activity size={32} class="mb-2 opacity-50" />
 						<p class="text-sm">No data available</p>

@@ -88,33 +88,33 @@
 
 <button
 	onclick={() => card.link && goto(card.link)}
-	class="dashboard-card group cursor-pointer rounded-lg border border-gray-200 bg-gray-50 p-3 text-left transition-all hover:scale-105 hover:shadow-lg dark:border-gray-700 dark:bg-gray-900/30"
+	class="dashboard-card group cursor-pointer rounded-lg border border-gray-200 bg-gray-50 p-3 text-left transition-all hover:scale-105 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/30"
 	data-color={card.color}
 >
 	<div class="flex items-start justify-between gap-3">
 		<div class="flex min-w-0 flex-1 items-start gap-3">
-			<div class="flex-shrink-0 rounded-md bg-white/60 p-1.5 dark:bg-slate-800/60">
-				<Icon size={16} class="group-hover-icon text-gray-500 dark:text-gray-400" />
+			<div class="flex-shrink-0 rounded-md bg-white/60 p-1.5 dark:bg-neutral-800/60">
+				<Icon size={16} class="group-hover-icon text-gray-500 dark:text-neutral-400" />
 			</div>
 
 			<div class="min-w-0 flex-1 space-y-0.5">
 				<p
-					class="truncate text-[10px] font-medium tracking-wide text-gray-500 uppercase dark:text-slate-400"
+					class="truncate text-[10px] font-medium tracking-wide text-gray-500 uppercase dark:text-neutral-400"
 				>
 					{card.title}
 				</p>
 				{#if data.loading}
-					<div class="h-6 w-16 animate-pulse rounded bg-gray-200 dark:bg-slate-600"></div>
+					<div class="h-6 w-16 animate-pulse rounded bg-gray-200 dark:bg-neutral-600"></div>
 				{:else if data.error}
 					<p class="h-6 text-xl leading-6 font-bold text-red-500">Error</p>
 				{:else}
 					<p
-						class="group-hover-text h-6 truncate text-xl leading-6 font-bold text-gray-900 dark:text-gray-100"
+						class="group-hover-text h-6 truncate text-xl leading-6 font-bold text-gray-900 dark:text-neutral-100"
 					>
 						{formatValue(data.value, card.format)}
 					</p>
 				{/if}
-				<p class="h-3 truncate text-[10px] text-gray-500 dark:text-slate-400">
+				<p class="h-3 truncate text-[10px] text-gray-500 dark:text-neutral-400">
 					{statusIndicator && !data.loading ? statusIndicator.text : ''}
 				</p>
 			</div>
@@ -122,7 +122,7 @@
 
 		<div class="flex-shrink-0">
 			{#if data.loading}
-				<LoaderCircle size={14} class="animate-spin text-gray-400 dark:text-slate-500" />
+				<LoaderCircle size={14} class="animate-spin text-gray-400 dark:text-neutral-500" />
 			{:else if statusIndicator}
 				{@const StatusIcon = statusIndicator.icon}
 				<StatusIcon size={14} class={statusIndicator.color} />

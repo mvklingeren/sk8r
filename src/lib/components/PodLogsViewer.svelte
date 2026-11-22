@@ -164,13 +164,13 @@
 
 <!-- Modal -->
 <div
-	class="fixed inset-4 z-50 flex flex-col overflow-hidden rounded-xl bg-gray-900 shadow-2xl md:inset-8 lg:inset-12"
+	class="fixed inset-4 z-50 flex flex-col overflow-hidden rounded-xl bg-neutral-900 shadow-2xl md:inset-8 lg:inset-12"
 >
 	<!-- Header -->
-	<div class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3">
+	<div class="flex items-center justify-between border-b border-neutral-700 bg-neutral-800 px-4 py-3">
 		<div class="flex items-center gap-4">
 			<h2 class="flex items-center gap-2 text-lg font-semibold text-white">
-				<span class="h-2 w-2 rounded-full {isConnected ? 'bg-green-400' : 'bg-gray-500'}"></span>
+				<span class="h-2 w-2 rounded-full {isConnected ? 'bg-green-400' : 'bg-neutral-500'}"></span>
 				Pod Logs: {podName}
 			</h2>
 
@@ -179,7 +179,7 @@
 					<select
 						value={selectedContainer}
 						onchange={handleContainerChange}
-						class="appearance-none rounded border border-gray-600 bg-gray-700 px-3 py-1.5 pr-8 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
+						class="appearance-none rounded border border-neutral-600 bg-neutral-700 px-3 py-1.5 pr-8 text-sm text-neutral-200 focus:border-blue-500 focus:outline-none"
 					>
 						{#each containers as container (container)}
 							<option value={container}>{container}</option>
@@ -187,11 +187,11 @@
 					</select>
 					<ChevronDown
 						size={14}
-						class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-gray-400"
+						class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-neutral-400"
 					/>
 				</div>
 			{:else if selectedContainer}
-				<span class="text-sm text-gray-400">Container: {selectedContainer}</span>
+				<span class="text-sm text-neutral-400">Container: {selectedContainer}</span>
 			{/if}
 		</div>
 
@@ -200,7 +200,7 @@
 			<select
 				value={tailLines}
 				onchange={handleTailLinesChange}
-				class="appearance-none rounded border border-gray-600 bg-gray-700 px-3 py-1.5 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
+				class="appearance-none rounded border border-neutral-600 bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 focus:border-blue-500 focus:outline-none"
 			>
 				{#each tailOptions as option (option.value)}
 					<option value={option.value}>{option.label}</option>
@@ -215,7 +215,7 @@
 				}}
 				class="rounded border px-3 py-1.5 text-sm transition-colors {timestamps
 					? 'border-blue-500 bg-blue-600 text-white'
-					: 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600'}"
+					: 'border-neutral-600 bg-neutral-700 text-neutral-300 hover:bg-neutral-600'}"
 				title="Show timestamps"
 			>
 				Time
@@ -226,7 +226,7 @@
 				onclick={toggleAutoScroll}
 				class="rounded border p-1.5 transition-colors {autoScroll
 					? 'border-blue-500 bg-blue-600 text-white'
-					: 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600'}"
+					: 'border-neutral-600 bg-neutral-700 text-neutral-300 hover:bg-neutral-600'}"
 				title={autoScroll ? 'Auto-scroll enabled' : 'Auto-scroll disabled'}
 			>
 				{#if autoScroll}
@@ -239,7 +239,7 @@
 			<!-- Refresh -->
 			<button
 				onclick={refresh}
-				class="rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:bg-gray-600"
+				class="rounded border border-neutral-600 bg-neutral-700 p-1.5 text-neutral-300 transition-colors hover:bg-neutral-600"
 				title="Refresh logs"
 				disabled={isLoading}
 			>
@@ -249,7 +249,7 @@
 			<!-- Clear -->
 			<button
 				onclick={clearLogs}
-				class="rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:bg-gray-600"
+				class="rounded border border-neutral-600 bg-neutral-700 p-1.5 text-neutral-300 transition-colors hover:bg-neutral-600"
 				title="Clear logs"
 			>
 				<Trash2 size={16} />
@@ -258,7 +258,7 @@
 			<!-- Download -->
 			<button
 				onclick={downloadLogs}
-				class="rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:bg-gray-600"
+				class="rounded border border-neutral-600 bg-neutral-700 p-1.5 text-neutral-300 transition-colors hover:bg-neutral-600"
 				title="Download logs"
 				disabled={logs.length === 0}
 			>
@@ -268,7 +268,7 @@
 			<!-- Close -->
 			<button
 				onclick={onClose}
-				class="ml-2 rounded border border-gray-600 bg-gray-700 p-1.5 text-gray-300 transition-colors hover:border-red-500 hover:bg-red-600"
+				class="ml-2 rounded border border-neutral-600 bg-neutral-700 p-1.5 text-neutral-300 transition-colors hover:border-red-500 hover:bg-red-600"
 				title="Close (Esc)"
 			>
 				<X size={16} />
@@ -279,7 +279,7 @@
 	<!-- Log content -->
 	<div bind:this={logContainer} class="flex-1 overflow-auto p-4 font-mono text-sm leading-relaxed">
 		{#if isLoading && logs.length === 0}
-			<div class="flex h-full items-center justify-center text-gray-400">
+			<div class="flex h-full items-center justify-center text-neutral-400">
 				<RefreshCw size={24} class="mr-2 animate-spin" />
 				Connecting to pod logs...
 			</div>
@@ -288,12 +288,12 @@
 				<span class="rounded bg-red-900/30 px-4 py-2">{error}</span>
 			</div>
 		{:else if logs.length === 0}
-			<div class="flex h-full items-center justify-center text-gray-500">No logs available</div>
+			<div class="flex h-full items-center justify-center text-neutral-500">No logs available</div>
 		{:else}
 			{#each logs as line, i (i)}
-				<div class="log-line -mx-2 rounded px-2 hover:bg-gray-800/50">
-					<span class="mr-4 text-gray-600 select-none">{String(i + 1).padStart(4, ' ')}</span>
-					<span class="break-all whitespace-pre-wrap text-gray-200">{line}</span>
+				<div class="log-line -mx-2 rounded px-2 hover:bg-neutral-800/50">
+					<span class="mr-4 text-neutral-600 select-none">{String(i + 1).padStart(4, ' ')}</span>
+					<span class="break-all whitespace-pre-wrap text-neutral-200">{line}</span>
 				</div>
 			{/each}
 		{/if}
@@ -301,7 +301,7 @@
 
 	<!-- Footer status -->
 	<div
-		class="flex items-center justify-between border-t border-gray-700 bg-gray-800 px-4 py-2 text-xs text-gray-400"
+		class="flex items-center justify-between border-t border-neutral-700 bg-neutral-800 px-4 py-2 text-xs text-neutral-400"
 	>
 		<span>
 			{logs.length} lines
@@ -310,7 +310,7 @@
 			{/if}
 		</span>
 		<span>
-			Press <kbd class="rounded bg-gray-700 px-1.5 py-0.5 text-gray-300">Esc</kbd> to close
+			Press <kbd class="rounded bg-neutral-700 px-1.5 py-0.5 text-neutral-300">Esc</kbd> to close
 		</span>
 	</div>
 </div>

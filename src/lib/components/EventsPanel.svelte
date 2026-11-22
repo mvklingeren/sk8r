@@ -218,13 +218,13 @@
 </script>
 
 <div
-	class="overflow-hidden rounded-lg border border-gray-700 bg-gray-900 {fillHeight
+	class="overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900 {fillHeight
 		? 'flex h-full flex-col'
 		: ''}"
 >
 	<!-- Header -->
 	<div
-		class="flex cursor-pointer items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3 select-none"
+		class="flex cursor-pointer items-center justify-between border-b border-neutral-700 bg-neutral-800 px-4 py-3 select-none"
 		onclick={() => {
 			isCollapsed = !isCollapsed;
 			onCollapseChange?.(isCollapsed);
@@ -244,16 +244,16 @@
 			<h3 class="text-sm font-semibold text-white">
 				Events Stream
 				{#if filterKind && filterName}
-					<span class="ml-2 font-normal text-gray-400">
+					<span class="ml-2 font-normal text-neutral-400">
 						({filterKind}/{filterName})
 					</span>
 				{/if}
 			</h3>
 			<div class="flex items-center gap-2">
 				<span
-					class="h-2 w-2 rounded-full {isConnected ? 'animate-pulse bg-green-400' : 'bg-gray-500'}"
+					class="h-2 w-2 rounded-full {isConnected ? 'animate-pulse bg-green-400' : 'bg-neutral-500'}"
 				></span>
-				<span class="text-xs text-gray-400">
+				<span class="text-xs text-neutral-400">
 					{events.length} events
 				</span>
 				{#if warningCount > 0}
@@ -275,8 +275,8 @@
 							filterType = 'all';
 						}}
 						class="rounded px-2 py-1 text-xs transition-colors {filterType === 'all'
-							? 'bg-gray-600 text-white'
-							: 'text-gray-400 hover:text-gray-200'}"
+							? 'bg-neutral-600 text-white'
+							: 'text-neutral-400 hover:text-neutral-200'}"
 					>
 						All
 					</button>
@@ -288,7 +288,7 @@
 						class="flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors {filterType ===
 						'Normal'
 							? 'bg-green-600 text-white'
-							: 'text-gray-400 hover:text-gray-200'}"
+							: 'text-neutral-400 hover:text-neutral-200'}"
 					>
 						<CheckCircle size={12} />
 						{normalCount}
@@ -301,7 +301,7 @@
 						class="flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors {filterType ===
 						'Warning'
 							? 'bg-yellow-600 text-white'
-							: 'text-gray-400 hover:text-gray-200'}"
+							: 'text-neutral-400 hover:text-neutral-200'}"
 					>
 						<AlertTriangle size={12} />
 						{warningCount}
@@ -316,7 +316,7 @@
 					}}
 					class="rounded p-1.5 transition-colors {autoScroll
 						? 'bg-blue-600 text-white'
-						: 'bg-gray-700 text-gray-400 hover:text-gray-200'}"
+						: 'bg-neutral-700 text-neutral-400 hover:text-neutral-200'}"
 					title={autoScroll ? 'Auto-scroll enabled' : 'Auto-scroll disabled'}
 				>
 					{#if autoScroll}
@@ -334,7 +334,7 @@
 					}}
 					class="rounded p-1.5 transition-colors {isPaused
 						? 'bg-yellow-600 text-white'
-						: 'bg-gray-700 text-gray-400 hover:text-gray-200'}"
+						: 'bg-neutral-700 text-neutral-400 hover:text-neutral-200'}"
 					title={isPaused ? 'Resume' : 'Pause'}
 				>
 					{#if isPaused}
@@ -350,7 +350,7 @@
 						e.stopPropagation();
 						refresh();
 					}}
-					class="rounded bg-gray-700 p-1.5 text-gray-400 transition-colors hover:text-gray-200"
+					class="rounded bg-neutral-700 p-1.5 text-neutral-400 transition-colors hover:text-neutral-200"
 					title="Refresh"
 					disabled={isLoading}
 				>
@@ -363,7 +363,7 @@
 						e.stopPropagation();
 						clearEvents();
 					}}
-					class="rounded bg-gray-700 p-1.5 text-gray-400 transition-colors hover:text-gray-200"
+					class="rounded bg-neutral-700 p-1.5 text-neutral-400 transition-colors hover:text-neutral-200"
 					title="Clear events"
 				>
 					<Trash2 size={14} />
@@ -375,7 +375,7 @@
 							e.stopPropagation();
 							onClose();
 						}}
-						class="ml-1 rounded bg-gray-700 p-1.5 text-gray-400 transition-colors hover:text-red-400"
+						class="ml-1 rounded bg-neutral-700 p-1.5 text-neutral-400 transition-colors hover:text-red-400"
 						title="Close"
 					>
 						<X size={14} />
@@ -384,9 +384,9 @@
 			{/if}
 
 			{#if isCollapsed}
-				<ChevronDown size={18} class="text-gray-400" />
+				<ChevronDown size={18} class="text-neutral-400" />
 			{:else}
-				<ChevronUp size={18} class="text-gray-400" />
+				<ChevronUp size={18} class="text-neutral-400" />
 			{/if}
 		</div>
 	</div>
@@ -402,21 +402,21 @@
 					{error}
 				</div>
 			{:else if isLoading && events.length === 0}
-				<div class="flex items-center justify-center gap-2 p-4 text-center text-sm text-gray-400">
+				<div class="flex items-center justify-center gap-2 p-4 text-center text-sm text-neutral-400">
 					<RefreshCw size={14} class="animate-spin" />
 					Connecting to events stream...
 				</div>
 			{:else if filteredEvents.length === 0}
-				<div class="p-4 text-center text-sm text-gray-500">
+				<div class="p-4 text-center text-sm text-neutral-500">
 					No events
 					{#if filterType !== 'all'}
 						matching filter
 					{/if}
 				</div>
 			{:else}
-				<div class="divide-y divide-gray-800">
+				<div class="divide-y divide-neutral-800">
 					{#each filteredEvents as event (event.metadata.uid + event.lastTimestamp)}
-						<div class="px-4 py-2 text-sm transition-colors hover:bg-gray-800/50">
+						<div class="px-4 py-2 text-sm transition-colors hover:bg-neutral-800/50">
 							<div class="flex items-start gap-3">
 								<!-- Type indicator -->
 								<div class="mt-0.5 flex-shrink-0">
@@ -431,20 +431,20 @@
 								<div class="min-w-0 flex-1">
 									<div class="flex flex-wrap items-center gap-2">
 										<span class="font-medium text-white">{event.reason}</span>
-										<span class="rounded bg-gray-700 px-1.5 py-0.5 text-xs text-gray-300">
+										<span class="rounded bg-neutral-700 px-1.5 py-0.5 text-xs text-neutral-300">
 											{event.involvedObject.kind}/{event.involvedObject.name}
 										</span>
 										{#if event.count > 1}
-											<span class="text-xs text-gray-500">×{event.count}</span>
+											<span class="text-xs text-neutral-500">×{event.count}</span>
 										{/if}
 									</div>
-									<p class="mt-0.5 text-xs break-words text-gray-400">{event.message}</p>
+									<p class="mt-0.5 text-xs break-words text-neutral-400">{event.message}</p>
 								</div>
 
 								<!-- Timestamp -->
-								<div class="flex-shrink-0 text-right text-xs text-gray-500">
+								<div class="flex-shrink-0 text-right text-xs text-neutral-500">
 									<div>{formatTimestamp(event.lastTimestamp)}</div>
-									<div class="text-gray-600">{getTimeAgo(event.lastTimestamp)}</div>
+									<div class="text-neutral-600">{getTimeAgo(event.lastTimestamp)}</div>
 								</div>
 							</div>
 						</div>
@@ -455,7 +455,7 @@
 
 		<!-- Footer -->
 		<div
-			class="flex items-center justify-between border-t border-gray-700 bg-gray-800 px-4 py-2 text-xs text-gray-500"
+			class="flex items-center justify-between border-t border-neutral-700 bg-neutral-800 px-4 py-2 text-xs text-neutral-500"
 		>
 			<span>
 				{filteredEvents.length} of {events.length} events
