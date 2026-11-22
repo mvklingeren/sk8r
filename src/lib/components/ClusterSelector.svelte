@@ -194,7 +194,9 @@
 			>
 				<RefreshCw
 					size={12}
-					class="text-neutral-500 hover:text-neutral-300 {$clusterStore.loading ? 'animate-spin' : ''}"
+					class="text-neutral-500 hover:text-neutral-300 {$clusterStore.loading
+						? 'animate-spin'
+						: ''}"
 				/>
 			</button>
 			<button

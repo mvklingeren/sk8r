@@ -396,7 +396,9 @@
 						</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-200 bg-white dark:divide-neutral-700 dark:bg-neutral-900">
+				<tbody
+					class="divide-y divide-gray-200 bg-white dark:divide-neutral-700 dark:bg-neutral-900"
+				>
 					{#each filteredResources as resource (`${resource.metadata.namespace}/${resource.metadata.name}`)}
 						<tr class="transition-colors hover:bg-gray-50 dark:hover:bg-neutral-700">
 							{#each columnWidths.columns as column (column.key)}

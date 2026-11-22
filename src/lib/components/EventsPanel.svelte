@@ -251,7 +251,9 @@
 			</h3>
 			<div class="flex items-center gap-2">
 				<span
-					class="h-2 w-2 rounded-full {isConnected ? 'animate-pulse bg-green-400' : 'bg-neutral-500'}"
+					class="h-2 w-2 rounded-full {isConnected
+						? 'animate-pulse bg-green-400'
+						: 'bg-neutral-500'}"
 				></span>
 				<span class="text-xs text-neutral-400">
 					{events.length} events
@@ -402,7 +404,9 @@
 					{error}
 				</div>
 			{:else if isLoading && events.length === 0}
-				<div class="flex items-center justify-center gap-2 p-4 text-center text-sm text-neutral-400">
+				<div
+					class="flex items-center justify-center gap-2 p-4 text-center text-sm text-neutral-400"
+				>
 					<RefreshCw size={14} class="animate-spin" />
 					Connecting to events stream...
 				</div>

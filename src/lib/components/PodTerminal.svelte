@@ -236,7 +236,9 @@
 		: 'inset-4 md:inset-8 lg:inset-12'}"
 >
 	<!-- Header -->
-	<div class="flex items-center justify-between border-b border-neutral-700 bg-neutral-800 px-4 py-3">
+	<div
+		class="flex items-center justify-between border-b border-neutral-700 bg-neutral-800 px-4 py-3"
+	>
 		<div class="flex items-center gap-4">
 			<h2 class="flex items-center gap-2 text-lg font-semibold text-white">
 				<span
