@@ -35,9 +35,12 @@ body {
 		color 0.2s ease;
 }
 
-h2,
-h3,
-h4,
-h5 {
-	color: var(--color-text-primary);
+/* Base layer so a heading's own text-* utility still wins */
+@layer base {
+	h2,
+	h3,
+	h4,
+	h5 {
+		color: var(--color-text-primary);
+	}
 }

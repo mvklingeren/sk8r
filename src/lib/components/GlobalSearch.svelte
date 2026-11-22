@@ -183,7 +183,7 @@
 				bind:value={searchQuery}
 				onkeydown={handleKeydown}
 				placeholder="Search all resources..."
-				class="flex-1 text-lg outline-none"
+				class="flex-1 text-lg text-gray-900 outline-none"
 			/>
 			<div class="ml-3 flex items-center gap-1 text-xs text-gray-500">
 				<Command size={12} />
