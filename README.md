@@ -1,15 +1,46 @@
-# sk8r - A Kubernetes Dashboard clone
+# sk8r
 
-sk8r is a modern, open-source dashboard for your Kubernetes cluster. It provides a user-friendly interface to visualize and manage your cluster resources, view logs, and monitor metrics.
+**A Kubernetes dashboard you'll actually want to keep open.**
 
-![Sk8tes Dashboard](docs/images/screenshot.png)
+sk8r covers what you'd expect from the classic Kubernetes Dashboard: browse, edit and delete resources, read logs, open a shell in a pod. It also gives you a Prometheus-powered cluster overview, a live events stream, <kbd>Ctrl</kbd>+<kbd>K</kbd> search across every resource, multi-cluster switching, and a Learning Mode that explains each resource and shows the `kubectl` commands behind it.
 
-## Features
+It ships as one container and installs with one `kubectl apply`.
 
-- **Resource Management:** View, create, and manage Kubernetes resources like Pods, Deployments, Services, etc.
-- **Real-time Logs:** Stream logs from your pods directly in the UI.
-- **Metrics:** Visualize cluster and application metrics with Prometheus integration.
-- **Interactive Pod Shell:** Access a terminal inside your running pods.
+![sk8r cluster overview](docs/images/dashboard.png)
+
+## What you get
+
+- **Cluster overview at a glance.** Health cards for nodes, pods, deployments, namespaces, services and PVCs, plus live charts for CPU, memory, network and disk I/O, container restarts, pod phases, replica health and volume capacity. Pick any window from 5 minutes to 24 hours, or set a custom one.
+- **One click from a row to what you need.** Every pod row opens its logs, a shell, or its events. Edit and delete sit right next to them. The node list shows average CPU and memory charts above the table.
+- **Live events stream.** Cluster events stream in as they happen, with repeat counts and warnings flagged, so a crash-looping pod stands out right away.
+- **Search everything.** Press <kbd>Ctrl</kbd>+<kbd>K</kbd> (<kbd>⌘</kbd>+<kbd>K</kbd> on macOS) and jump to any deployment, service, ingress, pod or config by name, across all namespaces.
+- **Logs and shell in the browser.** Stream pod logs with timestamps, pause, and download. Open a full xterm.js terminal inside any container.
+- **Create and edit as YAML.** Start from templates for common resources (Deployments, StatefulSets, CronJobs, Services, Ingresses, NetworkPolicies, ConfigMaps, Secrets, PVCs and more), with YAML checked as you type. Edit live resources the same way.
+- **Learning Mode.** Every resource type comes with a plain-language explanation, common `kubectl` commands, and a link to the official docs. Includes a step-by-step guide on moving from traditional hosting to Kubernetes. Useful for onboarding a team, and for remembering that one flag.
+- **Multiple clusters.** Add clusters by API URL and token, then switch between them from the sidebar. Credentials are stored in your browser, not on the server.
+- **Custom resources.** Built-in views for Traefik (IngressRoutes, Middlewares, TLS options) and cert-manager (Certificates, Issuers, ClusterIssuers).
+- **Dark and light themes.**
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/nodes.png" alt="Nodes with average CPU and memory charts"><br><sub><b>Nodes</b>: average CPU and memory above the list</sub></td>
+    <td width="50%"><img src="docs/images/events.png" alt="Live events stream with warnings"><br><sub><b>Live events</b>: warnings and repeat counts as they happen</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/logs.png" alt="Streaming pod logs"><br><sub><b>Pod logs</b>: streaming, timestamps, download</sub></td>
+    <td><img src="docs/images/terminal.png" alt="Interactive shell inside a pod"><br><sub><b>Pod terminal</b>: a real shell in the browser</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/search.png" alt="Global search across all resources"><br><sub><b>Global search</b>: <kbd>Ctrl</kbd>+<kbd>K</kbd> to find any resource</sub></td>
+    <td><img src="docs/images/learning.png" alt="Learning Mode explaining Pods with kubectl commands"><br><sub><b>Learning Mode</b>: explanations and kubectl commands</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/create.png" alt="Create a resource from a template"><br><sub><b>Create from templates</b>: YAML checked as you type</sub></td>
+    <td><img src="docs/images/light.png" alt="Light theme"><br><sub><b>Light theme</b>, if that's your thing</sub></td>
+  </tr>
+</table>
 
 ## Quick Start
 
