@@ -50,16 +50,42 @@ export interface ResourceFilter {
 }
 
 /**
- * Fields read from errors thrown by @kubernetes/client-node calls. 1.x throws ApiException
- * (`code`, string `body`); `statusCode`, `response` and an object `body` are pre-1.0 shapes.
+ * HTTP status of an error thrown by @kubernetes/client-node: 1.x ApiException has a numeric
+ * `code`; pre-1.0 used `statusCode` / `response.statusCode`. Undefined for network errors.
  */
-export interface K8sClientError {
-	message?: string;
-	statusCode?: number;
-	response?: { statusCode?: number };
-	body?: string | { message?: string; reason?: string };
+export function k8sErrorStatus(err: unknown): number | undefined {
+	if (typeof err !== 'object' || err === null) return undefined;
+	const e = err as { code?: unknown; statusCode?: unknown; response?: { statusCode?: unknown } };
+	// Node system errors also have `code`, but as a string (ECONNREFUSED), so require a number
+	for (const status of [e.code, e.statusCode, e.response?.statusCode]) {
+		if (typeof status === 'number') return status;
+	}
+	return undefined;
 }
 
-export function isK8sClientError(err: unknown): err is K8sClientError {
-	return typeof err === 'object' && err !== null;
+/**
+ * Readable message for a @kubernetes/client-node error: the API's Status.message when the body
+ * has one (1.x passes it as JSON text), else the error's own message.
+ */
+export function k8sErrorMessage(err: unknown, fallback = 'Unknown error'): string {
+	if (typeof err !== 'object' || err === null) return fallback;
+	const e = err as { body?: unknown; message?: unknown };
+	let body = e.body;
+	if (typeof e.body === 'string') {
+		const text = e.body.trim();
+		try {
+			body = JSON.parse(text);
+		} catch {
+			if (text) return text;
+		}
+	}
+	if (typeof body === 'object' && body !== null) {
+		const { message, reason } = body as { message?: unknown; reason?: unknown };
+		if (typeof message === 'string' && message) return message;
+		if (typeof reason === 'string' && reason) return reason;
+	}
+	if (typeof e.message !== 'string' || !e.message) return fallback;
+	// 1.x ApiException.message is "HTTP-Code: 401\nMessage: Unauthorized\nBody: ...\nHeaders: ..."
+	const short = /^HTTP-Code: (\d+)\nMessage: (.*)$/m.exec(e.message);
+	return short ? `HTTP ${short[1]}: ${short[2]}` : e.message;
 }

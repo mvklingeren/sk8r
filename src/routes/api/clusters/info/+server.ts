@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { CoreV1Api } from '@kubernetes/client-node';
 import { createKubeConfig, isServerAllowed } from '$lib/server/k8sAuth';
-import { isK8sClientError, type K8sClientError } from '$lib/types/k8s';
+import { k8sErrorMessage, k8sErrorStatus } from '$lib/types/k8s';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -50,24 +50,9 @@ export const POST: RequestHandler = async ({ request }) => {
 			});
 		} catch (err) {
 			console.error('Failed to connect to cluster:', err);
-			const apiError: K8sClientError = isK8sClientError(err) ? err : {};
-
-			// Extract detailed error message from Kubernetes API response
-			let errorMessage = 'Invalid token or server URL';
-			if (apiError.body) {
-				if (typeof apiError.body === 'string') {
-					errorMessage = apiError.body;
-				} else if (apiError.body.message) {
-					errorMessage = apiError.body.message;
-				} else if (apiError.body.reason) {
-					errorMessage = apiError.body.reason;
-				}
-			} else if (apiError.message) {
-				errorMessage = apiError.message;
-			}
-
-			// Determine the appropriate status code
-			const statusCode = apiError.statusCode || apiError.response?.statusCode || 401;
+			const errorMessage = k8sErrorMessage(err, 'Invalid token or server URL');
+			// No HTTP status means the API server wasn't reachable (DNS, refused, TLS)
+			const statusCode = k8sErrorStatus(err) ?? 502;
 
 			return json(
 				{

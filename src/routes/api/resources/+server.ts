@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { KubernetesObjectApi } from '@kubernetes/client-node';
 import yaml from 'js-yaml';
 import { getK8sCredentials, unauthorizedResponse, createKubeConfig } from '$lib/server/k8sAuth';
-import { isK8sClientError, type K8sClientError } from '$lib/types/k8s';
+import { k8sErrorMessage, k8sErrorStatus } from '$lib/types/k8s';
 
 interface K8sManifest {
 	apiVersion: string;
@@ -111,9 +111,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					status: 'created'
 				});
 			} catch (err) {
-				const e: K8sClientError = isK8sClientError(err) ? err : {};
-				const errorMessage =
-					(typeof e.body === 'object' && e.body.message) || e.message || 'Unknown error';
+				const errorMessage = k8sErrorMessage(err);
 				errors.push({
 					kind: manifest.kind,
 					name: manifest.metadata.name,
@@ -233,12 +231,10 @@ export const PUT: RequestHandler = async ({ request }) => {
 				}
 			});
 		} catch (err) {
-			const e: K8sClientError = isK8sClientError(err) ? err : {};
-			const errorMessage =
-				(typeof e.body === 'object' && e.body.message) || e.message || 'Unknown error';
+			const errorMessage = k8sErrorMessage(err);
 			return json(
 				{ error: `Failed to update resource: ${errorMessage}` },
-				{ status: e.statusCode || 500 }
+				{ status: k8sErrorStatus(err) || 500 }
 			);
 		}
 	} catch (error) {
@@ -280,12 +276,10 @@ export const DELETE: RequestHandler = async ({ request }) => {
 				message: `${kind} "${name}" deleted successfully`
 			});
 		} catch (err) {
-			const e: K8sClientError = isK8sClientError(err) ? err : {};
-			const errorMessage =
-				(typeof e.body === 'object' && e.body.message) || e.message || 'Unknown error';
+			const errorMessage = k8sErrorMessage(err);
 			return json(
 				{ error: `Failed to delete resource: ${errorMessage}` },
-				{ status: e.statusCode || 500 }
+				{ status: k8sErrorStatus(err) || 500 }
 			);
 		}
 	} catch (error) {
