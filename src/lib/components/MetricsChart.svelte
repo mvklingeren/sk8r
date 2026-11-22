@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import Chart from 'chart.js/auto';
 	import 'chartjs-adapter-date-fns';
-	import type { MetricChartConfig, MetricSeries } from '$lib/types/metricsTypes';
+	import type { MetricChartConfig, MetricSeries } from '#lib/types/metricsTypes.js';
 
 	interface Props {
 		config: MetricChartConfig;

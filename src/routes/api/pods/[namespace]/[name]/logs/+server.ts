@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { Log } from '@kubernetes/client-node';
 import { Writable } from 'stream';
-import { getK8sCredentials, createKubeConfig } from '$lib/server/k8sAuth';
+import { getK8sCredentials, createKubeConfig } from '#lib/server/k8sAuth.js';
 
 export const GET: RequestHandler = async ({ params, url, request }) => {
 	const credentials = getK8sCredentials(request);

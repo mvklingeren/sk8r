@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { K8sApiServiceSimple } from '$lib/services/k8sApiSimple';
-import { getK8sCredentials, unauthorizedResponse } from '$lib/server/k8sAuth';
+import { K8sApiServiceSimple } from '#lib/services/k8sApiSimple.js';
+import { getK8sCredentials, unauthorizedResponse } from '#lib/server/k8sAuth.js';
 import type { V1NodeCondition } from '@kubernetes/client-node';
-import type { K8sResource } from '$lib/types/k8s';
+import type { K8sResource } from '#lib/types/k8s.js';
 
 export interface DashboardStats {
 	nodes: { total: number; ready: number };

@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { apiClient } from '$lib/utils/apiClient';
+import { apiClient } from '#lib/utils/apiClient.js';
 
 export interface NamespaceState {
 	namespaces: string[];

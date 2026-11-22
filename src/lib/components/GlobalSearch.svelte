@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Search, Command, ArrowRight } from 'lucide-svelte';
+	import { Search, Command, ArrowRight } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
-	import { navigation } from '$lib/stores/navigation';
-	import { apiClient } from '$lib/utils/apiClient';
-	import type { K8sResource } from '$lib/types/k8s';
+	import { navigation } from '#lib/stores/navigation.js';
+	import { apiClient } from '#lib/utils/apiClient.js';
+	import type { K8sResource } from '#lib/types/k8s.js';
 
 	interface SearchResult {
 		name: string;

@@ -1,4 +1,4 @@
-import type { NavigationConfig, LearningContent } from '$lib/types/navigationConfig';
+import type { NavigationConfig, LearningContent } from '#lib/types/navigationConfig.js';
 
 // Learning content for each resource type
 export const learningContent: Record<string, LearningContent> = {

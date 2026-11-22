@@ -1,19 +1,19 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
-	import Sidebar from '$lib/components/Sidebar.svelte';
-	import GlobalSearch from '$lib/components/GlobalSearch.svelte';
+	import favicon from '#lib/assets/favicon.svg';
+	import Sidebar from '#lib/components/Sidebar.svelte';
+	import GlobalSearch from '#lib/components/GlobalSearch.svelte';
 	import { onMount } from 'svelte';
-	import { clusterStore } from '$lib/stores/cluster';
-	import { darkMode } from '$lib/stores/darkMode';
+	import { clusterStore } from '#lib/stores/cluster.js';
+	import { darkMode } from '#lib/stores/darkMode.js';
 	import { get } from 'svelte/store';
-	import { browser } from '$app/environment';
-	import { page } from '$app/stores';
+	import { browser } from '$app/env';
+	import { page } from '$app/state';
 
 	let { children } = $props();
 
 	// Check if we're on a patterns page (no padding needed)
-	let isPatternPage = $derived($page.url.pathname.startsWith('/patterns'));
+	let isPatternPage = $derived(page.url.pathname.startsWith('/patterns'));
 	let searchOpen = $state(false);
 
 	onMount(() => {

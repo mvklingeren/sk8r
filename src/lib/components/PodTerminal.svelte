@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { X, RefreshCw, ChevronDown, Maximize2, Minimize2 } from 'lucide-svelte';
-	import { authToken } from '$lib/stores/auth';
+	import { X, RefreshCw, ChevronDown, Maximize2, Minimize2 } from '@lucide/svelte';
+	import { authToken } from '#lib/stores/auth.js';
 
 	interface Props {
 		podName: string;
@@ -12,6 +12,8 @@
 
 	let { podName, namespace, containers, onClose }: Props = $props();
 
+	// Intentionally only seeds the user's selection
+	// svelte-ignore state_referenced_locally
 	let selectedContainer = $state(containers[0] || '');
 	let isConnected = $state(false);
 	let isConnecting = $state(false);
@@ -349,9 +351,9 @@
 			{/if}
 		</span>
 		<span>
-			Press <kbd class="rounded bg-neutral-700 px-1.5 py-0.5 text-neutral-300"
-				>{isFullscreen ? 'Esc' : 'Esc'}</kbd
-			>
+			Press <kbd class="rounded bg-neutral-700 px-1.5 py-0.5 text-neutral-300">
+				{isFullscreen ? 'Esc' : 'Esc'}
+			</kbd>
 			to {isFullscreen ? 'exit fullscreen' : 'close'}
 		</span>
 	</div>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { AlertCircle, Check, Copy, CheckCheck } from 'lucide-svelte';
+	import { AlertCircle, Check, Copy, CheckCheck } from '@lucide/svelte';
 
 	interface Props {
 		value: string;
@@ -235,8 +235,7 @@
 					spellcheck="false"
 					autocomplete="off"
 					{...{ autocorrect: 'off' }}
-					autocapitalize="off"
-				></textarea>
+					autocapitalize="off"></textarea>
 			{/if}
 		</div>
 	</div>

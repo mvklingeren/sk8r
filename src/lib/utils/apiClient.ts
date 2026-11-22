@@ -1,4 +1,4 @@
-import { authToken } from '$lib/stores/auth';
+import { authToken } from '#lib/stores/auth.js';
 
 type Fetch = typeof fetch;
 

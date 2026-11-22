@@ -1,8 +1,8 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { MetricsService } from '$lib/services/metricsService';
-import { K8sApiServiceSimple } from '$lib/services/k8sApiSimple';
-import { getK8sCredentials, unauthorizedResponse } from '$lib/server/k8sAuth';
+import { MetricsService } from '#lib/services/metricsService.js';
+import { K8sApiServiceSimple } from '#lib/services/k8sApiSimple.js';
+import { getK8sCredentials, unauthorizedResponse } from '#lib/server/k8sAuth.js';
 
 export const GET: RequestHandler = async ({ request }) => {
 	const credentials = getK8sCredentials(request);

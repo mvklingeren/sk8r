@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { JsonValue } from '$lib/types/k8s';
+	import type { JsonValue } from '#lib/types/k8s.js';
 	import { quintOut } from 'svelte/easing';
 	import { slide } from 'svelte/transition';
 

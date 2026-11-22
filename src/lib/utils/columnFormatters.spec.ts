@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { K8sResource } from '$lib/types/k8s';
+import type { K8sResource } from '#lib/types/k8s.js';
 import { columnFormatters, extractColumnValue, getAge } from './columnFormatters';
 
 const res = (r: Record<string, unknown>) =>

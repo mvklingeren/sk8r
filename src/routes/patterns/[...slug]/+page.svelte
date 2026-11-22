@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowLeft, BookOpen } from 'lucide-svelte';
+	import { ArrowLeft, BookOpen } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let { data } = $props();

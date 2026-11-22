@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
-import type { NodeMetrics, MetricDataPoint } from '$lib/types/metricsTypes';
-import { k8sErrorStatus } from '$lib/types/k8s';
+import type { NodeMetrics, MetricDataPoint } from '#lib/types/metricsTypes.js';
+import { k8sErrorStatus } from '#lib/types/k8s.js';
 
 interface NodeMetricSample {
 	cpu: number;

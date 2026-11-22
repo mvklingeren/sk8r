@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { KubernetesObjectApi } from '@kubernetes/client-node';
-import yaml from 'js-yaml';
-import { getK8sCredentials, unauthorizedResponse, createKubeConfig } from '$lib/server/k8sAuth';
-import { k8sErrorMessage, k8sErrorStatus } from '$lib/types/k8s';
+import { CORE_SCHEMA, loadAll, mergeTag } from 'js-yaml';
+import { getK8sCredentials, unauthorizedResponse, createKubeConfig } from '#lib/server/k8sAuth.js';
+import { k8sErrorMessage, k8sErrorStatus } from '#lib/types/k8s.js';
 
 interface K8sManifest {
 	apiVersion: string;
@@ -16,8 +16,11 @@ interface K8sManifest {
 	[key: string]: unknown;
 }
 
+const YAML_SCHEMA = CORE_SCHEMA.withTags(mergeTag);
+
 function parseYamlManifests(yamlContent: string): K8sManifest[] {
-	const documents = yaml.loadAll(yamlContent) as K8sManifest[];
+	// js-yaml 5 dropped `<<` merge keys from the default schema; kubectl still accepts them
+	const documents = loadAll(yamlContent, { schema: YAML_SCHEMA }) as K8sManifest[];
 	return documents.filter((doc) => doc !== null && doc !== undefined);
 }
 

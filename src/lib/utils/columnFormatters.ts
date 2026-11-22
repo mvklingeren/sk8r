@@ -8,7 +8,7 @@ import type {
 	V1ObjectReference,
 	V1ServicePort
 } from '@kubernetes/client-node';
-import type { K8sResource } from '$lib/types/k8s';
+import type { K8sResource } from '#lib/types/k8s.js';
 
 // Utility function to get nested property value using dot notation
 function getNestedValue(obj: unknown, path: string): unknown {

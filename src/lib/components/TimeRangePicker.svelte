@@ -44,7 +44,7 @@
 </script>
 
 <script lang="ts">
-	import { Clock, ChevronDown } from 'lucide-svelte';
+	import { Clock, ChevronDown } from '@lucide/svelte';
 
 	interface Props {
 		range: TimeRange;

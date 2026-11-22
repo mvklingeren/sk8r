@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/private';
+import { PROMETHEUS_URL } from '$app/env/private';
 
 export interface PrometheusQueryResponse {
 	status: 'success' | 'error';
@@ -33,10 +33,10 @@ export class PrometheusService {
 	private prometheusUrl: string;
 
 	constructor() {
-		if (!env.PROMETHEUS_URL) {
+		if (!PROMETHEUS_URL) {
 			throw new Error('PROMETHEUS_URL environment variable is not set.');
 		}
-		this.prometheusUrl = env.PROMETHEUS_URL;
+		this.prometheusUrl = PROMETHEUS_URL;
 	}
 
 	/**

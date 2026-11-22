@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { openEventStream } from '$lib/utils/eventStream';
+	import { openEventStream } from '#lib/utils/eventStream.js';
 	import {
 		Activity,
 		ChevronDown,
@@ -13,7 +13,7 @@
 		CheckCircle,
 		X,
 		Filter
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 
 	interface K8sEvent {
 		watchType: string;

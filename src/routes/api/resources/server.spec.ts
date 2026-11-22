@@ -51,6 +51,14 @@ describe('/api/resources validation (no cluster calls)', () => {
 		]);
 	});
 
+	it('resolves YAML merge keys', async () => {
+		const r = await call(POST, {
+			dryRun: true,
+			yaml: 'base: &m\n  name: merged\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  <<: *m\n'
+		});
+		expect(r.body.resources).toEqual([{ kind: 'ConfigMap', name: 'merged', namespace: 'default' }]);
+	});
+
 	it('PUT accepts exactly one document', async () => {
 		const two = await call(PUT, { dryRun: true, yaml: `${deployment}---\n${deployment}` });
 		expect(two.status).toBe(400);

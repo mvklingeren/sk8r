@@ -22,8 +22,8 @@
 		AlertTriangle,
 		CheckCircle2,
 		LoaderCircle
-	} from 'lucide-svelte';
-	import type { DashboardCardConfig } from '$lib/config/dashboardConfig';
+	} from '@lucide/svelte';
+	import type { DashboardCardConfig } from '#lib/config/dashboardConfig.js';
 
 	interface Props {
 		card: DashboardCardConfig;

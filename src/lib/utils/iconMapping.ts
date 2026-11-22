@@ -1,4 +1,4 @@
-import type { ComponentType } from 'svelte';
+import type { LucideIcon } from '@lucide/svelte';
 import {
 	Layers,
 	Network,
@@ -33,10 +33,10 @@ import {
 	Badge,
 	FilePlus,
 	Award
-} from 'lucide-svelte';
+} from '@lucide/svelte';
 
 // Map icon names to Lucide components
-export const iconMap: Record<string, ComponentType> = {
+export const iconMap: Record<string, LucideIcon> = {
 	// Section icons
 	server: Server,
 	cpu: Cpu,
@@ -75,7 +75,7 @@ export const iconMap: Record<string, ComponentType> = {
 	share2: Share2
 };
 
-export function getIcon(iconName?: string): ComponentType {
+export function getIcon(iconName?: string): LucideIcon {
 	if (!iconName) return Box; // Default fallback
 	return iconMap[iconName] || Box;
 }

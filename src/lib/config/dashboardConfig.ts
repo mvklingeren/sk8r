@@ -1,4 +1,4 @@
-import type { MetricChartConfig } from '$lib/types/metricsTypes';
+import type { MetricChartConfig } from '#lib/types/metricsTypes.js';
 
 export interface DashboardCardConfig {
 	id: string;

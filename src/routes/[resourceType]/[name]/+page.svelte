@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ArrowLeft, Edit, Trash2, ScrollText } from 'lucide-svelte';
+	import { ArrowLeft, Edit, Trash2, ScrollText } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
-	import type { K8sResource } from '$lib/types/k8s';
-	import PodLogsViewer from '$lib/components/PodLogsViewer.svelte';
-	import { apiClient } from '$lib/utils/apiClient';
-	import { browser } from '$app/environment';
-	import { clusterStore } from '$lib/stores/cluster';
+	import type { K8sResource } from '#lib/types/k8s.js';
+	import PodLogsViewer from '#lib/components/PodLogsViewer.svelte';
+	import { apiClient } from '#lib/utils/apiClient.js';
+	import { browser } from '$app/env';
+	import { clusterStore } from '#lib/stores/cluster.js';
 	import { get } from 'svelte/store';
 
 	// Lazy load ResourceCreator to avoid SSR issues with shiki/js-yaml
-	let ResourceCreator: typeof import('$lib/components/ResourceCreator.svelte').default | null =
+	let ResourceCreator: typeof import('#lib/components/ResourceCreator.svelte').default | null =
 		$state(null);
 
 	interface Props {
@@ -73,7 +73,7 @@
 	}
 
 	onMount(async () => {
-		const module = await import('$lib/components/ResourceCreator.svelte');
+		const module = await import('#lib/components/ResourceCreator.svelte');
 		ResourceCreator = module.default;
 
 		// Load resource client-side
